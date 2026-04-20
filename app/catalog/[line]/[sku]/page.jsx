@@ -1,189 +1,142 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import QuoteRequestForm from "@/components/catalog/QuoteRequestForm";
+import Link from "next/link";
+import ProductDetailClient from "@/components/catalog/ProductDetailClient";
+
+const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 export async function generateMetadata({ params }) {
-  return {
-    title: `${params.sku.toUpperCase()} — Cabinet Detail`,
-  };
+  return { title: `${params.sku.toUpperCase()} — Cabinet Detail` };
 }
 
-export default async function ProductDetailPage({ params }) {
-  const supabase = createClient();
+async function getData(lineSlug, skuParam) {
+  const admin = createAdminClient();
+  const sku = skuParam.toUpperCase();
 
-  // Fetch catalog line
-  const { data: line } = await supabase
+  const { data: line } = await admin
     .from("catalog_lines")
     .select("id, name, slug")
-    .eq("slug", params.line)
+    .eq("tenant_id", TENANT_ID)
+    .eq("slug", lineSlug)
     .eq("status", "published")
     .single();
 
-  if (!line) notFound();
+  if (!line) return null;
 
-  // Fetch product
-  const { data: product } = await supabase
+  const { data: product } = await admin
     .from("products")
-    .select(`
-      *,
-      catalog_line:catalog_lines(id, name, slug),
-      category:categories(id, name, slug),
-      product_finishes(finish:finishes(id, name, code))
-    `)
+    .select("id, sku, name, description, width_in, height_in, depth_in, box_width_in, box_height_in, box_depth_in, door_count, drawer_count, notes, catalog_line:catalog_lines(name,slug), category:categories(name,slug)")
     .eq("catalog_line_id", line.id)
-    .eq("sku", params.sku.toUpperCase())
+    .eq("tenant_id", TENANT_ID)
+    .eq("sku", sku)
     .eq("is_active", true)
     .single();
 
-  if (!product) notFound();
+  if (!product) return null;
 
-  // Fetch product images (mapped, confirmed assets)
-  const { data: images } = await supabase
-    .from("asset_mappings")
-    .select("id, public_url, variant, is_primary, sort_order")
+  // Images via product_assets (v2)
+  const { data: paRows } = await admin
+    .from("product_assets")
+    .select("is_primary, sort_order, variant:product_variants!variant_id(variant_key, label), asset:assets!asset_id(public_url, alt_text)")
     .eq("product_id", product.id)
-    .eq("asset_type", "product")
     .order("is_primary", { ascending: false })
     .order("sort_order", { ascending: true });
 
-  // Fetch finish swatch images
-  const finishIds = (product.product_finishes || []).map((pf) => pf.finish?.id).filter(Boolean);
-  let finishImages = [];
+  const images = (paRows || [])
+    .filter((r) => r.asset?.public_url)
+    .map((r) => ({
+      url: r.asset.public_url,
+      alt: r.asset.alt_text || product.name,
+      is_primary: r.is_primary,
+      variant_key: r.variant?.variant_key || null,
+      variant_label: r.variant?.label || null,
+    }));
+
+  // Finishes via product_finish_map (v2)
+  const { data: pfmRows } = await admin
+    .from("product_finish_map")
+    .select("is_default, sort_order, is_available, finish:finishes!finish_id(id, name, code, finish_family)")
+    .eq("product_id", product.id)
+    .eq("is_available", true)
+    .order("sort_order", { ascending: true });
+
+  const finishList = (pfmRows || [])
+    .filter((r) => r.finish)
+    .map((r) => ({ ...r.finish, is_default: r.is_default }));
+
+  // Swatch assets
+  const finishIds = finishList.map((f) => f.id);
+  const swatches = {};
   if (finishIds.length > 0) {
-    const { data } = await supabase
-      .from("asset_mappings")
-      .select("id, finish_id, public_url, sort_order")
+    const { data: swatchRows } = await admin
+      .from("assets")
+      .select("finish_id, public_url")
       .in("finish_id", finishIds)
-      .eq("asset_type", "finish");
-    finishImages = data || [];
+      .eq("asset_type", "finish_swatch")
+      .eq("status", "confirmed");
+    for (const r of swatchRows || []) {
+      if (!swatches[r.finish_id]) swatches[r.finish_id] = r.public_url;
+    }
   }
 
-  const primaryImage = images?.find((i) => i.is_primary) || images?.[0];
+  // Rules
+  const { data: rules } = await admin
+    .from("product_rules")
+    .select("rule_type, rule_value, label")
+    .eq("product_id", product.id)
+    .eq("tenant_id", TENANT_ID)
+    .eq("is_active", true);
+
+  const incompatibleFinishIds = new Set(
+    (rules || [])
+      .filter((r) => r.rule_type === "finish_incompatible")
+      .flatMap((r) => r.rule_value?.finish_ids || [])
+  );
+
+  const finishes = finishList.map((f) => ({
+    ...f,
+    swatch_url: swatches[f.id] || null,
+    incompatible: incompatibleFinishIds.has(f.id),
+  }));
+
+  const dimensionNotes = (rules || [])
+    .filter((r) => r.rule_type === "dimension_note")
+    .map((r) => r.rule_value?.message || r.label);
+
+  return { line, product, images, finishes, dimensionNotes };
+}
+
+export default async function ProductDetailPage({ params }) {
+  const data = await getData(params.line, params.sku);
+  if (!data) notFound();
+
+  const { line, product, images, finishes, dimensionNotes } = data;
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-10">
-      <div className="mb-4 text-sm text-gray-400">
-        <a href="/catalog" className="hover:underline">Catalog</a>
-        {" / "}
-        <a href={`/catalog/${line.slug}`} className="hover:underline">{line.name}</a>
-        {" / "}
-        <span className="text-gray-600">{product.sku}</span>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <nav className="text-xs text-stone-400 mb-6 flex items-center gap-1.5 flex-wrap">
+        <Link href="/catalog" className="hover:text-stone-600 transition">Collections</Link>
+        <span>/</span>
+        <Link href={`/catalog/${line.slug}`} className="hover:text-stone-600 transition">{line.name}</Link>
+        <span>/</span>
+        {product.category && (
+          <>
+            <Link href={`/catalog/${line.slug}?category=${product.category.slug}`} className="hover:text-stone-600 transition">
+              {product.category.name}
+            </Link>
+            <span>/</span>
+          </>
+        )}
+        <span className="text-stone-600 font-medium">{product.sku}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* Left: images */}
-        <div>
-          {/* Primary image */}
-          <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-3">
-            {primaryImage?.public_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={primaryImage.public_url}
-                alt={`${product.sku} cabinet`}
-                className="w-full h-full object-contain p-4"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">
-                No image
-              </div>
-            )}
-          </div>
-
-          {/* Thumbnail strip */}
-          {images && images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {images.map((img) => (
-                <div
-                  key={img.id}
-                  className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200"
-                >
-                  {img.public_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={img.public_url}
-                      alt={img.variant || product.sku}
-                      className="w-full h-full object-contain p-1"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right: product info */}
-        <div>
-          <p className="text-sm text-gray-400 uppercase tracking-wider mb-1">
-            {product.catalog_line?.name} · {product.category?.name}
-          </p>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{product.name}</h1>
-          <p className="font-mono text-gray-500 text-sm mb-4">SKU: {product.sku}</p>
-
-          {product.description && (
-            <p className="text-gray-600 mb-6">{product.description}</p>
-          )}
-
-          {/* Dimensions */}
-          {(product.width_in || product.height_in || product.depth_in) && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Dimensions</h3>
-              <div className="flex gap-4 text-sm text-gray-600">
-                {product.width_in && <span>W: {product.width_in}&quot;</span>}
-                {product.height_in && <span>H: {product.height_in}&quot;</span>}
-                {product.depth_in && <span>D: {product.depth_in}&quot;</span>}
-              </div>
-            </div>
-          )}
-
-          {/* Finishes */}
-          {product.product_finishes && product.product_finishes.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Available Finishes</h3>
-              <div className="flex flex-wrap gap-3">
-                {product.product_finishes.map(({ finish }) => {
-                  if (!finish) return null;
-                  const swatchImg = finishImages.find((fi) => fi.finish_id === finish.id);
-                  return (
-                    <div
-                      key={finish.id}
-                      className="flex flex-col items-center gap-1"
-                      title={finish.name}
-                    >
-                      <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
-                        {swatchImg?.public_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={swatchImg.public_url}
-                            alt={finish.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
-                            ?
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-500 text-center max-w-[60px] truncate">
-                        {finish.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Quote form */}
-          <QuoteRequestForm
-            productId={product.id}
-            productName={product.name}
-            productSku={product.sku}
-            finishes={(product.product_finishes || [])
-              .map((pf) => pf.finish)
-              .filter(Boolean)}
-          />
-        </div>
-      </div>
-    </main>
+      <ProductDetailClient
+        product={product}
+        images={images}
+        finishes={finishes}
+        dimensionNotes={dimensionNotes}
+        lineSlug={line.slug}
+      />
+    </div>
   );
 }

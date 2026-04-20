@@ -1,7 +1,8 @@
 {
   "name": "cabinet-catalog-platform",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,8 +10,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
+    "dotenv": "^17.4.2",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18"
