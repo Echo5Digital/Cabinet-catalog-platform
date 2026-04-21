@@ -275,7 +275,7 @@ function CSVImportModal({ open, onClose, lines, categories, onImported }) {
 
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
                   <strong>Example CSV row:</strong><br />
-                  <code>B24, "Base Cabinet 24\"", base, 24, 34.5, 24, 1, 0</code>
+                  <code>B24, &quot;Base Cabinet 24\&quot;&quot;, base, 24, 34.5, 24, 1, 0</code>
                 </div>
               </div>
             )}

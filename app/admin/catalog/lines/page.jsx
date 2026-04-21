@@ -238,6 +238,12 @@ function LineCard({ line, onPublish, onUnpublish }) {
         >
           Manage →
         </Link>
+        <Link
+          href={`/admin/catalog/${line.id}/versions`}
+          className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-500"
+        >
+          History
+        </Link>
 
         {line.status === "draft" || line.status === "review" ? (
           <button

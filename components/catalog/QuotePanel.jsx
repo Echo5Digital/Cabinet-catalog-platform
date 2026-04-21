@@ -62,7 +62,7 @@ export default function QuotePanel() {
             <div className="px-6 py-16 text-center">
               <p className="text-stone-400 text-sm mb-1">Your quote is empty.</p>
               <p className="text-stone-400 text-xs">
-                Browse products and click "Add to Quote" to build your list.
+                Browse products and click &quot;Add to Quote&quot; to build your list.
               </p>
             </div>
           ) : (

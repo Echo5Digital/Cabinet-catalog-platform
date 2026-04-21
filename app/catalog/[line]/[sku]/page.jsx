@@ -1,128 +1,79 @@
-import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ProductDetailClient from "@/components/catalog/ProductDetailClient";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getPublishedVersion } from "@/lib/catalog/getPublishedVersion";
 
 export async function generateMetadata({ params }) {
   return { title: `${params.sku.toUpperCase()} — Cabinet Detail` };
 }
 
-async function getData(lineSlug, skuParam) {
-  const admin = createAdminClient();
-  const sku = skuParam.toUpperCase();
+export default async function ProductDetailPage({ params }) {
+  const result = await getPublishedVersion(params.line);
+  if (!result) notFound();
 
-  const { data: line } = await admin
-    .from("catalog_lines")
-    .select("id, name, slug")
-    .eq("tenant_id", TENANT_ID)
-    .eq("slug", lineSlug)
-    .eq("status", "published")
-    .single();
+  const { line, snapshot } = result;
+  const sku = params.sku.toUpperCase();
 
-  if (!line) return null;
-
-  const { data: product } = await admin
-    .from("products")
-    .select("id, sku, name, description, width_in, height_in, depth_in, box_width_in, box_height_in, box_depth_in, door_count, drawer_count, notes, catalog_line:catalog_lines(name,slug), category:categories(name,slug)")
-    .eq("catalog_line_id", line.id)
-    .eq("tenant_id", TENANT_ID)
-    .eq("sku", sku)
-    .eq("is_active", true)
-    .single();
-
-  if (!product) return null;
-
-  // Images via product_assets (v2)
-  const { data: paRows } = await admin
-    .from("product_assets")
-    .select("is_primary, sort_order, variant:product_variants!variant_id(variant_key, label), asset:assets!asset_id(public_url, alt_text)")
-    .eq("product_id", product.id)
-    .order("is_primary", { ascending: false })
-    .order("sort_order", { ascending: true });
-
-  const images = (paRows || [])
-    .filter((r) => r.asset?.public_url)
-    .map((r) => ({
-      url: r.asset.public_url,
-      alt: r.asset.alt_text || product.name,
-      is_primary: r.is_primary,
-      variant_key: r.variant?.variant_key || null,
-      variant_label: r.variant?.label || null,
-    }));
-
-  // Finishes via product_finish_map (v2)
-  const { data: pfmRows } = await admin
-    .from("product_finish_map")
-    .select("is_default, sort_order, is_available, finish:finishes!finish_id(id, name, code, finish_family)")
-    .eq("product_id", product.id)
-    .eq("is_available", true)
-    .order("sort_order", { ascending: true });
-
-  const finishList = (pfmRows || [])
-    .filter((r) => r.finish)
-    .map((r) => ({ ...r.finish, is_default: r.is_default }));
-
-  // Swatch assets
-  const finishIds = finishList.map((f) => f.id);
-  const swatches = {};
-  if (finishIds.length > 0) {
-    const { data: swatchRows } = await admin
-      .from("assets")
-      .select("finish_id, public_url")
-      .in("finish_id", finishIds)
-      .eq("asset_type", "finish_swatch")
-      .eq("status", "confirmed");
-    for (const r of swatchRows || []) {
-      if (!swatches[r.finish_id]) swatches[r.finish_id] = r.public_url;
-    }
-  }
-
-  // Rules
-  const { data: rules } = await admin
-    .from("product_rules")
-    .select("rule_type, rule_value, label")
-    .eq("product_id", product.id)
-    .eq("tenant_id", TENANT_ID)
-    .eq("is_active", true);
-
-  const incompatibleFinishIds = new Set(
-    (rules || [])
-      .filter((r) => r.rule_type === "finish_incompatible")
-      .flatMap((r) => r.rule_value?.finish_ids || [])
+  // Find product in snapshot
+  const product = (snapshot.products || []).find(
+    (p) => p.sku.toUpperCase() === sku
   );
+  if (!product) notFound();
 
-  const finishes = finishList.map((f) => ({
-    ...f,
-    swatch_url: swatches[f.id] || null,
-    incompatible: incompatibleFinishIds.has(f.id),
+  // Build images array from snapshot
+  const images = (product.images || []).map((img) => ({
+    url: img.url,
+    alt: img.alt || product.name,
+    is_primary: img.is_primary,
+    variant_key: null,
+    variant_label: null,
   }));
 
-  const dimensionNotes = (rules || [])
-    .filter((r) => r.rule_type === "dimension_note")
-    .map((r) => r.rule_value?.message || r.label);
+  // Map finish_ids → full finish objects from snapshot.finishes
+  const finishById = Object.fromEntries(
+    (snapshot.finishes || []).map((f) => [f.id, f])
+  );
+  const incompatibleSet = new Set(product.incompatible_finish_ids || []);
 
-  return { line, product, images, finishes, dimensionNotes };
-}
+  const finishes = (product.finish_ids || [])
+    .map((id) => finishById[id])
+    .filter(Boolean)
+    .map((f) => ({
+      ...f,
+      is_default: f.id === product.default_finish_id,
+      swatch_url: f.swatch_url || null,
+      incompatible: incompatibleSet.has(f.id),
+    }));
 
-export default async function ProductDetailPage({ params }) {
-  const data = await getData(params.line, params.sku);
-  if (!data) notFound();
+  const dimensionNotes = product.dimension_notes || [];
 
-  const { line, product, images, finishes, dimensionNotes } = data;
+  // Reshape for ProductDetailClient (expects nested category + catalog_line objects)
+  const productForClient = {
+    ...product,
+    category: product.category_id
+      ? { name: product.category_name, slug: product.category_slug }
+      : null,
+    catalog_line: { name: line.name, slug: line.slug },
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <nav className="text-xs text-stone-400 mb-6 flex items-center gap-1.5 flex-wrap">
-        <Link href="/catalog" className="hover:text-stone-600 transition">Collections</Link>
+        <Link href="/catalog" className="hover:text-stone-600 transition">
+          Collections
+        </Link>
         <span>/</span>
-        <Link href={`/catalog/${line.slug}`} className="hover:text-stone-600 transition">{line.name}</Link>
+        <Link href={`/catalog/${line.slug}`} className="hover:text-stone-600 transition">
+          {line.name}
+        </Link>
         <span>/</span>
-        {product.category && (
+        {product.category_id && (
           <>
-            <Link href={`/catalog/${line.slug}?category=${product.category.slug}`} className="hover:text-stone-600 transition">
-              {product.category.name}
+            <Link
+              href={`/catalog/${line.slug}?category=${product.category_slug}`}
+              className="hover:text-stone-600 transition"
+            >
+              {product.category_name}
             </Link>
             <span>/</span>
           </>
@@ -131,7 +82,7 @@ export default async function ProductDetailPage({ params }) {
       </nav>
 
       <ProductDetailClient
-        product={product}
+        product={productForClient}
         images={images}
         finishes={finishes}
         dimensionNotes={dimensionNotes}
