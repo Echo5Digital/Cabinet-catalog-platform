@@ -1,0 +1,258 @@
+/*
+ * ─── Admin Panel – Visibility & Contrast Stylesheet ─────────────────────────
+ *
+ *  Pure CSS fixes for contrast, legibility, and mobile responsiveness.
+ *  No logic, state, or component structure is changed here.
+ *
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── 1. SIDEBAR: Nav group section labels ─────────────────────────────────────
+   The labels (SETUP, CATALOG, ASSETS, LEADS) use Tailwind class text-gray-600
+   = #4b5563 on bg-gray-950 = #030712 → contrast ratio ≈ 1.9:1 (WCAG fail).
+   Override to gray-400 (#9ca3af) → contrast ratio ≈ 6.0:1 (WCAG AA pass).
+────────────────────────────────────────────────────────────────────────────── */
+aside nav p {
+  color: #9ca3af !important; /* gray-400 */
+  letter-spacing: 0.1em;
+}
+
+/* ── 2. SIDEBAR: Footer links & Sign-out button ───────────────────────────────
+   "View Public Catalog" and "Sign Out" use text-gray-500 / icon text-gray-600
+   which is dim on the near-black sidebar. Boost to gray-400.
+────────────────────────────────────────────────────────────────────────────── */
+aside > div:last-child > a,
+aside > div:last-child > button {
+  color: #9ca3af !important; /* gray-400 */
+}
+aside > div:last-child > a:hover {
+  color: #e5e7eb !important; /* gray-200 on hover */
+}
+aside > div:last-child > button:hover {
+  color: #f87171 !important; /* red-400 on hover (sign-out) */
+}
+
+/* ── 3. HEADER: Breadcrumb separator "/" is text-gray-300 on white ────────────
+   text-gray-300 = #d1d5db on white → contrast ≈ 1.6:1. Boost to gray-400.
+────────────────────────────────────────────────────────────────────────────── */
+header span.text-gray-300 {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* ── 4. ASSET REVIEW: "No metadata" span is text-gray-300 on white ───────────
+   Boost to gray-500 so it is readable but still clearly a placeholder.
+────────────────────────────────────────────────────────────────────────────── */
+span.text-gray-300 {
+  color: #6b7280 !important; /* gray-500 */
+}
+
+/* ── 5. BUTTONS: Border-only buttons have no explicit text color ──────────────
+   Buttons like "Upload Logo", "Correct", "Cancel", "Save Notes", "Import CSV",
+   "Back", "Manage →", "History" all use border-gray-300 but NO text-* class.
+   In dark mode without our fix, they'd be white-on-white. After the globals fix
+   they'll be dark, but let's explicitly set for maximum safety.
+────────────────────────────────────────────────────────────────────────────── */
+button {
+  color: inherit;
+}
+
+/* Buttons that have a border but no background color (ghost buttons) */
+button.border,
+button[class*="border-gray-"] {
+  color: #374151; /* gray-700 — always a readable dark color */
+}
+
+/* Don't override buttons that DO have explicit text or bg colors */
+button[class*="text-white"],
+button[class*="bg-blue-"],
+button[class*="bg-green-"],
+button[class*="bg-red-"],
+button[class*="bg-indigo-"],
+button[class*="text-red-"],
+button[class*="text-blue-"],
+button[class*="text-green-"],
+button[class*="text-amber-"],
+button[class*="text-indigo-"],
+button[class*="text-gray-"] {
+  /* These already have explicit colors from Tailwind — no override needed */
+  color: revert;
+}
+
+/* ── 6. FORM INPUTS: Always dark text, white background ──────────────────────
+   Inputs/selects/textareas need dark-on-white styling regardless of system theme.
+────────────────────────────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+input[type="color"],
+select,
+textarea {
+  color: #111827;           /* gray-900 */
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;           /* gray-400 — clear but distinct from real text */
+  opacity: 1;               /* Firefox resets this */
+}
+
+/* ── 7. TABLE HEADERS: Ensure uppercase column labels are readable ─────────────
+   thead th with text-gray-500 (#6b7280) on bg-gray-50 is fine at 5.1:1 but
+   boost the th font-weight to ensure they punch through.
+────────────────────────────────────────────────────────────────────────────── */
+thead th {
+  font-weight: 600 !important;
+}
+
+/* ── 8. STATUS PIPELINE BUTTONS (Leads page) ──────────────────────────────────
+   The pipeline buttons (New / Contacted / Quoted / Closed / Lost) use
+   border-gray-200 + no text color. Ensure they show gray-900 text.
+────────────────────────────────────────────────────────────────────────────── */
+div.grid button.border.rounded-lg > p {
+  color: #111827 !important; /* gray-900 for the count number */
+}
+div.grid button.border.rounded-lg > p + p {
+  color: #6b7280 !important; /* gray-500 for the status label */
+}
+
+/* ── 9. MODAL / DRAWER CLOSE BUTTON "×" ──────────────────────────────────────
+   The × button uses text-gray-400 which can get lost against a white header.
+   Ensure it's at least gray-500.
+────────────────────────────────────────────────────────────────────────────── */
+div.border-b > button.text-gray-400 {
+  color: #6b7280 !important; /* gray-500 */
+}
+
+/* ── 10. CORRECTION FORM inputs inside table rows ─────────────────────────────
+   Mini inputs in the asset correction inline form need dark text.
+────────────────────────────────────────────────────────────────────────────── */
+select.border.border-gray-300.rounded,
+input.border.border-gray-300.rounded {
+  color: #111827;
+  background-color: #ffffff;
+}
+
+/* ── 11. CHECKBOXES ───────────────────────────────────────────────────────────
+   Native checkboxes get the indigo brand accent and are sized for clarity.
+────────────────────────────────────────────────────────────────────────────── */
+input[type="checkbox"] {
+  accent-color: #4f46e5; /* indigo-600 */
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* ── 12. SCROLLBARS: Thin, branded (WebKit) ───────────────────────────────────
+   Custom scrollbars for the sidebar nav, modals, and main content areas.
+────────────────────────────────────────────────────────────────────────────── */
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track,
+.overflow-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb,
+.overflow-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.4); /* gray-500/40 */
+  border-radius: 9999px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* ── 13. FOCUS RINGS: Make keyboard focus clearly visible ─────────────────────
+   Many buttons have focus:ring-2 but the default browser outline is removed.
+   Add a consistent fallback.
+────────────────────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #6366f1; /* indigo-500 */
+  outline-offset: 2px;
+}
+
+/* ── 14. MOBILE RESPONSIVENESS ────────────────────────────────────────────────
+   Prevent horizontal overflow on small screens; ensure the header and main
+   content don't clip.
+────────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Header breadcrumb — prevent overflow on very small screens */
+  header .truncate {
+    max-width: 140px;
+  }
+
+  /* Make table cells wrap more gracefully */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Pipeline status summary grid: allow wrap without clipping */
+  div.grid.grid-cols-3 {
+    gap: 0.5rem;
+  }
+}
+
+/* ── 15. GENERAL LEGIBILITY IMPROVEMENTS ─────────────────────────────────────
+   Subtle improvements to default line-height and spacing for dense admin UI.
+────────────────────────────────────────────────────────────────────────────── */
+p, label, span, td, th {
+  line-height: 1.5;
+}
+
+/* Section/card headings within admin white cards */
+.bg-white h2 {
+  color: #111827; /* gray-900 — never let section titles be ambiguous */
+}
+
+/* Error messages: ensure red text is always readable */
+.text-red-700 {
+  color: #b91c1c !important;
+}
+.text-red-600 {
+  color: #dc2626 !important;
+}
+
+/* Success message: "Settings saved!" */
+.text-green-600 {
+  color: #16a34a !important;
+}
+
+/* ── 16. STAT CARDS (Dashboard): value numbers ────────────────────────────────
+   The dash "—" placeholder is text-gray-300. Boost it to gray-400.
+────────────────────────────────────────────────────────────────────────────── */
+span.text-gray-300.text-2xl {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* ── 17. UPLOAD ZONE: droppable area text ────────────────────────────────────
+   text-gray-500 in dashed upload zones is fine, make the "browse" highlight clear.
+────────────────────────────────────────────────────────────────────────────── */
+.border-dashed p.text-gray-500 {
+  color: #374151; /* gray-700 — upload zone instructions are important */
+}
+.border-dashed p.text-gray-400 {
+  color: #6b7280; /* gray-500 */
+}
+
+/* ── 18. CODE / MONO FONT: file names, SKUs, slugs ───────────────────────────
+   Monospace text should stay crisp and not too light.
+────────────────────────────────────────────────────────────────────────────── */
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.8125rem; /* slightly larger than xs for readability */
+}
+
+/* Limit text-gray-400 on mono text within table cells (e.g. asset filenames) */
+td .font-mono.text-gray-700,
+td .font-mono.text-gray-800 {
+  color: #1f2937 !important; /* gray-800 */
+}
