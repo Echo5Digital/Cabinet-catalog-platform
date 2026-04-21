@@ -4,6 +4,25 @@
 -- Idempotent: all inserts use ON CONFLICT DO NOTHING
 -- ================================================================
 
+-- ── REQUIRED SETUP STEP ───────────────────────────────────────
+-- After running this seed AND creating your Supabase Auth user,
+-- run the following in the Supabase SQL editor (Dashboard → SQL Editor),
+-- replacing <YOUR_AUTH_USER_UUID> with your actual user UUID from
+-- the auth.users table (Dashboard → Authentication → Users):
+--
+-- insert into tenant_users (tenant_id, auth_user_id, email, full_name, role, is_active)
+-- values (
+--   'a0000000-0000-0000-0000-000000000001',
+--   '<YOUR_AUTH_USER_UUID>',
+--   'your@email.com',
+--   'Your Name',
+--   'owner',
+--   true
+-- );
+--
+-- Without this row, all admin API calls return 401 Unauthorized.
+-- ─────────────────────────────────────────────────────────────
+
 -- ── Tenant ────────────────────────────────────────────────────
 insert into tenants (id, name, slug, primary_color, accent_color, contact_email, contact_phone, website_url, status, settings)
 values (

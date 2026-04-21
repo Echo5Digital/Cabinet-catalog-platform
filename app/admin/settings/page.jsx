@@ -35,6 +35,7 @@ function Field({ label, hint, children }) {
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -56,7 +57,10 @@ export default function SettingsPage() {
     async function load() {
       try {
         const res = await fetch("/api/tenant");
-        if (!res.ok) throw new Error("Failed to load settings");
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || "Failed to load settings");
+        }
         const data = await res.json();
         const t = data.tenant;
         setForm({
@@ -68,6 +72,7 @@ export default function SettingsPage() {
           accent_color: t.accent_color || "#3b82f6",
           logo_url: t.logo_url || "",
         });
+        setLoaded(true);
       } catch (e) {
         setError(e.message);
       } finally {
@@ -130,6 +135,19 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="p-10 text-center text-gray-400 text-sm">Loading settings…</div>
+    );
+  }
+
+  if (!loaded) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Branding & Settings</h1>
+        </div>
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {error || "Failed to load settings."}
+        </div>
+      </div>
     );
   }
 

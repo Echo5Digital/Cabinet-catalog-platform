@@ -112,7 +112,18 @@ export async function POST(request) {
       results.push({ filename, asset: inserted });
     }
 
-    return NextResponse.json({ ingested: results });
+    const succeeded = results.filter((r) => !r.error);
+    const failed = results.filter((r) => r.error);
+
+    if (failed.length > 0 && succeeded.length === 0) {
+      return NextResponse.json({ error: "All files failed to ingest.", failed }, { status: 400 });
+    }
+
+    if (failed.length > 0) {
+      return NextResponse.json({ ingested: succeeded, failed, partial: true }, { status: 207 });
+    }
+
+    return NextResponse.json({ ingested: succeeded });
   } catch (err) {
     console.error("Ingest error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });

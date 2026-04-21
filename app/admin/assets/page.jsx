@@ -27,6 +27,7 @@ function AssetUploader({ onComplete }) {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState(null);
+  const [failed, setFailed] = useState(null);
   const [error, setError] = useState(null);
   const inputRef = useRef(null);
 
@@ -40,6 +41,7 @@ function AssetUploader({ onComplete }) {
     if (!files.length) return;
     setUploading(true);
     setError(null);
+    setFailed(null);
     try {
       const formData = new FormData();
       for (const f of files) formData.append("files", f);
@@ -47,6 +49,7 @@ function AssetUploader({ onComplete }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
       setResults(data.ingested || []);
+      setFailed(data.failed?.length > 0 ? data.failed : null);
       setFiles([]);
     } catch (e) {
       setError(e.message);
@@ -101,17 +104,25 @@ function AssetUploader({ onComplete }) {
       {results && (
         <div className="mt-4 space-y-1">
           <p className="text-sm font-medium text-gray-700 mb-2">
-            {results.length} file(s) processed — they now appear in the review queue below.
+            {results.length} file(s) ingested — they now appear in the review queue below.
           </p>
           {results.map((r, i) => (
             <div key={i} className="flex items-center justify-between bg-white border border-gray-200 rounded px-3 py-2 text-xs">
               <span className="text-gray-700 truncate max-w-xs">{r.filename}</span>
-              {r.error
-                ? <span className="text-red-500 shrink-0">{r.error}</span>
-                : <ConfidenceBadge confidence={r.asset?.confidence} />
-              }
+              <ConfidenceBadge confidence={r.asset?.confidence} />
             </div>
           ))}
+          {failed && (
+            <div className="mt-3 border border-red-200 rounded-lg bg-red-50 px-3 py-2">
+              <p className="text-xs font-semibold text-red-700 mb-1">{failed.length} file(s) failed to upload:</p>
+              {failed.map((f, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-0.5">
+                  <span className="text-red-700 truncate max-w-xs">{f.filename}</span>
+                  <span className="text-red-500 shrink-0 ml-2">{f.error}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <button onClick={onComplete} className="mt-2 text-xs text-blue-600 hover:underline">
             Refresh review queue →
           </button>

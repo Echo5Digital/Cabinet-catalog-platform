@@ -61,19 +61,38 @@ export async function POST(request, { params }) {
 
     // ── Generate public URL ───────────────────────────────────
     // Move file from assets-staging to assets bucket (confirmed)
-    const { data: fileData } = await admin.storage
+    const { data: fileData, error: downloadError } = await admin.storage
       .from("assets-staging")
       .download(asset.storage_path);
 
-    let publicUrl = null;
-    if (fileData) {
-      const destPath = `${ctx.tenantId}/${asset.original_filename}`;
-      await admin.storage.from("assets").upload(destPath, fileData, {
-        contentType: asset.mime_type || "application/octet-stream",
-        upsert: true,
-      });
-      const { data: urlData } = admin.storage.from("assets").getPublicUrl(destPath);
-      publicUrl = urlData?.publicUrl ?? null;
+    if (downloadError || !fileData) {
+      return NextResponse.json(
+        { error: "Failed to retrieve asset from staging storage. Cannot confirm." },
+        { status: 500 }
+      );
+    }
+
+    const destPath = `${ctx.tenantId}/${asset.original_filename}`;
+    const { error: uploadError } = await admin.storage.from("assets").upload(destPath, fileData, {
+      contentType: asset.mime_type || "application/octet-stream",
+      upsert: true,
+    });
+
+    if (uploadError) {
+      return NextResponse.json(
+        { error: "Failed to move asset to confirmed storage. Cannot confirm." },
+        { status: 500 }
+      );
+    }
+
+    const { data: urlData } = admin.storage.from("assets").getPublicUrl(destPath);
+    const publicUrl = urlData?.publicUrl ?? null;
+
+    if (!publicUrl) {
+      return NextResponse.json(
+        { error: "Failed to generate public URL for asset. Cannot confirm." },
+        { status: 500 }
+      );
     }
 
     // Look up confirming user

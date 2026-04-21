@@ -33,7 +33,10 @@ export async function GET(request) {
     if (category) query = query.eq("categories.slug", category);
     if (active === "true") query = query.eq("is_active", true);
     if (active === "false") query = query.eq("is_active", false);
-    if (search) query = query.or(`sku.ilike.%${search}%,name.ilike.%${search}%`);
+    if (search) {
+      const q = String(search).trim().slice(0, 100).replace(/[%_\\]/g, "\\$&");
+      query = query.or(`sku.ilike.%${q}%,name.ilike.%${q}%`);
+    }
 
     const { data, error, count } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
