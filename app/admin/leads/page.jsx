@@ -266,18 +266,18 @@ export default function AdminLeadsPage() {
       </div>
 
       {/* Pipeline summary */}
-      <div className="grid grid-cols-5 gap-2 mb-5">
+      <div className="grid grid-cols-3 xs:grid-cols-5 sm:grid-cols-5 gap-2 mb-5">
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
-            className={`border rounded-lg p-3 text-center transition ${
+            className={`border rounded-lg p-2.5 sm:p-3 text-center transition ${
               statusFilter === s
                 ? "border-blue-400 bg-blue-50"
                 : "border-gray-200 bg-white hover:border-gray-300"
             }`}
           >
-            <p className="text-lg font-bold text-gray-900">{stats[s] ?? 0}</p>
+            <p className="text-base sm:text-lg font-bold text-gray-900">{stats[s] ?? 0}</p>
             <p className="text-xs text-gray-500 capitalize">{s}</p>
           </button>
         ))}

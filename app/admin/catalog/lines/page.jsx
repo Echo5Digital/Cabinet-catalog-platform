@@ -200,7 +200,7 @@ function LineCard({ line, onPublish, onUnpublish }) {
   const statusClass = STATUS_COLORS[line.status] || STATUS_COLORS.draft;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start justify-between gap-4 hover:shadow-sm transition">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-start justify-between gap-3 sm:gap-4 hover:shadow-sm transition">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
           <h3 className="font-semibold text-gray-900 text-base">{line.name}</h3>
@@ -213,7 +213,7 @@ function LineCard({ line, onPublish, onUnpublish }) {
           <p className="text-sm text-gray-600 line-clamp-2 mb-3">{line.description}</p>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-gray-500">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
           {line.manufacturer?.name && (
             <span>Mfr: {line.manufacturer.name}</span>
           )}

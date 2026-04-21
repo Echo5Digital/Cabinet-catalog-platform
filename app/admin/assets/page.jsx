@@ -122,7 +122,7 @@ function AssetUploader({ onComplete }) {
 }
 
 // ─── Single asset row ─────────────────────────────────────────────────────────
-function AssetRow({ asset, lines, finishes, products, onRefresh, selected, onSelect }) {
+function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
   const [correcting, setCorrecting] = useState(false);
   const [form, setForm] = useState({
     asset_type: asset.asset_type || "",
@@ -189,8 +189,8 @@ function AssetRow({ asset, lines, finishes, products, onRefresh, selected, onSel
       )}
       {asset.status !== "pending_review" && <td className="px-3 py-3" />}
 
-      {/* Thumbnail */}
-      <td className="px-3 py-3">
+      {/* Thumbnail — hidden on mobile */}
+      <td className="px-3 py-3 hidden sm:table-cell">
         {asset.status === "confirmed" && asset.public_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={asset.public_url} alt="" className="w-12 h-12 rounded object-cover border border-gray-200" />
@@ -202,8 +202,8 @@ function AssetRow({ asset, lines, finishes, products, onRefresh, selected, onSel
       </td>
 
       {/* Filename + parsed metadata */}
-      <td className="px-3 py-3 min-w-[180px]">
-        <p className="text-xs font-mono text-gray-700 truncate max-w-[200px]" title={asset.original_filename}>
+      <td className="px-3 py-3 min-w-[140px] max-w-[220px]">
+        <p className="text-xs font-mono text-gray-700 truncate" title={asset.original_filename}>
           {asset.original_filename}
         </p>
         {asset.parse_notes?.length > 0 && (
@@ -211,15 +211,15 @@ function AssetRow({ asset, lines, finishes, products, onRefresh, selected, onSel
         )}
       </td>
 
-      {/* Type */}
-      <td className="px-3 py-3">
+      {/* Type — hidden on mobile */}
+      <td className="px-3 py-3 hidden sm:table-cell">
         <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded capitalize">
           {asset.asset_type?.replace("_", " ") || "—"}
         </span>
       </td>
 
-      {/* Parsed info */}
-      <td className="px-3 py-3 text-xs text-gray-600 space-y-0.5">
+      {/* Parsed info — hidden on small screens */}
+      <td className="px-3 py-3 text-xs text-gray-600 space-y-0.5 hidden md:table-cell">
         {asset.parsed_line_slug && <div>Line: <strong>{asset.parsed_line_slug}</strong></div>}
         {asset.parsed_sku && <div>SKU: <strong>{asset.parsed_sku}</strong></div>}
         {asset.parsed_finish_code && <div>Finish: <strong>{asset.parsed_finish_code}</strong></div>}
@@ -234,13 +234,13 @@ function AssetRow({ asset, lines, finishes, products, onRefresh, selected, onSel
         <ConfidenceBadge confidence={asset.confidence} />
       </td>
 
-      {/* Flag reason */}
+      {/* Flag reason — hidden on small screens */}
       {asset.status === "flagged" && (
-        <td className="px-3 py-3 text-xs text-amber-700 max-w-[150px]">
+        <td className="px-3 py-3 text-xs text-amber-700 max-w-[150px] hidden lg:table-cell">
           {asset.flag_reason || "—"}
         </td>
       )}
-      {asset.status !== "flagged" && <td className="px-3 py-3" />}
+      {asset.status !== "flagged" && <td className="px-3 py-3 hidden lg:table-cell" />}
 
       {/* Actions */}
       <td className="px-3 py-3">
@@ -429,12 +429,11 @@ export default function AdminAssetsPage() {
   }
 
   const matchedCount = assets.filter((a) => a.confidence === "matched").length;
-  const pendingCount = stats.pending_review ?? 0;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-start sm:items-center justify-between gap-3 mb-5 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Asset Review</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -443,7 +442,7 @@ export default function AdminAssetsPage() {
         </div>
         <button
           onClick={() => setShowUploader((v) => !v)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+          className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
         >
           {showUploader ? "Hide Uploader" : "+ Upload Assets"}
         </button>
@@ -456,12 +455,12 @@ export default function AdminAssetsPage() {
 
       {/* Status tabs with counts */}
       <div className="border-b border-gray-200 mb-4">
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 overflow-x-auto">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => { setActiveTab(tab.key); }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-1.5 ${
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === tab.key
                   ? "border-blue-600 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700"
@@ -482,11 +481,11 @@ export default function AdminAssetsPage() {
 
       {/* Bulk confirm bar (only on pending_review tab) */}
       {activeTab === "pending_review" && matchedCount > 0 && (
-        <div className="mb-3 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+        <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
           <p className="text-sm text-green-800">
             <strong>{matchedCount}</strong> auto-matched asset{matchedCount !== 1 ? "s" : ""} ready to confirm
           </p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => handleSelectAll(true)}
               className="text-xs text-green-700 underline hover:text-green-900"
@@ -538,12 +537,12 @@ export default function AdminAssetsPage() {
                       />
                     )}
                   </th>
-                  <th className="px-3 py-3 w-14" />
+                  <th className="px-3 py-3 w-14 hidden sm:table-cell" />
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">File</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Detected Metadata</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">Type</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Detected Metadata</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Confidence</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Notes</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Notes</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
@@ -554,7 +553,6 @@ export default function AdminAssetsPage() {
                     asset={asset}
                     lines={lines}
                     finishes={finishes}
-                    products={[]}
                     onRefresh={() => { fetchAssets(); fetchStats(); }}
                     selected={selected.has(asset.id)}
                     onSelect={handleSelect}
@@ -567,7 +565,7 @@ export default function AdminAssetsPage() {
       )}
 
       {/* Legend */}
-      <div className="mt-5 flex gap-4 text-xs text-gray-400">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-green-100 border border-green-200 inline-block" />
           Auto-matched (safe to bulk confirm)
