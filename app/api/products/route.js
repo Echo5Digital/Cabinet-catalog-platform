@@ -8,7 +8,8 @@ export async function GET(request) {
     if (!ctx.user) return unauthorized();
 
     const { searchParams } = new URL(request.url);
-    const line = searchParams.get("line");
+    const catalogLineId = searchParams.get("catalog_line_id");
+    const line = searchParams.get("line"); // slug-based fallback (public/legacy)
     const category = searchParams.get("category");
     const active = searchParams.get("active");
     const search = searchParams.get("search");
@@ -29,7 +30,7 @@ export async function GET(request) {
       .order("sku", { ascending: true })
       .range(offset, offset + limit - 1);
 
-    if (line) query = query.eq("catalog_lines.slug", line);
+    if (catalogLineId) query = query.eq("catalog_line_id", catalogLineId);
     if (category) query = query.eq("categories.slug", category);
     if (active === "true") query = query.eq("is_active", true);
     if (active === "false") query = query.eq("is_active", false);

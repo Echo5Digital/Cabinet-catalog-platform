@@ -60,17 +60,20 @@ export async function POST(request) {
           continue;
         }
 
-        // Check finish is available for this product
-        const { data: pfm } = await admin
+        // Check finish is available for this product.
+        // Empty product_finish_map = all finishes implicitly available (not a violation).
+        // Only violate if explicit mappings exist AND this finish is not marked is_available.
+        const { data: allMappings } = await admin
           .from("product_finish_map")
-          .select("is_available")
-          .eq("product_id", product.id)
-          .eq("finish_id", finish.id)
-          .single();
+          .select("finish_id, is_available")
+          .eq("product_id", product.id);
 
-        if (!pfm || !pfm.is_available) {
-          violations.push({ sku, finish_code, message: `${finish.name} is not available for ${sku}.` });
-          continue;
+        if ((allMappings ?? []).length > 0) {
+          const pfm = allMappings.find((m) => m.finish_id === finish.id);
+          if (!pfm || !pfm.is_available) {
+            violations.push({ sku, finish_code, message: `${finish.name} is not available for ${sku}.` });
+            continue;
+          }
         }
 
         // Check incompatibility rules
