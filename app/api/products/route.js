@@ -10,7 +10,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const catalogLineId = searchParams.get("catalog_line_id");
     const line = searchParams.get("line"); // slug-based fallback (public/legacy)
-    const category = searchParams.get("category");
+    const category = searchParams.get("category_id");
     const active = searchParams.get("active");
     const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -31,7 +31,7 @@ export async function GET(request) {
       .range(offset, offset + limit - 1);
 
     if (catalogLineId) query = query.eq("catalog_line_id", catalogLineId);
-    if (category) query = query.eq("categories.slug", category);
+    if (category) query = query.eq("category_id", category);
     if (active === "true") query = query.eq("is_active", true);
     if (active === "false") query = query.eq("is_active", false);
     if (search) {

@@ -123,7 +123,7 @@ function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
   }
 
   return (
-    <aside className="w-64 bg-gray-950 text-gray-100 flex flex-col shrink-0 min-h-screen">
+    <aside className="w-64 bg-gray-950 text-gray-100 flex flex-col shrink-0 h-full">
       {/* Brand header */}
       <div className="px-5 pt-6 pb-5 border-b border-gray-800">
         <Link href="/admin" className="flex items-center gap-3">
@@ -281,7 +281,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex">
+      <div className="hidden lg:block sticky top-0 h-screen shrink-0">
         <Sidebar {...sidebarProps} />
       </div>
 

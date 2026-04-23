@@ -32,13 +32,13 @@ export default function ProductCard({ product, lineSlug }) {
 
       {/* Info */}
       <div className="p-3 border-t border-stone-100">
-        <p className="font-mono text-[11px] text-stone-400 tracking-wide">{product.sku}</p>
-        <p className="text-sm font-medium text-stone-800 mt-0.5 leading-snug line-clamp-2">{product.name}</p>
+        <p className="font-mono text-[11px] text-stone-500 tracking-wide">{product.sku}</p>
+        <p className="text-sm font-semibold text-stone-900 mt-0.5 leading-snug line-clamp-2">{product.name}</p>
         {product.category && (
-          <p className="text-xs text-stone-400 mt-0.5">{product.category.name}</p>
+          <p className="text-xs text-stone-500 mt-0.5 font-medium">{product.category.name}</p>
         )}
         {dims && (
-          <p className="text-xs text-stone-400 mt-1 font-mono">{dims}</p>
+          <p className="text-xs text-stone-500 mt-1 font-mono">{dims}</p>
         )}
       </div>
     </Link>

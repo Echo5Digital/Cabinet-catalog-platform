@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ProductCard from "@/components/catalog/ProductCard";
 import CategoryPills from "@/components/catalog/CategoryPills";
+import LifestyleBanner from "@/components/catalog/LifestyleBanner";
 import { getPublishedVersion } from "@/lib/catalog/getPublishedVersion";
 
 export async function generateMetadata({ params }) {
@@ -59,41 +60,18 @@ export default async function CatalogLinePage({ params, searchParams }) {
 
   return (
     <div>
-      {/* Lifestyle hero strip */}
-      {lifestyleImages.length > 0 ? (
-        <div
-          className={`grid gap-px overflow-hidden ${
-            lifestyleImages.length >= 3
-              ? "grid-cols-3"
-              : lifestyleImages.length === 2
-              ? "grid-cols-2"
-              : "grid-cols-1"
-          }`}
-        >
-          {lifestyleImages.slice(0, 3).map((img, i) => (
-            <div key={i} className="overflow-hidden bg-stone-200 h-[300px] sm:h-[380px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.url}
-                alt={img.alt || line.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="h-20 bg-stone-100 border-b border-stone-200" />
-      )}
+      {/* Lifestyle hero banner (sliding carousel) */}
+      <LifestyleBanner images={lifestyleImages} lineName={line.name} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {/* Breadcrumb + heading */}
         <div className="mb-8">
-          <nav className="text-xs text-stone-400 mb-3 flex items-center gap-1.5">
-            <Link href="/catalog" className="hover:text-stone-600 transition">
+          <nav className="text-xs text-stone-500 mb-3 flex items-center gap-1.5">
+            <Link href="/catalog" className="hover:text-stone-800 transition font-medium">
               Collections
             </Link>
-            <span>/</span>
-            <span className="text-stone-600">{line.name}</span>
+            <span className="text-stone-400">/</span>
+            <span className="text-stone-700 font-medium">{line.name}</span>
           </nav>
           <h1
             className="text-3xl sm:text-4xl font-bold text-stone-900"
@@ -119,7 +97,7 @@ export default async function CatalogLinePage({ params, searchParams }) {
 
         {/* Count + clear */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-stone-400">
+          <p className="text-sm text-stone-600 font-medium">
             {products.length} product{products.length !== 1 ? "s" : ""}
             {activeCategory &&
               ` · ${categories.find((c) => c.slug === activeCategory)?.name || activeCategory}`}
@@ -128,7 +106,7 @@ export default async function CatalogLinePage({ params, searchParams }) {
           {(activeCategory || activeWidth) && (
             <Link
               href={`/catalog/${line.slug}`}
-              className="text-xs text-stone-400 hover:text-stone-700 transition"
+              className="text-xs text-stone-500 hover:text-stone-900 underline underline-offset-2 transition"
             >
               Clear filters ×
             </Link>

@@ -322,7 +322,7 @@ export default function FinishesPage() {
 
   const fetchFinishes = useCallback(async () => {
     const params = new URLSearchParams();
-    if (lineFilter) params.set("catalog_line_id", lineFilter);
+    if (lineFilter) params.set("line", lineFilter);
     const res = await fetch(`/api/finishes?${params}`);
     const data = res.ok ? await res.json() : {};
     setFinishes(data.finishes || []);
