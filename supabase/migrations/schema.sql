@@ -209,7 +209,7 @@ create table finishes (
   sort_order      int         not null default 0,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now(),
-  unique (tenant_id, code)
+  unique (tenant_id, catalog_line_id, code)
 );
 
 -- ================================================================

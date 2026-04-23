@@ -15,7 +15,8 @@ export async function GET(request) {
       .from("finishes")
       .select(`
         id, name, code, finish_family, description, is_active, sort_order, catalog_line_id,
-        catalog_line:catalog_lines(id, name, slug)
+        catalog_line:catalog_lines(id, name, slug),
+        assets!assets_finish_id_fkey(id, public_url, status, asset_type)
       `)
       .eq("tenant_id", ctx.tenantId)
       .order("sort_order", { ascending: true });
@@ -24,7 +25,16 @@ export async function GET(request) {
 
     const { data, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ finishes: data });
+
+    const finishes = data.map(({ assets, ...f }) => ({
+      ...f,
+      swatch_asset:
+        (assets || []).find(
+          (a) => a.status === "confirmed" && a.asset_type === "finish_swatch"
+        ) ?? null,
+    }));
+
+    return NextResponse.json({ finishes });
   } catch {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
@@ -59,7 +69,10 @@ export async function POST(request) {
 
     if (error) {
       if (error.code === "23505") {
-        return NextResponse.json({ error: `Finish code "${code}" already exists.` }, { status: 409 });
+        return NextResponse.json(
+          { error: `Finish code "${code}" already exists in this catalog line.` },
+          { status: 409 }
+        );
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
