@@ -1,7 +1,7 @@
 "use client";
 
 import "./admin.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -114,68 +114,15 @@ const NAV_GROUPS = [
   },
 ];
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ─── Sidebar (stable component outside layout to prevent remount on re-render) ─
 
-export default function AdminLayout({ children }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [badges, setBadges] = useState({ pending: 0, new_leads: 0 });
-  const [tenantName, setTenantName] = useState("Cabinet Catalog");
-  const [signingOut, setSigningOut] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadBadges() {
-      try {
-        const [assetRes, leadRes] = await Promise.all([
-          fetch("/api/assets/stats"),
-          fetch("/api/leads/stats"),
-        ]);
-        if (assetRes.ok) {
-          const a = await assetRes.json();
-          setBadges((prev) => ({ ...prev, pending: a.by_status?.pending_review ?? 0 }));
-        }
-        if (leadRes.ok) {
-          const l = await leadRes.json();
-          setBadges((prev) => ({ ...prev, new_leads: l.by_status?.new ?? 0 }));
-        }
-      } catch {
-        // Non-critical
-      }
-    }
-
-    async function loadTenant() {
-      try {
-        const res = await fetch("/api/tenant");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.tenant?.name) setTenantName(data.tenant.name);
-        }
-      } catch {
-        // Non-critical
-      }
-    }
-
-    loadBadges();
-    loadTenant();
-  }, [pathname]);
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
-    } catch {
-      setSigningOut(false);
-    }
-  }
-
+function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
   function isActive(href) {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   }
 
-  const Sidebar = () => (
+  return (
     <aside className="w-64 bg-gray-950 text-gray-100 flex flex-col shrink-0 min-h-screen">
       {/* Brand header */}
       <div className="px-5 pt-6 pb-5 border-b border-gray-800">
@@ -246,7 +193,7 @@ export default function AdminLayout({ children }) {
           View Public Catalog
         </Link>
         <button
-          onClick={handleSignOut}
+          onClick={onSignOut}
           disabled={signingOut}
           className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-500 hover:text-red-400 rounded-lg hover:bg-gray-800/80 transition text-left group"
         >
@@ -256,6 +203,68 @@ export default function AdminLayout({ children }) {
       </div>
     </aside>
   );
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+export default function AdminLayout({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [badges, setBadges] = useState({ pending: 0, new_leads: 0 });
+  const [tenantName, setTenantName] = useState("Cabinet Catalog");
+  const [signingOut, setSigningOut] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const loadBadges = useCallback(async () => {
+    try {
+      const [assetRes, leadRes] = await Promise.all([
+        fetch("/api/assets/stats"),
+        fetch("/api/leads/stats"),
+      ]);
+      if (assetRes.ok) {
+        const a = await assetRes.json();
+        setBadges((prev) => ({ ...prev, pending: a.by_status?.pending_review ?? 0 }));
+      }
+      if (leadRes.ok) {
+        const l = await leadRes.json();
+        setBadges((prev) => ({ ...prev, new_leads: l.by_status?.new ?? 0 }));
+      }
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
+  useEffect(() => {
+    async function loadTenant() {
+      try {
+        const res = await fetch("/api/tenant");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tenant?.name) setTenantName(data.tenant.name);
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
+    loadTenant();
+    loadBadges();
+  }, [loadBadges]); // runs once on mount only
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch {
+      setSigningOut(false);
+    }
+  }
+
+  function isActive(href) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
 
   // Current page label for the header
   const currentLabel = (() => {
@@ -267,11 +276,13 @@ export default function AdminLayout({ children }) {
     return "Dashboard";
   })();
 
+  const sidebarProps = { tenantName, badges, signingOut, pathname, onSignOut: handleSignOut };
+
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex">
-        <Sidebar />
+        <Sidebar {...sidebarProps} />
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -282,7 +293,7 @@ export default function AdminLayout({ children }) {
             onClick={() => setSidebarOpen(false)}
           />
           <div className="relative z-10">
-            <Sidebar />
+            <Sidebar {...sidebarProps} />
           </div>
         </div>
       )}

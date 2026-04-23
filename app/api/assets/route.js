@@ -21,7 +21,7 @@ export async function GET(request) {
     let query = admin
       .from("assets")
       .select(
-        `id, original_filename, asset_type, confidence, status, flag_reason,
+        `id, original_filename, asset_type, confidence, status, flag_reason, is_corrected,
          parsed_line_slug, parsed_category_slug, parsed_sku, parsed_finish_code, parsed_variant, parsed_sequence,
          parse_notes, storage_path, storage_bucket, public_url, mime_type, file_size_bytes,
          catalog_line_id, finish_id, ai_eligible, ingested_at, updated_at`,

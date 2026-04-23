@@ -3,11 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── Confidence badge ────────────────────────────────────────────────────────
-function ConfidenceBadge({ confidence }) {
+function ConfidenceBadge({ confidence, isCorrected }) {
+  if (isCorrected) {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">
+        Corrected
+      </span>
+    );
+  }
   const map = {
     matched: { cls: "bg-green-100 text-green-700", label: "Auto-matched" },
     partial: { cls: "bg-yellow-100 text-yellow-700", label: "Partial match" },
-    unmatched: { cls: "bg-red-100 text-red-700", label: "Unmatched" },
+    unmatched: { cls: "bg-gray-100 text-gray-500", label: "Unmatched" },
   };
   const { cls, label } = map[confidence] || { cls: "bg-gray-100 text-gray-500", label: confidence || "—" };
   return (
@@ -47,7 +54,16 @@ function AssetUploader({ onComplete }) {
       for (const f of files) formData.append("files", f);
       const res = await fetch("/api/assets/ingest", { method: "POST", body: formData });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      if (!res.ok) {
+        // Show per-file errors if available, otherwise show top-level error
+        if (data.failed?.length > 0) {
+          setFailed(data.failed);
+          setError(data.error || "Upload failed");
+        } else {
+          throw new Error(data.error || "Upload failed");
+        }
+        return;
+      }
       setResults(data.ingested || []);
       setFailed(data.failed?.length > 0 ? data.failed : null);
       setFiles([]);
@@ -91,6 +107,19 @@ function AssetUploader({ onComplete }) {
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
+      {/* Per-file errors — shown regardless of whether any succeeded */}
+      {failed && !results && (
+        <div className="mt-3 border border-red-200 rounded-lg bg-red-50 px-3 py-2">
+          <p className="text-xs font-semibold text-red-700 mb-1">{failed.length} file(s) failed:</p>
+          {failed.map((f, i) => (
+            <div key={i} className="text-xs py-0.5">
+              <span className="text-red-700 font-medium">{f.filename}</span>
+              <span className="text-red-500 ml-2">{f.error}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {files.length > 0 && (
         <button
           onClick={handleUpload}
@@ -114,11 +143,11 @@ function AssetUploader({ onComplete }) {
           ))}
           {failed && (
             <div className="mt-3 border border-red-200 rounded-lg bg-red-50 px-3 py-2">
-              <p className="text-xs font-semibold text-red-700 mb-1">{failed.length} file(s) failed to upload:</p>
+              <p className="text-xs font-semibold text-red-700 mb-1">{failed.length} file(s) failed:</p>
               {failed.map((f, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-0.5">
-                  <span className="text-red-700 truncate max-w-xs">{f.filename}</span>
-                  <span className="text-red-500 shrink-0 ml-2">{f.error}</span>
+                <div key={i} className="text-xs py-0.5">
+                  <span className="text-red-700 font-medium">{f.filename}</span>
+                  <span className="text-red-500 ml-2">{f.error}</span>
                 </div>
               ))}
             </div>
@@ -242,7 +271,7 @@ function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
 
       {/* Confidence */}
       <td className="px-3 py-3">
-        <ConfidenceBadge confidence={asset.confidence} />
+        <ConfidenceBadge confidence={asset.confidence} isCorrected={asset.is_corrected} />
       </td>
 
       {/* Flag reason — hidden on small screens */}
@@ -582,11 +611,15 @@ export default function AdminAssetsPage() {
           Auto-matched (safe to bulk confirm)
         </span>
         <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-blue-100 border border-blue-200 inline-block" />
+          Corrected (manually reviewed)
+        </span>
+        <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-200 inline-block" />
           Partial match (verify before confirming)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-white border border-gray-200 inline-block" />
+          <span className="w-3 h-3 rounded bg-gray-100 border border-gray-200 inline-block" />
           Unmatched (requires correction)
         </span>
       </div>

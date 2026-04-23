@@ -52,9 +52,22 @@ export async function POST(request, { params }) {
       );
     }
 
-    if (asset.asset_type === "product_diagram" && !product_id) {
+    // Auto-resolve product_id from parsed_sku if not provided
+    let resolvedProductId = product_id ?? null;
+    if (asset.asset_type === "product_diagram" && !resolvedProductId && asset.parsed_sku) {
+      let skuQuery = admin
+        .from("products")
+        .select("id")
+        .eq("tenant_id", ctx.tenantId)
+        .eq("sku", asset.parsed_sku);
+      if (asset.catalog_line_id) skuQuery = skuQuery.eq("catalog_line_id", asset.catalog_line_id);
+      const { data: productMatch } = await skuQuery.single();
+      resolvedProductId = productMatch?.id ?? null;
+    }
+
+    if (asset.asset_type === "product_diagram" && !resolvedProductId) {
       return NextResponse.json(
-        { error: "product_diagram assets require product_id in the request body." },
+        { error: "product_diagram assets require a matching SKU or product_id to confirm." },
         { status: 422 }
       );
     }
@@ -122,10 +135,10 @@ export async function POST(request, { params }) {
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
     // ── Create product_assets row for product_diagram ─────────
-    if (asset.asset_type === "product_diagram" && product_id) {
+    if (asset.asset_type === "product_diagram" && resolvedProductId) {
       await admin.from("product_assets").insert({
         tenant_id: ctx.tenantId,
-        product_id,
+        product_id: resolvedProductId,
         asset_id: params.id,
         variant_id: variant_id ?? null,
         is_primary,

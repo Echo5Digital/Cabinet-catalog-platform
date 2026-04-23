@@ -22,7 +22,7 @@ export async function POST(request) {
       admin.from("catalog_lines").select("id, slug").eq("tenant_id", ctx.tenantId),
       admin.from("categories").select("id, slug").eq("tenant_id", ctx.tenantId),
       admin.from("products").select("id, sku, catalog_line_id").eq("tenant_id", ctx.tenantId),
-      admin.from("finishes").select("id, code, catalog_line_id").eq("tenant_id", ctx.tenantId),
+      admin.from("finishes").select("id, code, name, catalog_line_id").eq("tenant_id", ctx.tenantId),
     ]);
 
     const lines = (linesRes.data || []).map((l) => ({ id: l.id, slug: l.slug }));
@@ -36,6 +36,7 @@ export async function POST(request) {
     const finishes = (finishesRes.data || []).map((f) => ({
       id: f.id,
       code: f.code,
+      name: f.name,
       catalogLineId: f.catalog_line_id,
       lineSlug: lines.find((l) => l.id === f.catalog_line_id)?.slug ?? null,
     }));
@@ -60,26 +61,33 @@ export async function POST(request) {
         });
 
       if (uploadError) {
+        console.error("[ingest] storage upload error:", filename, uploadError);
         results.push({ filename, error: uploadError.message });
         continue;
       }
 
-      // 2. Parse filename
-      const parsed = parseAssetFilename(filename);
+      // 2. Parse filename — pass live line slugs so new lines are recognized
+      const parsed = parseAssetFilename(filename, lines.map((l) => l.slug));
 
       // 3. Score confidence against DB
       const scored = scoreAssetConfidence(parsed, dbContext);
 
-      // 4. Resolve FKs for pre-filling
-      const resolvedLineId = lines.find((l) => l.slug === scored.lineSlug)?.id ?? null;
-      const resolvedFinishId = finishes.find((f) => f.code === scored.finishCode && f.lineSlug === scored.lineSlug)?.id ?? null;
+      // 4. Resolve FKs — prefer IDs resolved by the scorer, fall back to slug lookup
+      const resolvedLineId =
+        scored.resolvedLineId ??
+        lines.find((l) => l.slug === scored.lineSlug)?.id ??
+        null;
+      const resolvedFinishId =
+        scored.resolvedFinishId ??
+        finishes.find((f) => f.code === scored.finishCode && f.lineSlug === scored.lineSlug)?.id ??
+        null;
 
       // 5. Insert into assets table
       const { data: inserted, error: insertError } = await admin
         .from("assets")
         .insert({
           tenant_id: ctx.tenantId,
-          asset_type: scored.assetType ?? null,
+          asset_type: scored.assetType ?? "lifestyle",
           original_filename: filename,
           storage_bucket: "assets-staging",
           storage_path: storagePath,
@@ -97,14 +105,15 @@ export async function POST(request) {
           confidence: scored.confidence,
           status: "pending_review",
 
-          // Pre-resolve FKs from confidence scoring
-          catalog_line_id: scored.assetType === "lifestyle" ? resolvedLineId : null,
+          // Pre-resolve FKs — set for all asset types where we have a match
+          catalog_line_id: resolvedLineId,
           finish_id: scored.assetType === "finish_swatch" ? resolvedFinishId : null,
         })
         .select("id, original_filename, asset_type, confidence, status, parsed_sku, parsed_line_slug, parse_notes")
         .single();
 
       if (insertError) {
+        console.error("[ingest] db insert error:", filename, insertError);
         results.push({ filename, error: insertError.message });
         continue;
       }

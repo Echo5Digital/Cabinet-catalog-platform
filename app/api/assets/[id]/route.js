@@ -44,13 +44,33 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
     }
 
+    // Convert empty strings to null for UUID fields to avoid postgres type errors
+    for (const field of ["catalog_line_id", "finish_id"]) {
+      if (field in updates && updates[field] === "") updates[field] = null;
+    }
+
+    // Auto-update confidence when FK relationships are manually resolved
+    const resolvedType = updates.asset_type;
+    const resolvedFinishId = updates.finish_id;
+    const resolvedLineId = updates.catalog_line_id;
+    if (resolvedType === "finish_swatch" && resolvedFinishId) {
+      updates.confidence = "matched";
+    } else if (resolvedType === "lifestyle" && resolvedLineId) {
+      updates.confidence = "matched";
+    } else if (resolvedType === "product_diagram" && updates.parsed_sku) {
+      updates.confidence = "partial";
+    }
+
+    // Mark as manually corrected (server-set, not from client body)
+    updates.is_corrected = true;
+
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("assets")
       .update(updates)
       .eq("id", params.id)
       .eq("tenant_id", ctx.tenantId)
-      .select("id, asset_type, confidence, status, parsed_sku, catalog_line_id, finish_id")
+      .select("id, asset_type, confidence, status, is_corrected, parsed_sku, parsed_finish_code, catalog_line_id, finish_id")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
