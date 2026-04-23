@@ -957,7 +957,7 @@ export default function LineManagePage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.blockers?.length) {
-          alert(`Cannot publish. Blockers:\n\n${data.blockers.map((b) => `• ${b}`).join("\n")}`);
+          alert(`Cannot publish. Blockers:\n\n${data.blockers.map((b) => `• ${b.message ?? b.type}`).join("\n")}`);
         } else {
           alert(data.error || "Publish failed");
         }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/api-auth";
+import { backfillFinishIds } from "@/lib/catalog/backfillFinishIds";
 
 export async function GET(request, { params }) {
   try {
@@ -10,6 +11,9 @@ export async function GET(request, { params }) {
 
     const admin = createAdminClient();
     const lineId = params.id;
+
+    // Auto-link any confirmed finish_swatch assets that are missing finish_id
+    await backfillFinishIds(lineId, ctx.tenantId, admin);
 
     // Load all active products for this line
     const { data: products } = await admin
@@ -65,6 +69,34 @@ export async function GET(request, { params }) {
           finish_id: finish.id,
           message: `${finish.name} — no confirmed finish_swatch asset`,
         });
+      }
+    }
+
+    // Check products with explicit finish mappings that have none available
+    // (empty mappings = all finishes implicitly available — not a blocker)
+    if ((products ?? []).length > 0) {
+      const productIds = (products ?? []).map((p) => p.id);
+      const { data: allMappings } = await admin
+        .from("product_finish_map")
+        .select("product_id, is_available")
+        .in("product_id", productIds);
+
+      const mappingsByProduct = {};
+      for (const m of allMappings ?? []) {
+        if (!mappingsByProduct[m.product_id]) mappingsByProduct[m.product_id] = [];
+        mappingsByProduct[m.product_id].push(m);
+      }
+
+      for (const product of products ?? []) {
+        const mappings = mappingsByProduct[product.id] ?? [];
+        if (mappings.length > 0 && !mappings.some((m) => m.is_available)) {
+          blockers.push({
+            type: "no_available_finishes",
+            sku: product.sku,
+            product_id: product.id,
+            message: `${product.sku} has explicit finish mappings but none are marked available`,
+          });
+        }
       }
     }
 
