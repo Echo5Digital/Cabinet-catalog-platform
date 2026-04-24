@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
+import FinishGallery from "@/components/catalog/FinishGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,12 @@ export const metadata = {
 };
 
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+
+const FALLBACK_COLORS = [
+  "#F0EDE8", "#2C1A0E", "#C8A96E", "#1C1917",
+  "#E8E0D8", "#4A3728", "#8B6914", "#3D3835",
+  "#F5F0EB", "#6B4C3B", "#D4A853", "#2A2520",
+];
 
 async function getData() {
   try {
@@ -47,9 +54,10 @@ async function getData() {
       }
     }
 
-    const finishesWithSwatches = (finishes || []).map((f) => ({
+    const finishesWithSwatches = (finishes || []).map((f, idx) => ({
       ...f,
       swatch: swatchMap[f.id] || null,
+      fallbackColor: FALLBACK_COLORS[idx % FALLBACK_COLORS.length],
     }));
 
     return { finishes: finishesWithSwatches, lines: lines || [] };
@@ -58,26 +66,10 @@ async function getData() {
   }
 }
 
-// Hardcoded fallback colors for finishes without swatch images
-const FALLBACK_COLORS = [
-  "#F0EDE8", "#2C1A0E", "#C8A96E", "#1C1917",
-  "#E8E0D8", "#4A3728", "#8B6914", "#3D3835",
-  "#F5F0EB", "#6B4C3B", "#D4A853", "#2A2520",
-];
-
 export default async function FinishesPage() {
   const { finishes, lines } = await getData();
 
-  // Group by finish_family
-  const familyGroups = {};
-  for (const finish of finishes) {
-    const family = finish.finish_family || "Other";
-    if (!familyGroups[family]) familyGroups[family] = [];
-    familyGroups[family].push(finish);
-  }
-  const families = Object.keys(familyGroups).sort();
-
-  // Map line id → name for display
+  // Build lineMap for the client component
   const lineMap = {};
   for (const l of lines) lineMap[l.id] = l;
 
@@ -100,58 +92,15 @@ export default async function FinishesPage() {
             Finish Selections
           </h1>
           <p className="text-stone-500 max-w-2xl leading-relaxed">
-            Browse our complete finish palette. Each finish is available across one or more of our cabinet
-            collections — visit a collection page to see which finishes apply to specific products.
+            Browse our complete finish palette. Click any finish to view it up close. Visit a collection
+            page to see which finishes apply to specific products.
           </p>
         </div>
       </div>
 
+      {/* Gallery (client component — handles lightbox) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-
-        {finishes.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="text-stone-400 mb-4">No finishes have been published yet.</p>
-            <Link href="/catalog" className="text-sm text-stone-600 underline">
-              Browse Collections
-            </Link>
-          </div>
-        ) : families.length > 1 ? (
-          // Grouped by family
-          <div className="space-y-14">
-            {families.map((family) => (
-              <div key={family}>
-                <h2
-                  className="text-xl font-bold text-stone-900 mb-6 capitalize"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                >
-                  {family}
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {familyGroups[family].map((finish, idx) => (
-                    <FinishCard
-                      key={finish.id}
-                      finish={finish}
-                      line={finish.catalog_line_id ? lineMap[finish.catalog_line_id] : null}
-                      fallbackColor={FALLBACK_COLORS[idx % FALLBACK_COLORS.length]}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // No grouping — single flat grid
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {finishes.map((finish, idx) => (
-              <FinishCard
-                key={finish.id}
-                finish={finish}
-                line={finish.catalog_line_id ? lineMap[finish.catalog_line_id] : null}
-                fallbackColor={FALLBACK_COLORS[idx % FALLBACK_COLORS.length]}
-              />
-            ))}
-          </div>
-        )}
+        <FinishGallery finishes={finishes} lineMap={lineMap} />
 
         {/* Link back to collections */}
         {lines.length > 0 && (
@@ -171,40 +120,6 @@ export default async function FinishesPage() {
               ))}
             </div>
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FinishCard({ finish, line, fallbackColor }) {
-  return (
-    <div className="group rounded-xl overflow-hidden border border-stone-200 bg-white hover:shadow-md hover:border-stone-300 transition-all duration-200">
-      {/* Swatch */}
-      <div className="aspect-square overflow-hidden">
-        {finish.swatch?.public_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={finish.swatch.public_url}
-            alt={finish.swatch.alt_text || finish.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div
-            className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-            style={{ backgroundColor: fallbackColor }}
-          />
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-3">
-        <p className="font-semibold text-stone-800 text-sm leading-snug">{finish.name}</p>
-        {finish.description && (
-          <p className="text-stone-500 text-xs mt-0.5 line-clamp-2 leading-relaxed">{finish.description}</p>
-        )}
-        {line && (
-          <p className="text-stone-400 text-[10px] mt-1 uppercase tracking-wide font-medium">{line.name}</p>
         )}
       </div>
     </div>
