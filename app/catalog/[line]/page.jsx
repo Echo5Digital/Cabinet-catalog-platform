@@ -5,6 +5,8 @@ import CategoryPills from "@/components/catalog/CategoryPills";
 import LifestyleBanner from "@/components/catalog/LifestyleBanner";
 import { getPublishedVersion } from "@/lib/catalog/getPublishedVersion";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }) {
   return { title: `${params.line} — Cabinet Collections` };
 }

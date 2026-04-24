@@ -1038,13 +1038,22 @@ export default function LineManagePage() {
             History
           </Link>
           {line.status === "published" ? (
-            <button
-              onClick={handleUnpublish}
-              disabled={publishLoading}
-              className="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-            >
-              {publishLoading ? "…" : "Unpublish"}
-            </button>
+            <>
+              <button
+                onClick={handlePublish}
+                disabled={publishLoading}
+                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+              >
+                {publishLoading ? "…" : "Republish"}
+              </button>
+              <button
+                onClick={handleUnpublish}
+                disabled={publishLoading}
+                className="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                {publishLoading ? "…" : "Unpublish"}
+              </button>
+            </>
           ) : line.status !== "archived" ? (
             <button
               onClick={handlePublish}

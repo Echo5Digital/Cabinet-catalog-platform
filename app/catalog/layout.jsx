@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import CatalogShell from "@/components/catalog/CatalogShell";
 
+export const dynamic = "force-dynamic";
+
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 async function getTenantAndLines() {

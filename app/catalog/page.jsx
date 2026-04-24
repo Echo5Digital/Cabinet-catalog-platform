@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 export const metadata = {
@@ -9,27 +11,38 @@ export const metadata = {
 };
 
 async function getLines() {
-  try {
-    const admin = createAdminClient();
-    const { data: lines } = await admin
-      .from("catalog_lines")
-      .select(`
-        id, name, slug, description, published_at,
-        lifestyle_images:assets!catalog_line_id(public_url, alt_text, parsed_sequence)
-      `)
-      .eq("tenant_id", TENANT_ID)
-      .eq("status", "published")
-      .order("sort_order", { ascending: true });
+  const admin = createAdminClient();
 
-    return (lines || []).map((line) => {
-      const sorted = (line.lifestyle_images || [])
-        .filter((a) => a.public_url)
-        .sort((a, b) => (a.parsed_sequence || 99) - (b.parsed_sequence || 99));
-      return { ...line, images: sorted };
-    });
-  } catch {
+  const { data: lines, error } = await admin
+    .from("catalog_lines")
+    .select("id, name, slug, description, published_at")
+    .eq("tenant_id", TENANT_ID)
+    .eq("status", "published")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("[catalog/page] lines query error:", error.message);
     return [];
   }
+
+  const lineIds = (lines || []).map((l) => l.id);
+  if (lineIds.length === 0) return [];
+
+  const { data: lifestyleAssets } = await admin
+    .from("assets")
+    .select("catalog_line_id, public_url, alt_text, parsed_sequence")
+    .in("catalog_line_id", lineIds)
+    .eq("asset_type", "lifestyle")
+    .eq("status", "confirmed")
+    .order("parsed_sequence", { ascending: true });
+
+  const lifestyleByLine = {};
+  for (const a of lifestyleAssets ?? []) {
+    if (!lifestyleByLine[a.catalog_line_id]) lifestyleByLine[a.catalog_line_id] = [];
+    lifestyleByLine[a.catalog_line_id].push({ public_url: a.public_url, alt_text: a.alt_text });
+  }
+
+  return (lines || []).map((line) => ({ ...line, images: lifestyleByLine[line.id] ?? [] }));
 }
 
 export default async function CatalogPage() {
