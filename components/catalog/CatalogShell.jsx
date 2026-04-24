@@ -44,17 +44,10 @@ function Header({ tenant, lines }) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo / Name */}
-        <Link
-          href="/"
-          className="flex items-center gap-3 shrink-0"
-        >
+        <Link href="/" className="flex items-center shrink-0">
           {tenant.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={tenant.logo_url}
-              alt={name}
-              className="h-8 w-auto object-contain"
-            />
+            <img src={tenant.logo_url} alt={name} className="h-8 w-auto object-contain" />
           ) : (
             <span className="text-white font-semibold text-base tracking-tight">{name}</span>
           )}
@@ -62,8 +55,9 @@ function Header({ tenant, lines }) {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
+          {/* Collections dropdown */}
           <div className="relative group">
-            <button className="flex items-center gap-1 px-3 py-2 text-sm text-white/80 hover:text-white transition rounded-lg hover:bg-white/10">
+            <button className="flex items-center gap-1 px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition">
               Collections
               <svg className="w-3.5 h-3.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -94,10 +88,32 @@ function Header({ tenant, lines }) {
               </div>
             </div>
           </div>
+
+          <Link
+            href="/catalog"
+            className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
+          >
+            About Us
+          </Link>
+
+          <a
+            href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
+            className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
+          >
+            Contact
+          </a>
         </nav>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Request a Quote CTA */}
+          <Link
+            href="/catalog"
+            className="hidden sm:inline-flex px-5 py-2 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
+          >
+            Request a Quote
+          </Link>
+
           <QuoteButton />
 
           {/* Mobile menu toggle */}
@@ -128,7 +144,7 @@ function Header({ tenant, lines }) {
                 key={line.id}
                 href={`/catalog/${line.slug}`}
                 onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition"
+                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
               >
                 {line.name}
               </Link>
@@ -140,6 +156,15 @@ function Header({ tenant, lines }) {
             >
               All collections →
             </Link>
+            <div className="pt-2 pb-1">
+              <Link
+                href="/catalog"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm font-semibold text-center bg-amber-500 hover:bg-amber-400 text-white rounded-full transition"
+              >
+                Request a Quote
+              </Link>
+            </div>
           </div>
         </div>
       )}

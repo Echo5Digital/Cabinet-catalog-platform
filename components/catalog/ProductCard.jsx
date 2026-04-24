@@ -40,6 +40,9 @@ export default function ProductCard({ product, lineSlug }) {
         {dims && (
           <p className="text-xs text-stone-500 mt-1 font-mono">{dims}</p>
         )}
+        <p className="mt-2 text-xs font-medium text-stone-400 group-hover:text-stone-700 transition">
+          View Details →
+        </p>
       </div>
     </Link>
   );
