@@ -1066,6 +1066,33 @@ export default function LineManagePage() {
         </div>
       </div>
 
+      {/* Pending changes banner */}
+      {line.status === "published" &&
+        line.last_published_product_count !== null &&
+        stats !== null &&
+        stats.product_count !== line.last_published_product_count && (
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <p className="text-amber-800 text-sm flex-1">
+              <span className="font-semibold">Public catalog is out of date.</span>{" "}
+              The live snapshot has{" "}
+              <span className="font-semibold">{line.last_published_product_count} product{line.last_published_product_count !== 1 ? "s" : ""}</span>
+              {" "}but this line now has{" "}
+              <span className="font-semibold">{stats.product_count}</span>.
+              {" "}Click <span className="font-semibold">Republish</span> to push the latest changes to the public view.
+            </p>
+            <button
+              onClick={handlePublish}
+              disabled={publishLoading}
+              className="shrink-0 px-4 py-1.5 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition disabled:opacity-50"
+            >
+              {publishLoading ? "Publishing…" : "Republish Now"}
+            </button>
+          </div>
+        )}
+
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard

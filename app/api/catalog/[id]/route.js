@@ -19,7 +19,23 @@ export async function GET(request, { params }) {
       .single();
 
     if (error || !data) return NextResponse.json({ error: "Catalog line not found." }, { status: 404 });
-    return NextResponse.json({ line: data });
+
+    // Include last published snapshot's product count so admin UI can detect pending changes
+    let lastPublishedProductCount = null;
+    if (data.status === "published") {
+      const { data: lastVersion } = await admin
+        .from("catalog_versions")
+        .select("product_count")
+        .eq("catalog_line_id", params.id)
+        .eq("tenant_id", ctx.tenantId)
+        .eq("status", "published")
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .single();
+      lastPublishedProductCount = lastVersion?.product_count ?? null;
+    }
+
+    return NextResponse.json({ line: { ...data, last_published_product_count: lastPublishedProductCount } });
   } catch {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
