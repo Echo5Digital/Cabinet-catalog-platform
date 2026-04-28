@@ -78,7 +78,7 @@ function AssetUploader({ onComplete }) {
     <div className="border border-gray-200 rounded-xl p-5 bg-gray-50 mb-5">
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Upload Assets</h3>
       <p className="text-xs text-gray-400 mb-3">
-        Name files using the pattern: <code className="bg-gray-100 px-1 rounded">line-category-SKU.png</code> or <code className="bg-gray-100 px-1 rounded">finish-line-code.png</code>. The system will auto-detect the type.
+        Name files using the pattern: <code className="bg-gray-100 px-1 rounded">line-category-SKU.png</code>, <code className="bg-gray-100 px-1 rounded">finish-line-code.png</code>, <code className="bg-gray-100 px-1 rounded">color-countertop-code.png</code>, or <code className="bg-gray-100 px-1 rounded">structure-code.png</code>. The system will auto-detect the type.
       </p>
       <div
         onDrop={handleDrop}
@@ -162,7 +162,7 @@ function AssetUploader({ onComplete }) {
 }
 
 // ─── Single asset row ─────────────────────────────────────────────────────────
-function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
+function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selected, onSelect }) {
   const [correcting, setCorrecting] = useState(false);
   const [form, setForm] = useState({
     asset_type: asset.asset_type || "",
@@ -171,6 +171,10 @@ function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
     parsed_finish_code: asset.parsed_finish_code || "",
     catalog_line_id: asset.catalog_line_id || "",
     finish_id: asset.finish_id || "",
+    color_id: asset.color_id || "",
+    structure_id: asset.structure_id || "",
+    parsed_color_code: asset.parsed_color_code || "",
+    parsed_structure_code: asset.parsed_structure_code || "",
   });
   const [saving, setSaving] = useState(false);
   const [actioning, setActioning] = useState(null);
@@ -264,7 +268,9 @@ function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
         {asset.parsed_sku && <div>SKU: <strong>{asset.parsed_sku}</strong></div>}
         {asset.parsed_finish_code && <div>Finish: <strong>{asset.parsed_finish_code}</strong></div>}
         {asset.parsed_category_slug && <div>Cat: <strong>{asset.parsed_category_slug}</strong></div>}
-        {!asset.parsed_line_slug && !asset.parsed_sku && !asset.parsed_finish_code && (
+        {asset.parsed_color_code && <div>Color: <strong>{asset.parsed_color_code}</strong></div>}
+        {asset.parsed_structure_code && <div>Structure: <strong>{asset.parsed_structure_code}</strong></div>}
+        {!asset.parsed_line_slug && !asset.parsed_sku && !asset.parsed_finish_code && !asset.parsed_color_code && !asset.parsed_structure_code && (
           <span className="text-gray-300">No metadata</span>
         )}
       </td>
@@ -292,6 +298,8 @@ function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
               <option value="product_diagram">Product Diagram</option>
               <option value="finish_swatch">Finish Swatch</option>
               <option value="lifestyle">Lifestyle</option>
+              <option value="color_swatch">Color Swatch</option>
+              <option value="structure_image">Structure Image</option>
             </select>
 
             {(form.asset_type === "product_diagram" || !form.asset_type) && (
@@ -316,6 +324,22 @@ function AssetRow({ asset, lines, finishes, onRefresh, selected, onSelect }) {
                 className="w-full border border-gray-300 rounded text-xs px-2 py-1">
                 <option value="">— Select line —</option>
                 {lines.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            )}
+
+            {form.asset_type === "color_swatch" && (
+              <select value={form.color_id} onChange={(e) => setForm((p) => ({ ...p, color_id: e.target.value }))}
+                className="w-full border border-gray-300 rounded text-xs px-2 py-1">
+                <option value="">— Select color —</option>
+                {colors.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.color_type})</option>)}
+              </select>
+            )}
+
+            {form.asset_type === "structure_image" && (
+              <select value={form.structure_id} onChange={(e) => setForm((p) => ({ ...p, structure_id: e.target.value }))}
+                className="w-full border border-gray-300 rounded text-xs px-2 py-1">
+                <option value="">— Select structure —</option>
+                {structures.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}
 
@@ -397,13 +421,24 @@ export default function AdminAssetsPage() {
   // Metadata for correction dropdowns
   const [lines, setLines] = useState([]);
   const [finishes, setFinishes] = useState([]);
+  const [colors, setColors] = useState([]);
+  const [structures, setStructures] = useState([]);
 
   useEffect(() => {
-    Promise.all([fetch("/api/catalog"), fetch("/api/finishes")]).then(async ([lRes, fRes]) => {
+    Promise.all([
+      fetch("/api/catalog"),
+      fetch("/api/finishes"),
+      fetch("/api/colors"),
+      fetch("/api/structures"),
+    ]).then(async ([lRes, fRes, cRes, sRes]) => {
       const lData = lRes.ok ? await lRes.json() : {};
       const fData = fRes.ok ? await fRes.json() : {};
+      const cData = cRes.ok ? await cRes.json() : {};
+      const sData = sRes.ok ? await sRes.json() : {};
       setLines(lData.lines || []);
       setFinishes(fData.finishes || []);
+      setColors(cData.colors || []);
+      setStructures(sData.structures || []);
     });
   }, []);
 
@@ -593,6 +628,8 @@ export default function AdminAssetsPage() {
                     asset={asset}
                     lines={lines}
                     finishes={finishes}
+                    colors={colors}
+                    structures={structures}
                     onRefresh={() => { fetchAssets(); fetchStats(); }}
                     selected={selected.has(asset.id)}
                     onSelect={handleSelect}

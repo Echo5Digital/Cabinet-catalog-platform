@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
+import ColorGallery from "@/components/catalog/ColorGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -91,14 +92,7 @@ export default async function ColorsPage() {
             </Link>
           </div>
         ) : (
-          <>
-            {countertop.length > 0 && (
-              <ColorSection title="Countertop" items={countertop} />
-            )}
-            {floor.length > 0 && (
-              <ColorSection title="Floor" items={floor} />
-            )}
-          </>
+          <ColorGallery countertop={countertop} floor={floor} />
         )}
 
         {total > 0 && (
@@ -114,50 +108,6 @@ export default async function ColorsPage() {
             </Link>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ColorSection({ title, items }) {
-  return (
-    <div>
-      <h2
-        className="text-xl font-bold text-stone-900 mb-6"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-      >
-        {title}
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {items.map((color) => (
-          <div
-            key={color.id}
-            className="group rounded-xl overflow-hidden border border-stone-100 bg-white hover:shadow-md transition-shadow"
-          >
-            <div className="aspect-square bg-stone-100 overflow-hidden">
-              {color.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={color.image.public_url}
-                  alt={color.image.alt_text || color.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="px-3 py-2.5">
-              <p className="text-sm font-medium text-stone-900 truncate">{color.name}</p>
-              {color.description && (
-                <p className="text-xs text-stone-400 mt-0.5 truncate">{color.description}</p>
-              )}
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
