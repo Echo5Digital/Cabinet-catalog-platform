@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
-
-export async function GET() {
+export async function GET(request) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("catalog_lines")
@@ -12,7 +12,7 @@ export async function GET() {
         id, name, slug, description, published_at,
         cover:assets!cover_asset_id(public_url, alt_text)
       `)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("status", "published")
       .order("sort_order", { ascending: true });
 

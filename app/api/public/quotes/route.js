@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 export async function POST(request) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const body = await request.json();
     const { name, email, phone, company, project_description, notes, source = "catalog", items = [] } = body;
 
@@ -33,7 +33,7 @@ export async function POST(request) {
       const { data: product } = await admin
         .from("products")
         .select("id, name, catalog_line_id")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("sku", sku.toUpperCase())
         .eq("is_active", true)
         .single();
@@ -50,7 +50,7 @@ export async function POST(request) {
         const { data: finish } = await admin
           .from("finishes")
           .select("id, name")
-          .eq("tenant_id", TENANT_ID)
+          .eq("tenant_id", tenantId)
           .eq("code", finish_code)
           .eq("is_active", true)
           .single();
@@ -126,7 +126,7 @@ export async function POST(request) {
     const { data: lead, error: leadError } = await admin
       .from("lead_requests")
       .insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         source,
         name: name.trim(),
         email: email.trim().toLowerCase(),

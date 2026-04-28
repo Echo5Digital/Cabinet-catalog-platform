@@ -335,7 +335,7 @@ function ProductsTab({ lineId, categories }) {
 
   const fetch_ = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ catalog_line_id: lineId });
+    const params = new URLSearchParams({ catalog_line_id: lineId, limit: "1000" });
     if (catFilter) params.set("category_id", catFilter);
     const res = await fetch(`/api/products?${params}`);
     const data = await res.json();
@@ -921,7 +921,7 @@ export default function LineManagePage() {
       const [lineRes, catsRes, productsRes, finishesRes] = await Promise.all([
         fetch(`/api/catalog/${id}`),
         fetch("/api/categories"),
-        fetch(`/api/products?catalog_line_id=${id}`),
+        fetch(`/api/products?catalog_line_id=${id}&limit=1000`),
         fetch(`/api/finishes?line=${id}`),
       ]);
       const [lineData, catsData, productsData, finishesData] = await Promise.all([

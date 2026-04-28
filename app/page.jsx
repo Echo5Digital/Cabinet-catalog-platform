@@ -1,23 +1,23 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
-
 async function getData() {
   try {
+    const tenantId = await resolveTenantId();
     const admin = createAdminClient();
     const [{ data: tenant }, { data: lines }] = await Promise.all([
       admin
         .from("tenants")
         .select("name, logo_url, primary_color, accent_color, contact_email, contact_phone")
-        .eq("id", TENANT_ID)
+        .eq("id", tenantId)
         .single(),
       admin
         .from("catalog_lines")
         .select("id, name, slug, description")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("status", "published")
         .order("sort_order", { ascending: true }),
     ]);

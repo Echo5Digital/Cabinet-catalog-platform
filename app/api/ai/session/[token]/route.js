@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 export async function GET(request, { params }) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const admin = createAdminClient();
     const { data: session, error } = await admin
       .from("ai_sessions")
@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
         catalog_line:catalog_lines!catalog_line_id(name, slug)
       `)
       .eq("session_token", params.token)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .single();
 
     if (error || !session) return NextResponse.json({ error: "Session not found." }, { status: 404 });

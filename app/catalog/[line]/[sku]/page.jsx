@@ -2,13 +2,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ProductDetailClient from "@/components/catalog/ProductDetailClient";
 import { getPublishedVersion } from "@/lib/catalog/getPublishedVersion";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 
 export async function generateMetadata({ params }) {
   return { title: `${params.sku.toUpperCase()} — Cabinet Detail` };
 }
 
 export default async function ProductDetailPage({ params }) {
-  const result = await getPublishedVersion(params.line);
+  const tenantId = await resolveTenantId();
+  const result = await getPublishedVersion(params.line, tenantId);
   if (!result) notFound();
 
   const { line, snapshot } = result;

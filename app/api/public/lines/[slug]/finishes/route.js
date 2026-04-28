@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 export async function GET(request, { params }) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const admin = createAdminClient();
 
     const { data: line } = await admin
       .from("catalog_lines")
       .select("id")
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("slug", params.slug)
       .eq("status", "published")
       .single();
@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
       .from("finishes")
       .select("id, name, code, finish_family, sort_order")
       .eq("catalog_line_id", line.id)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 

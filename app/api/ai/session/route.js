@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 import { randomBytes } from "crypto";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 export async function POST(request) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const { catalog_line_slug } = await request.json().catch(() => ({}));
 
     const admin = createAdminClient();
@@ -15,7 +15,7 @@ export async function POST(request) {
       const { data: line } = await admin
         .from("catalog_lines")
         .select("id")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("slug", catalog_line_slug)
         .eq("status", "published")
         .single();
@@ -27,7 +27,7 @@ export async function POST(request) {
     const { data: session, error } = await admin
       .from("ai_sessions")
       .insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         catalog_line_id: catalogLineId,
         session_token: sessionToken,
         started_at: new Date().toISOString(),

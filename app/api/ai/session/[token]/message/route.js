@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runChat } from "@/lib/ai/chat";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 /**
  * POST /api/ai/session/[token]/message
@@ -18,6 +17,7 @@ export async function POST(request, { params }) {
   const startTime = Date.now();
 
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const { message } = await request.json();
     if (!message?.trim()) {
       return NextResponse.json({ error: "message is required." }, { status: 400 });
@@ -30,7 +30,7 @@ export async function POST(request, { params }) {
       .from("ai_sessions")
       .select("id, escalated")
       .eq("session_token", params.token)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .single();
 
     if (!session) {
@@ -82,7 +82,7 @@ export async function POST(request, { params }) {
     // 4. Store user message
     await admin.from("ai_messages").insert({
       session_id: session.id,
-      tenant_id: TENANT_ID,
+      tenant_id: tenantId,
       actor: "user",
       content: message.trim(),
     });
@@ -91,7 +91,7 @@ export async function POST(request, { params }) {
     const result = await runChat({
       userMessage: message.trim(),
       history: historyRows || [],
-      tenantId: TENANT_ID,
+      tenantId: tenantId,
       sessionId: session.id,
       quoteItems,
     });
@@ -103,7 +103,7 @@ export async function POST(request, { params }) {
       .from("ai_messages")
       .insert({
         session_id: session.id,
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         actor: "assistant",
         content: result.text,
         model: "claude-haiku-4-5-20251001",

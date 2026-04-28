@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 export async function POST(request, { params }) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const { name, email, items = [] } = await request.json();
     if (!name || !email) {
       return NextResponse.json({ error: "name and email are required." }, { status: 400 });
@@ -15,7 +15,7 @@ export async function POST(request, { params }) {
       .from("ai_sessions")
       .select("id")
       .eq("session_token", params.token)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .single();
 
     if (!session) return NextResponse.json({ error: "Session not found." }, { status: 404 });
@@ -24,7 +24,7 @@ export async function POST(request, { params }) {
     const { data: lead, error: leadError } = await admin
       .from("lead_requests")
       .insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         source: "ai_chat",
         ai_session_id: session.id,
         name: name.trim(),
@@ -45,12 +45,12 @@ export async function POST(request, { params }) {
       const { data: product } = await admin
         .from("products")
         .select("id, name")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("sku", sku.toUpperCase())
         .single();
 
       const { data: finish } = finish_code
-        ? await admin.from("finishes").select("id, name").eq("tenant_id", TENANT_ID).eq("code", finish_code).single()
+        ? await admin.from("finishes").select("id, name").eq("tenant_id", tenantId).eq("code", finish_code).single()
         : { data: null };
 
       resolvedItems.push({

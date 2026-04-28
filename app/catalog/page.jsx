@@ -1,9 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 export const metadata = {
   title: "Collections — Cabinet & Remodeling Depot",
@@ -11,12 +10,13 @@ export const metadata = {
 };
 
 async function getLines() {
+  const tenantId = await resolveTenantId();
   const admin = createAdminClient();
 
   const { data: lines, error } = await admin
     .from("catalog_lines")
     .select("id, name, slug, description, published_at")
-    .eq("tenant_id", TENANT_ID)
+    .eq("tenant_id", tenantId)
     .eq("status", "published")
     .order("sort_order", { ascending: true });
 

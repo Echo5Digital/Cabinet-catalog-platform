@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -7,16 +8,15 @@ export const metadata = {
   title: "Design Gallery — Cabinet Catalog",
 };
 
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
-
 async function getData() {
   try {
+    const tenantId = await resolveTenantId();
     const admin = createAdminClient();
     const [{ data: images }, { data: lines }] = await Promise.all([
       admin
         .from("assets")
         .select("id, public_url, alt_text, catalog_line_id, parsed_sequence")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("asset_type", "lifestyle")
         .eq("status", "confirmed")
         .not("public_url", "is", null)
@@ -25,7 +25,7 @@ async function getData() {
       admin
         .from("catalog_lines")
         .select("id, name, slug")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("status", "published")
         .order("sort_order", { ascending: true }),
     ]);

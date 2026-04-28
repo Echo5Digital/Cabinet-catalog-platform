@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 export async function GET(request, { params }) {
   try {
+    const tenantId = await getTenantIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const finish = searchParams.get("finish");
@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
     const { data: line } = await admin
       .from("catalog_lines")
       .select("id")
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("slug", params.slug)
       .eq("status", "published")
       .single();
@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
         { count: "exact" }
       )
       .eq("catalog_line_id", line.id)
-      .eq("tenant_id", TENANT_ID)
+      .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .order("sku", { ascending: true })
       .range(offset, offset + limit - 1);

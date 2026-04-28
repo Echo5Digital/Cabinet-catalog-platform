@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
 import FinishGallery from "@/components/catalog/FinishGallery";
 
@@ -8,8 +9,6 @@ export const metadata = {
   title: "Finish Selections — Cabinet Catalog",
 };
 
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
-
 const FALLBACK_COLORS = [
   "#F0EDE8", "#2C1A0E", "#C8A96E", "#1C1917",
   "#E8E0D8", "#4A3728", "#8B6914", "#3D3835",
@@ -18,18 +17,19 @@ const FALLBACK_COLORS = [
 
 async function getData() {
   try {
+    const tenantId = await resolveTenantId();
     const admin = createAdminClient();
     const [{ data: finishes }, { data: lines }] = await Promise.all([
       admin
         .from("finishes")
         .select("id, name, code, description, finish_family, catalog_line_id, sort_order")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
       admin
         .from("catalog_lines")
         .select("id, name, slug")
-        .eq("tenant_id", TENANT_ID)
+        .eq("tenant_id", tenantId)
         .eq("status", "published")
         .order("sort_order", { ascending: true }),
     ]);

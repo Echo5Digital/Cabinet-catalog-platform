@@ -4,6 +4,7 @@ import ProductCard from "@/components/catalog/ProductCard";
 import CategoryPills from "@/components/catalog/CategoryPills";
 import LifestyleBanner from "@/components/catalog/LifestyleBanner";
 import { getPublishedVersion } from "@/lib/catalog/getPublishedVersion";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CatalogLinePage({ params, searchParams }) {
-  const result = await getPublishedVersion(params.line);
+  const tenantId = await resolveTenantId();
+  const result = await getPublishedVersion(params.line, tenantId);
   if (!result) notFound();
 
   const { line, snapshot } = result;
