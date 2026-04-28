@@ -34,8 +34,9 @@ export async function PATCH(request, { params }) {
     const allowed = [
       "asset_type",
       "parsed_line_slug", "parsed_category_slug", "parsed_sku",
-      "parsed_finish_code", "parsed_variant", "parsed_sequence",
-      "catalog_line_id", "finish_id",
+      "parsed_finish_code", "parsed_color_code", "parsed_structure_code",
+      "parsed_variant", "parsed_sequence",
+      "catalog_line_id", "finish_id", "color_id", "structure_id",
       "alt_text", "ai_description",
     ];
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)));
@@ -45,7 +46,7 @@ export async function PATCH(request, { params }) {
     }
 
     // Convert empty strings to null for UUID fields to avoid postgres type errors
-    for (const field of ["catalog_line_id", "finish_id"]) {
+    for (const field of ["catalog_line_id", "finish_id", "color_id", "structure_id"]) {
       if (field in updates && updates[field] === "") updates[field] = null;
     }
 
@@ -56,6 +57,10 @@ export async function PATCH(request, { params }) {
     if (resolvedType === "finish_swatch" && resolvedFinishId) {
       updates.confidence = "matched";
     } else if (resolvedType === "lifestyle" && resolvedLineId) {
+      updates.confidence = "matched";
+    } else if (resolvedType === "color_swatch" && updates.color_id) {
+      updates.confidence = "matched";
+    } else if (resolvedType === "structure_image" && updates.structure_id) {
       updates.confidence = "matched";
     } else if (resolvedType === "product_diagram" && updates.parsed_sku) {
       updates.confidence = "partial";
@@ -70,7 +75,7 @@ export async function PATCH(request, { params }) {
       .update(updates)
       .eq("id", params.id)
       .eq("tenant_id", ctx.tenantId)
-      .select("id, asset_type, confidence, status, is_corrected, parsed_sku, parsed_finish_code, catalog_line_id, finish_id")
+      .select("id, asset_type, confidence, status, is_corrected, parsed_sku, parsed_finish_code, parsed_color_code, parsed_structure_code, catalog_line_id, finish_id, color_id, structure_id")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

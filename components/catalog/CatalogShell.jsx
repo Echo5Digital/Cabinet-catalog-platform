@@ -90,6 +90,24 @@ function Header({ tenant, lines }) {
           </div>
 
           <Link
+            href="/catalog/colors"
+            className={`px-4 py-1.5 rounded-full text-sm hover:text-white hover:bg-white/10 transition ${
+              pathname.startsWith("/catalog/colors") ? "text-white font-medium" : "text-white/80"
+            }`}
+          >
+            Colors &amp; Tiles
+          </Link>
+
+          <Link
+            href="/catalog/structures"
+            className={`px-4 py-1.5 rounded-full text-sm hover:text-white hover:bg-white/10 transition ${
+              pathname.startsWith("/catalog/structures") ? "text-white font-medium" : "text-white/80"
+            }`}
+          >
+            Structures
+          </Link>
+
+          <Link
             href="/catalog"
             className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
           >
@@ -156,6 +174,23 @@ function Header({ tenant, lines }) {
             >
               All collections →
             </Link>
+            <div className="border-t border-white/10 pt-2 mt-2">
+              <p className="text-xs text-white/40 uppercase tracking-widest font-medium px-2 pb-1">More</p>
+              <Link
+                href="/catalog/colors"
+                onClick={() => setMenuOpen(false)}
+                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              >
+                Colors &amp; Tiles
+              </Link>
+              <Link
+                href="/catalog/structures"
+                onClick={() => setMenuOpen(false)}
+                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              >
+                Structures
+              </Link>
+            </div>
             <div className="pt-2 pb-1">
               <Link
                 href="/catalog"

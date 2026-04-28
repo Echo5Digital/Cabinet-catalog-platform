@@ -52,6 +52,20 @@ export async function POST(request, { params }) {
       );
     }
 
+    if (asset.asset_type === "color_swatch" && !asset.color_id) {
+      return NextResponse.json(
+        { error: "color_swatch assets require color_id to be set before confirming." },
+        { status: 422 }
+      );
+    }
+
+    if (asset.asset_type === "structure_image" && !asset.structure_id) {
+      return NextResponse.json(
+        { error: "structure_image assets require structure_id to be set before confirming." },
+        { status: 422 }
+      );
+    }
+
     // Auto-resolve product_id from parsed_sku if not provided
     let resolvedProductId = product_id ?? null;
     if (asset.asset_type === "product_diagram" && !resolvedProductId && asset.parsed_sku) {

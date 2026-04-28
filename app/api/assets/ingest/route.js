@@ -18,11 +18,13 @@ export async function POST(request) {
     const admin = createAdminClient();
 
     // Load DB context for confidence scoring
-    const [linesRes, categoriesRes, skusRes, finishesRes] = await Promise.all([
+    const [linesRes, categoriesRes, skusRes, finishesRes, colorsRes, structuresRes] = await Promise.all([
       admin.from("catalog_lines").select("id, slug").eq("tenant_id", ctx.tenantId),
       admin.from("categories").select("id, slug").eq("tenant_id", ctx.tenantId),
       admin.from("products").select("id, sku, catalog_line_id").eq("tenant_id", ctx.tenantId),
       admin.from("finishes").select("id, code, name, catalog_line_id").eq("tenant_id", ctx.tenantId),
+      admin.from("colors").select("id, code, name, color_type").eq("tenant_id", ctx.tenantId),
+      admin.from("structures").select("id, code, name").eq("tenant_id", ctx.tenantId),
     ]);
 
     const lines = (linesRes.data || []).map((l) => ({ id: l.id, slug: l.slug }));
@@ -40,8 +42,19 @@ export async function POST(request) {
       catalogLineId: f.catalog_line_id,
       lineSlug: lines.find((l) => l.id === f.catalog_line_id)?.slug ?? null,
     }));
+    const colors = (colorsRes.data || []).map((c) => ({
+      id: c.id,
+      code: c.code,
+      name: c.name,
+      colorType: c.color_type,
+    }));
+    const structures = (structuresRes.data || []).map((s) => ({
+      id: s.id,
+      code: s.code,
+      name: s.name,
+    }));
 
-    const dbContext = { lines, categories, skus, finishes };
+    const dbContext = { lines, categories, skus, finishes, colors, structures };
     const results = [];
 
     for (const file of files) {
@@ -81,6 +94,14 @@ export async function POST(request) {
         scored.resolvedFinishId ??
         finishes.find((f) => f.code === scored.finishCode && f.lineSlug === scored.lineSlug)?.id ??
         null;
+      const resolvedColorId =
+        scored.resolvedColorId ??
+        colors.find((c) => c.code === scored.colorCode)?.id ??
+        null;
+      const resolvedStructureId =
+        scored.resolvedStructureId ??
+        structures.find((s) => s.code === scored.structureCode)?.id ??
+        null;
 
       // 5. Insert into assets table
       const { data: inserted, error: insertError } = await admin
@@ -98,6 +119,8 @@ export async function POST(request) {
           parsed_category_slug: scored.categorySlug ?? null,
           parsed_sku: scored.sku ?? null,
           parsed_finish_code: scored.finishCode ?? null,
+          parsed_color_code: scored.colorCode ?? null,
+          parsed_structure_code: scored.structureCode ?? null,
           parsed_variant: scored.variant ?? null,
           parsed_sequence: scored.sequence ?? null,
           parse_notes: scored.parseNotes.length > 0 ? scored.parseNotes : null,
@@ -108,6 +131,8 @@ export async function POST(request) {
           // Pre-resolve FKs — set for all asset types where we have a match
           catalog_line_id: resolvedLineId,
           finish_id: scored.assetType === "finish_swatch" ? resolvedFinishId : null,
+          color_id: scored.assetType === "color_swatch" ? resolvedColorId : null,
+          structure_id: scored.assetType === "structure_image" ? resolvedStructureId : null,
         })
         .select("id, original_filename, asset_type, confidence, status, parsed_sku, parsed_line_slug, parse_notes")
         .single();
