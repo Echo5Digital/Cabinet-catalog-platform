@@ -6,6 +6,17 @@ import { buildKitchenDesignPrompt } from "@/lib/ai/kitchen-design-prompt";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
+// Maps customer layout names to explicit spatial descriptions DALL-E can render accurately.
+// Abstract names like "L-shaped" are ambiguous; these tell DALL-E exactly where cabinets are.
+const LAYOUT_VISUAL = {
+  "L-shaped":     "kitchen with two runs of cabinets: one along the back wall and one along the left side wall, meeting at a right-angle corner — viewed from a wide-angle perspective showing both runs clearly",
+  "U-shaped":     "kitchen with three runs of cabinets forming a U-shape: cabinets along the back wall, left side wall, and right side wall, with open space in the center — wide-angle view showing all three walls",
+  "Galley":       "narrow galley kitchen with two parallel rows of cabinets facing each other on opposite walls, with a walkway between them — straight-on perspective showing both sides",
+  "Island":       "kitchen with an L-shaped or straight cabinet run against the walls plus a large freestanding island in the center of the floor — wide-angle view showing both the perimeter cabinets and island",
+  "Single Wall":  "kitchen with a single straight row of all cabinets and appliances lined up along one wall only — wide open floor plan visible, straight-on view",
+  "G-shaped":     "kitchen with cabinets on three full walls plus a partial peninsula extension on one end, forming a G-shape — wide-angle corner view showing the peninsula and three cabinet walls",
+};
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -113,6 +124,7 @@ export async function POST(request) {
       skus: recommendedSkus = [],
       sales_summary = "",
       next_steps = [],
+      color_suggestions = [],
     } = gptData;
 
     if (!concept || !dalle_prompt) {
@@ -121,6 +133,12 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    // Force-override: customer's locked selections always win over AI choices
+    if (upper_color) concept.upper_color = upper_color;
+    if (lower_color) concept.lower_color = lower_color;
+    if (countertop)  concept.countertop  = countertop;
+    if (flooring)    concept.flooring    = flooring;
 
     // ── Stage 4: Resolve product images for recommended SKUs ──────────────────
     const skuList = (Array.isArray(recommendedSkus) ? recommendedSkus : [])
@@ -197,13 +215,30 @@ export async function POST(request) {
         .filter(Boolean);
     }
 
-    // ── Stage 5: Generate DALL-E render (non-fatal) ───────────────────────────
+    // ── Stage 5: Generate DALL-E render + persist to Supabase Storage ─────────
     let dalleImageUrl = null;
     try {
-      // When redesigning an existing photo, prepend a strong redesign directive
+      // Build the layout + materials spec entirely from the customer's locked form values.
+      // GPT's dalle_prompt provides only lighting/composition details — NOT trusted for colors or layout.
+      const layoutVisual = layout ? (LAYOUT_VISUAL[layout] || `${layout} kitchen layout`) : null;
+      const layoutSpec = layoutVisual ? `THIS IS A ${(layout || "").toUpperCase()} KITCHEN: ${layoutVisual}. ` : "";
+
+      const materialParts = [
+        upper_color   && `wall-mounted overhead upper cabinets (above the countertop) in ${upper_color} finish`,
+        lower_color   && `floor-level base lower cabinets (below the countertop) in ${lower_color} finish`,
+        countertop    && `${countertop} countertop surface`,
+        flooring      && `${flooring} floor`,
+        cabinet_style && `${cabinet_style}-style cabinet doors`,
+      ].filter(Boolean);
+
+      const materialSpec = materialParts.length > 0
+        ? `Exact finishes and materials: ${materialParts.join("; ")}. `
+        : "";
+
+      // Combine: layout shape + locked colors/materials + GPT's structural description
       const finalDallePrompt = effectiveImageUrl
-        ? `Photo-realistic kitchen REDESIGN. Preserve exact room structure: same walls, windows, ceiling height, and floor plan as the existing kitchen. Only change cabinets, finishes, countertop, and flooring. ${dalle_prompt}`
-        : dalle_prompt;
+        ? `Photorealistic kitchen REDESIGN. Same room geometry, windows, ceiling height, and floor plan as existing. Only cabinets, countertop, and flooring changed. ${layoutSpec}${materialSpec}${dalle_prompt}`
+        : `Photorealistic architectural kitchen photograph, showroom quality. ${layoutSpec}${materialSpec}${dalle_prompt}`;
 
       const imageResponse = await client.images.generate({
         model: "dall-e-3",
@@ -213,7 +248,33 @@ export async function POST(request) {
         quality: "standard",
         style: "vivid",
       });
-      dalleImageUrl = imageResponse.data?.[0]?.url || null;
+      const temporaryUrl = imageResponse.data?.[0]?.url || null;
+
+      if (temporaryUrl) {
+        // Fetch image bytes and re-upload to Supabase Storage for a permanent URL
+        try {
+          const imgRes = await fetch(temporaryUrl);
+          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+          const storagePath = `${TENANT_ID}/${Date.now()}.png`;
+
+          const { error: uploadError } = await admin.storage
+            .from("design-renders")
+            .upload(storagePath, imgBuffer, { contentType: "image/png", upsert: false });
+
+          if (!uploadError) {
+            const { data: urlData } = admin.storage
+              .from("design-renders")
+              .getPublicUrl(storagePath);
+            dalleImageUrl = urlData.publicUrl;
+          } else {
+            console.warn("[kitchen-design] Storage upload failed, using temp URL:", uploadError.message);
+            dalleImageUrl = temporaryUrl;
+          }
+        } catch (uploadErr) {
+          console.warn("[kitchen-design] Storage fetch/upload error, using temp URL:", uploadErr.message);
+          dalleImageUrl = temporaryUrl;
+        }
+      }
     } catch (dalleErr) {
       console.warn("[kitchen-design] DALL-E failed (non-fatal):", dalleErr.message);
     }
@@ -225,6 +286,7 @@ export async function POST(request) {
       products,
       sales_summary,
       next_steps: Array.isArray(next_steps) ? next_steps : [],
+      color_suggestions: Array.isArray(color_suggestions) ? color_suggestions : [],
       layout,
     });
 

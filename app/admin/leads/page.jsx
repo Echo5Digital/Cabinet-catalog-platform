@@ -74,6 +74,7 @@ async function downloadRender(url) {
 // ── Rich design detail view (design_ai source only) ───────────────────────────
 function DesignDetails({ description }) {
   const d = parseDesignDescription(description);
+  const [imgError, setImgError] = useState(false);
   if (!d) return null;
 
   const detailRows = [
@@ -93,24 +94,44 @@ function DesignDetails({ description }) {
       {/* Render image + download */}
       {d.renderUrl && (
         <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={d.renderUrl}
-            alt="AI Kitchen Render"
-            className="w-full object-cover"
-            style={{ maxHeight: 220 }}
-          />
+          {imgError ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-2">
+              <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+              <p className="text-xs text-gray-400">Render URL has expired (DALL·E links expire after 1 hour).</p>
+              <a
+                href={d.renderUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-blue-500 hover:underline"
+              >
+                Try opening directly ↗
+              </a>
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={d.renderUrl}
+              alt="AI Kitchen Render"
+              className="w-full object-cover"
+              style={{ maxHeight: 260 }}
+              onError={() => setImgError(true)}
+            />
+          )}
           <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
             <p className="text-xs text-gray-400 font-medium">AI Render (DALL·E 3)</p>
-            <button
-              onClick={() => downloadRender(d.renderUrl)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Download
-            </button>
+            {!imgError && (
+              <button
+                onClick={() => downloadRender(d.renderUrl)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                Download
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -204,11 +225,12 @@ function LeadDetail({ lead, onClose, onUpdate }) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col pointer-events-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h2 className="font-semibold text-gray-900">Quote Request Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
@@ -326,6 +348,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
               {saving ? "Saving…" : "Save Notes"}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </>

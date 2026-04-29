@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import DesignResultBoard from "@/components/catalog/DesignResultBoard";
 
 const PROJECT_TYPES = [
@@ -354,32 +354,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             Colors &amp; Materials
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <SwatchPicker
-              label="Upper Cabinet Color"
-              items={finishes}
-              value={form.upper_color}
-              onChange={(val) => set("upper_color", val)}
-            />
-            <SwatchPicker
-              label="Lower Cabinet Color"
-              items={finishes}
-              value={form.lower_color}
-              onChange={(val) => set("lower_color", val)}
-            />
-            <SwatchPicker
-              label="Countertop"
-              items={countertopColors}
-              value={form.countertop}
-              onChange={(val) => set("countertop", val)}
-            />
-            <SwatchPicker
-              label="Flooring"
-              items={floorColors}
-              value={form.flooring}
-              onChange={(val) => set("flooring", val)}
-            />
-          </div>
+          <ColorMaterialsSection
+            finishes={finishes}
+            countertopColors={countertopColors}
+            floorColors={floorColors}
+            form={form}
+            set={set}
+          />
         </section>
 
         {/* ── Section 5: Details ── */}
@@ -468,7 +449,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           <div className="space-y-6">
             {/* Photo upload */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <label className="text-sm font-medium text-stone-700">Do you have a photo of your kitchen?</label>
                 <div className="flex items-center gap-3">
                   {["Yes", "No"].map((opt) => (
@@ -662,6 +643,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             products={result.products}
             sales_summary={result.sales_summary}
             next_steps={result.next_steps}
+            color_suggestions={result.color_suggestions}
             layout={result.layout}
             finishImageMap={finishImageMap}
             countertopImageMap={countertopImageMap}
@@ -756,57 +738,208 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   );
 }
 
-// ── SwatchPicker — image card picker for colors / finishes ────────────────────
-function SwatchPicker({ label, items, value, onChange }) {
+// ── Tab icons for the Colors & Materials section ──────────────────────────────
+function TabIcon({ id, active }) {
+  const cls = `w-4 h-4 shrink-0 ${active ? "text-blue-500" : "text-stone-400"}`;
+  if (id === "upper_color")
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M3 9V6a1 1 0 011-1h16a1 1 0 011 1v3M3 9v9a1 1 0 001 1h16a1 1 0 001-1V9M8 13h8" />
+      </svg>
+    );
+  if (id === "lower_color")
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 12V9a1 1 0 011-1h16a1 1 0 011 1v3M3 12v5a1 1 0 001 1h16a1 1 0 001-1v-5M8 16h8" />
+      </svg>
+    );
+  if (id === "countertop")
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 8h20v3H2zM6 11v7M18 11v7M6 18h12" />
+      </svg>
+    );
   return (
-    <div>
-      <label className="block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide">
-        {label}
-      </label>
-      {items.length === 0 ? (
-        <p className="text-xs text-stone-400 italic">No options available</p>
-      ) : (
-        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onChange(item.name)}
-              className={`flex flex-col items-center rounded-lg border overflow-hidden transition ${
-                value === item.name
-                  ? "border-stone-900 ring-2 ring-stone-900 ring-offset-1"
-                  : "border-stone-200 hover:border-stone-400"
-              }`}
-            >
-              {/* Image area */}
-              <div className="w-full aspect-square bg-stone-200 overflow-hidden shrink-0">
-                {item.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.image_url}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-stone-400 text-xs font-semibold uppercase">
-                      {item.name.slice(0, 2)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {/* Name bar */}
-              <div className={`w-full px-1 py-1 ${value === item.name ? "bg-stone-900" : "bg-white"}`}>
-                <p className={`text-[10px] font-medium leading-tight truncate text-center ${
-                  value === item.name ? "text-white" : "text-stone-700"
-                }`}>
-                  {item.name}
-                </p>
-              </div>
-            </button>
-          ))}
+    <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h4v4H4zM10 5h4v4h-4zM16 5h4v4h-4zM4 11h4v4H4zM10 11h4v4h-4zM16 11h4v4h-4zM4 17h4v4H4zM10 17h4v4h-4zM16 17h4v4h-4z" />
+    </svg>
+  );
+}
+
+// ── Tabbed carousel for Colors & Materials ────────────────────────────────────
+function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, set }) {
+  const [activeTab, setActiveTab] = useState("upper_color");
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [activeDot, setActiveDot] = useState(0);
+
+  const TABS = [
+    { id: "upper_color", label: "Upper Cabinet Color", shortLabel: "Upper Color", subtitle: "Select the perfect color for your upper cabinets", items: finishes },
+    { id: "lower_color", label: "Lower Cabinet Color", shortLabel: "Lower Color", subtitle: "Select the perfect color for your lower cabinets", items: finishes },
+    { id: "countertop",  label: "Countertop",          shortLabel: "Countertop",  subtitle: "Choose your countertop material and color",          items: countertopColors },
+    { id: "flooring",    label: "Flooring",             shortLabel: "Flooring",    subtitle: "Pick the perfect flooring finish",                   items: floorColors },
+  ];
+
+  const tab   = TABS.find((t) => t.id === activeTab);
+  const items = tab?.items || [];
+  const value = form[activeTab];
+
+  // Reset scroll + re-check right-arrow on tab change
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollLeft = 0;
+    setCanScrollLeft(false);
+    setActiveDot(0);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        setCanScrollRight(scrollRef.current.scrollWidth > scrollRef.current.clientWidth + 4);
+      }
+    }, 60);
+  }, [activeTab]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < maxScroll - 4);
+    if (maxScroll > 0) {
+      const dots = Math.max(1, Math.ceil(items.length / 6));
+      setActiveDot(Math.min(dots - 1, Math.round((el.scrollLeft / maxScroll) * (dots - 1))));
+    }
+  }
+
+  function scrollByPage(dir) {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
+  }
+
+  const dotCount = Math.max(1, Math.ceil(items.length / 6));
+
+  return (
+    <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white">
+      {/* ── Tab bar ── */}
+      <div className="flex border-b border-stone-100">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setActiveTab(t.id)}
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-3.5 text-[11px] sm:text-sm font-medium border-b-2 transition-colors ${
+              activeTab === t.id
+                ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+            }`}
+          >
+            <TabIcon id={t.id} active={activeTab === t.id} />
+            <span className="hidden sm:inline">{t.label}</span>
+            <span className="sm:hidden leading-tight text-center">{t.shortLabel}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 sm:px-5 pt-4 pb-3">
+        {/* ── Section header ── */}
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-stone-900">{tab?.label}</p>
+          <p className="text-xs text-stone-400 mt-0.5">{tab?.subtitle}</p>
         </div>
-      )}
+
+        {/* ── Carousel ── */}
+        <div className="relative">
+          {canScrollLeft && (
+            <button
+              type="button"
+              onClick={() => scrollByPage(-1)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 hidden sm:flex w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md items-center justify-center text-stone-600 hover:border-stone-400 transition"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex gap-3 overflow-x-auto pb-1"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {items.length === 0 ? (
+              <p className="text-xs text-stone-400 italic py-6">No options available</p>
+            ) : (
+              items.map((item) => {
+                const selected = value === item.name;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => set(activeTab, item.name)}
+                    className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
+                      selected
+                        ? "border-2 border-blue-500 shadow-sm"
+                        : "border-2 border-stone-200 hover:border-stone-300"
+                    }`}
+                    style={{ width: 110 }}
+                  >
+                    <div className="relative bg-stone-100 w-full" style={{ height: 110 }}>
+                      {item.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-stone-400 text-sm font-bold uppercase">{item.name.slice(0, 2)}</span>
+                        </div>
+                      )}
+                      {selected && (
+                        <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className={`px-2 py-2 ${selected ? "bg-blue-50" : "bg-white"}`}>
+                      <p className={`text-[11px] font-medium leading-snug line-clamp-2 text-center ${selected ? "text-blue-700" : "text-stone-700"}`}>
+                        {item.name}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {canScrollRight && (
+            <button
+              type="button"
+              onClick={() => scrollByPage(1)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 hidden sm:flex w-8 h-8 rounded-full bg-white border border-stone-200 shadow-md items-center justify-center text-stone-600 hover:border-stone-400 transition"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* ── Dot pagination ── */}
+        {dotCount > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-3">
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <span
+                key={i}
+                className={`rounded-full transition-all duration-200 ${
+                  i === activeDot ? "w-4 h-2 bg-blue-500" : "w-2 h-2 bg-stone-300"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

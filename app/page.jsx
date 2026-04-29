@@ -123,9 +123,10 @@ export default async function HomePage() {
           {/* Request a Quote CTA */}
           <Link
             href="/catalog"
-            className="px-5 py-2 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition shrink-0"
+            className="px-4 sm:px-5 py-2 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition shrink-0 whitespace-nowrap"
           >
-            Request a Quote
+            <span className="sm:hidden">Quote</span>
+            <span className="hidden sm:inline">Request a Quote</span>
           </Link>
         </div>
       </header>
