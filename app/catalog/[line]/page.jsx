@@ -64,8 +64,10 @@ export default async function CatalogLinePage({ params, searchParams }) {
 
   return (
     <div>
-      {/* Lifestyle hero banner (sliding carousel) */}
-      <LifestyleBanner images={lifestyleImages} lineName={line.name} />
+      {/* Pull the banner up by the sticky header height so it fills behind the pill navbar */}
+      <div className="-mt-[68px]">
+        <LifestyleBanner images={lifestyleImages} lineName={line.name} />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {/* Breadcrumb + heading */}
