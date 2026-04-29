@@ -14,14 +14,14 @@ function QuoteButton() {
   return (
     <button
       onClick={() => setPanelOpen(true)}
-      className="relative flex items-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-700 hover:border-stone-400 hover:text-stone-900 transition text-sm font-medium"
+      className="relative flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:border-white/50 transition text-sm font-medium"
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
       Quote
       {totalItems > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-stone-900 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
           {totalItems > 9 ? "9+" : totalItems}
         </span>
       )}
@@ -38,11 +38,18 @@ function Header({ tenant, lines }) {
   const primaryColor = tenant.primary_color || "#1C1917";
 
   return (
-    <header
-      className="sticky top-0 z-30 border-b"
-      style={{ backgroundColor: primaryColor, borderColor: "rgba(255,255,255,0.1)" }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 px-4 sm:px-6 pt-4 pb-2">
+      {/* Pill navbar */}
+      <div
+        className="max-w-7xl mx-auto h-16 px-6 rounded-full flex items-center justify-between gap-4"
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor}f2 0%, ${primaryColor}b8 55%, ${primaryColor}d4 100%)`,
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+          border: "1px solid rgba(255,255,255,0.10)",
+        }}
+      >
         {/* Logo / Name */}
         <Link href="/" className="flex items-center shrink-0">
           {tenant.logo_url ? (
@@ -64,7 +71,7 @@ function Header({ tenant, lines }) {
               </svg>
             </button>
             {/* Dropdown */}
-            <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-stone-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
+            <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-stone-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
               {lines.map((line) => (
                 <Link
                   key={line.id}
@@ -80,32 +87,24 @@ function Header({ tenant, lines }) {
               ))}
               <div className="border-t border-stone-100">
                 <Link
-                  href="/catalog"
-                  className="block px-4 py-3 text-sm text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition"
+                  href="/catalog/colors"
+                  className={`block px-4 py-3 text-sm hover:bg-stone-50 transition ${
+                    pathname.startsWith("/catalog/colors") ? "text-stone-900 font-medium" : "text-stone-600"
+                  }`}
                 >
-                  View all collections →
+                  Colors &amp; Tiles
+                </Link>
+                <Link
+                  href="/catalog/structures"
+                  className={`block px-4 py-3 text-sm hover:bg-stone-50 transition ${
+                    pathname.startsWith("/catalog/structures") ? "text-stone-900 font-medium" : "text-stone-600"
+                  }`}
+                >
+                  Structures
                 </Link>
               </div>
             </div>
           </div>
-
-          <Link
-            href="/catalog/colors"
-            className={`px-4 py-1.5 rounded-full text-sm hover:text-white hover:bg-white/10 transition ${
-              pathname.startsWith("/catalog/colors") ? "text-white font-medium" : "text-white/80"
-            }`}
-          >
-            Colors &amp; Tiles
-          </Link>
-
-          <Link
-            href="/catalog/structures"
-            className={`px-4 py-1.5 rounded-full text-sm hover:text-white hover:bg-white/10 transition ${
-              pathname.startsWith("/catalog/structures") ? "text-white font-medium" : "text-white/80"
-            }`}
-          >
-            Structures
-          </Link>
 
           <Link
             href="/catalog/design"
@@ -136,14 +135,6 @@ function Header({ tenant, lines }) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Request a Quote CTA */}
-          <Link
-            href="/catalog"
-            className="hidden sm:inline-flex px-5 py-2 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
-          >
-            Request a Quote
-          </Link>
-
           <QuoteButton />
 
           {/* Mobile menu toggle */}
@@ -164,9 +155,12 @@ function Header({ tenant, lines }) {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — floats below pill */}
       {menuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-black/20">
+        <div
+          className="md:hidden max-w-7xl mx-auto mt-2 rounded-2xl overflow-hidden shadow-lg"
+          style={{ backgroundColor: primaryColor }}
+        >
           <div className="px-4 py-3 space-y-1">
             <p className="text-xs text-white/40 uppercase tracking-widest font-medium px-2 pb-1">Collections</p>
             {lines.map((line) => (
@@ -180,28 +174,20 @@ function Header({ tenant, lines }) {
               </Link>
             ))}
             <Link
-              href="/catalog"
+              href="/catalog/colors"
               onClick={() => setMenuOpen(false)}
-              className="block px-3 py-2 text-sm text-white/50 hover:text-white/80 transition"
+              className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
             >
-              All collections →
+              Colors &amp; Tiles
+            </Link>
+            <Link
+              href="/catalog/structures"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+            >
+              Structures
             </Link>
             <div className="border-t border-white/10 pt-2 mt-2">
-              <p className="text-xs text-white/40 uppercase tracking-widest font-medium px-2 pb-1">More</p>
-              <Link
-                href="/catalog/colors"
-                onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
-              >
-                Colors &amp; Tiles
-              </Link>
-              <Link
-                href="/catalog/structures"
-                onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
-              >
-                Structures
-              </Link>
               <Link
                 href="/catalog/design"
                 onClick={() => setMenuOpen(false)}
@@ -212,15 +198,20 @@ function Header({ tenant, lines }) {
                 </svg>
                 Design AI
               </Link>
-            </div>
-            <div className="pt-2 pb-1">
               <Link
                 href="/catalog"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm font-semibold text-center bg-amber-500 hover:bg-amber-400 text-white rounded-full transition"
+                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
               >
-                Request a Quote
+                About Us
               </Link>
+              <a
+                href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
+                onClick={() => setMenuOpen(false)}
+                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              >
+                Contact
+              </a>
             </div>
           </div>
         </div>

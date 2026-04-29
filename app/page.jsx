@@ -65,9 +65,17 @@ export default async function HomePage() {
     <div className="bg-[#FAFAF9]">
 
       {/* ── HEADER — pill navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-white/10" style={{ backgroundColor: primaryColor }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-
+      <header className="fixed top-0 left-0 right-0 z-30 px-4 sm:px-6 pt-4 pb-2">
+        <div
+          className="max-w-7xl mx-auto h-16 px-6 rounded-full flex items-center justify-between gap-4"
+          style={{
+            background: `linear-gradient(135deg, ${primaryColor}f2 0%, ${primaryColor}b8 55%, ${primaryColor}d4 100%)`,
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            boxShadow: "0 4px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.10)",
+          }}
+        >
           {/* Logo / Name */}
           <Link href="/" className="shrink-0 flex items-center">
             {tenant.logo_url ? (
@@ -80,33 +88,12 @@ export default async function HomePage() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <div className="relative group">
-              <button className="flex items-center gap-1 px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition">
-                Catalogs
-                <svg className="w-3.5 h-3.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-stone-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
-                {lines.map((line) => (
-                  <Link
-                    key={line.id}
-                    href={`/catalog/${line.slug}`}
-                    className="block px-4 py-3 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition"
-                  >
-                    {line.name}
-                  </Link>
-                ))}
-                <div className="border-t border-stone-100">
-                  <Link
-                    href="/catalog"
-                    className="block px-4 py-3 text-sm text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition"
-                  >
-                    View all collections →
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <Link
+              href="/catalog"
+              className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
+            >
+              Catalog
+            </Link>
 
             <Link
               href="/catalog"
@@ -121,6 +108,16 @@ export default async function HomePage() {
             >
               Contact
             </a>
+
+            <Link
+              href="/catalog/design"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              Design AI
+            </Link>
           </nav>
 
           {/* Request a Quote CTA */}
@@ -135,28 +132,19 @@ export default async function HomePage() {
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <section
-        className="relative min-h-[85vh] flex items-end overflow-hidden"
+        className="relative min-h-screen flex items-end overflow-hidden"
         style={{ backgroundColor: primaryColor }}
       >
-        {heroImage?.public_url ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={heroImage.public_url}
-              alt={heroImage.alt_text || name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-          </>
-        ) : (
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 14px)",
-            }}
-          />
-        )}
+        {/* Video background */}
+        <video
+          src="/Baner.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full pb-16 sm:pb-24">
           <div className="max-w-2xl">
@@ -193,33 +181,112 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── FILTER BAR (below hero) ──────────────────────────────────────── */}
-      <div className="bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase tracking-widest text-stone-400 font-medium mr-1 shrink-0">
-              Filter:
-            </span>
-            {["Style", "Cabinet Type", "Width", "Height", "Finish"].map((label) => (
-              <div
-                key={label}
-                className="flex items-center gap-2 px-4 py-2 bg-stone-50 rounded-full border border-stone-200 text-stone-600 text-sm cursor-default select-none hover:border-stone-300 transition"
-              >
-                <span>{label}</span>
-                <svg className="w-3 h-3 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      {/* ── DESIGN AI PROMO ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden" style={{ backgroundColor: primaryColor }}>
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+
+            {/* Left — copy */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 mb-6">
+                <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
+                <span className="text-white/70 text-xs font-medium uppercase tracking-widest">Powered by AI</span>
               </div>
-            ))}
-            <Link
-              href="/catalog"
-              className="ml-auto px-6 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold transition shrink-0"
-            >
-              Search
-            </Link>
+
+              <h2
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.1] mb-5"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                Design Your Kitchen<br />
+                <span className="text-amber-400">in Minutes.</span>
+              </h2>
+
+              <p className="text-white/60 text-lg leading-relaxed mb-8 max-w-md">
+                Describe your style, choose your colors, and our AI generates a photorealistic kitchen render — complete with matching products from our catalog.
+              </p>
+
+              <ul className="space-y-3 mb-10">
+                {[
+                  "Photorealistic DALL-E kitchen renders",
+                  "Matched products from our live catalog",
+                  "Instant sales summary & next steps",
+                ].map((feat) => (
+                  <li key={feat} className="flex items-center gap-3 text-white/70 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+                      <svg className="w-3 h-3 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/catalog/design"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition shadow-lg shadow-amber-500/25"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                Try Design AI — It&apos;s Free
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+
+            {/* Right — visual mockup */}
+            <div className="relative hidden md:block">
+              {/* Outer glow */}
+              <div className="absolute -inset-4 bg-amber-500/10 rounded-3xl blur-2xl" />
+              {/* Card */}
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-white/5 p-1">
+                {/* Mock header bar */}
+                <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/10">
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="ml-3 text-white/30 text-xs font-mono">Design AI — Kitchen Concept</span>
+                </div>
+                {/* Mock render area */}
+                <div className="aspect-video bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                      </svg>
+                    </div>
+                    <p className="text-white/40 text-sm">AI-generated kitchen render</p>
+                    <p className="text-white/20 text-xs mt-1">DALL·E 3 · 1792×1024</p>
+                  </div>
+                </div>
+                {/* Mock product strip */}
+                <div className="flex gap-2 p-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex-1 aspect-square rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                      <span className="text-white/20 text-[10px] font-mono">SKU</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ── THREE FEATURE CARDS ─────────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">

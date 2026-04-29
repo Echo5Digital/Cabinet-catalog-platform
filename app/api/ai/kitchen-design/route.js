@@ -10,11 +10,11 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const {
-      name, email, phone,
-      project_type, layout, cabinet_style,
+      name, address, email, phone,
+      project_type, layout, cabinet_style, budget_style,
       upper_color, lower_color, countertop, flooring,
-      hood_style, backsplash, hardware, appliance_color,
-      items_list,
+      hood_style, hardware, appliance_color,
+      items_list, design_comments,
       image_status, image_url,
     } = body;
 
@@ -56,13 +56,18 @@ export async function POST(request) {
     const finishes = (finishesRes.data || []).map((f) => `${f.name} (${f.code})`);
 
     const catalogContext = { lines, skus, countertopColors, floorColors, finishes };
-    const includeImageAnalysis = image_status === "Yes" && !!image_url;
+    const effectiveImageUrl = image_status === "Yes" && image_url ? image_url : "";
+    const includeImageAnalysis = !!effectiveImageUrl;
 
     // ── Stage 2: Build prompt and call GPT (JSON mode) ────────────────────────
     const { systemPrompt, userPrompt } = buildKitchenDesignPrompt(
-      { name, email, phone, project_type, layout, cabinet_style,
+      {
+        name, address, email, phone,
+        project_type, layout, cabinet_style, budget_style,
         upper_color, lower_color, countertop, flooring,
-        hood_style, backsplash, hardware, appliance_color, items_list },
+        hood_style, hardware, appliance_color,
+        items_list, design_comments,
+      },
       catalogContext,
       includeImageAnalysis
     );
@@ -73,7 +78,7 @@ export async function POST(request) {
     if (includeImageAnalysis) {
       userContent = [
         { type: "text", text: userPrompt },
-        { type: "image_url", image_url: { url: image_url, detail: "low" } },
+        { type: "image_url", image_url: { url: effectiveImageUrl, detail: "low" } },
       ];
     } else {
       userContent = userPrompt;
@@ -135,15 +140,33 @@ export async function POST(request) {
 
       let assetMap = {};
       if (matchedIds.length > 0) {
-        const { data: assetRows } = await admin
+        // Step 1: prefer primary assets
+        const { data: primaryRows } = await admin
           .from("product_assets")
           .select("product_id, asset:assets!asset_id(public_url, status)")
           .in("product_id", matchedIds)
           .eq("is_primary", true);
 
-        for (const row of assetRows || []) {
+        for (const row of primaryRows || []) {
           if (row.asset?.status === "confirmed" && row.asset?.public_url) {
             assetMap[row.product_id] = row.asset.public_url;
+          }
+        }
+
+        // Step 2: for products with no primary, fall back to any confirmed asset
+        const uncoveredIds = matchedIds.filter((id) => !assetMap[id]);
+        if (uncoveredIds.length > 0) {
+          const { data: fallbackRows } = await admin
+            .from("product_assets")
+            .select("product_id, asset:assets!asset_id(public_url, status)")
+            .in("product_id", uncoveredIds)
+            .order("sort_order", { ascending: true })
+            .limit(uncoveredIds.length * 3);
+
+          for (const row of fallbackRows || []) {
+            if (!assetMap[row.product_id] && row.asset?.status === "confirmed" && row.asset?.public_url) {
+              assetMap[row.product_id] = row.asset.public_url;
+            }
           }
         }
       }
@@ -177,9 +200,14 @@ export async function POST(request) {
     // ── Stage 5: Generate DALL-E render (non-fatal) ───────────────────────────
     let dalleImageUrl = null;
     try {
+      // When redesigning an existing photo, prepend a strong redesign directive
+      const finalDallePrompt = effectiveImageUrl
+        ? `Photo-realistic kitchen REDESIGN. Preserve exact room structure: same walls, windows, ceiling height, and floor plan as the existing kitchen. Only change cabinets, finishes, countertop, and flooring. ${dalle_prompt}`
+        : dalle_prompt;
+
       const imageResponse = await client.images.generate({
         model: "dall-e-3",
-        prompt: dalle_prompt,
+        prompt: finalDallePrompt,
         n: 1,
         size: "1792x1024",
         quality: "standard",

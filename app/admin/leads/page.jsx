@@ -2,6 +2,151 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+// ── Parse the structured project_description from design_ai submissions ───────
+function parseDesignDescription(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const f = {};
+  let inItems = false;
+  const itemLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith("AI Kitchen Design — ")) {
+      f.conceptName = line.replace("AI Kitchen Design — ", "").trim();
+      inItems = false;
+    } else if (line.startsWith("Style: ")) {
+      inItems = false;
+      line.split(" | ").forEach((part) => {
+        const idx = part.indexOf(": ");
+        if (idx === -1) return;
+        const key = part.slice(0, idx).trim();
+        const val = part.slice(idx + 2).trim();
+        if (key === "Style") f.style = val;
+        else if (key === "Layout") f.layout = val;
+        else if (key === "Budget Style") f.budgetStyle = val;
+      });
+    } else if (line.startsWith("Upper: ")) {
+      inItems = false;
+      line.split(" | ").forEach((part) => {
+        const idx = part.indexOf(": ");
+        if (idx === -1) return;
+        const key = part.slice(0, idx).trim();
+        const val = part.slice(idx + 2).trim();
+        if (key === "Upper") f.upperColor = val;
+        else if (key === "Lower") f.lowerColor = val;
+        else if (key === "Countertop") f.countertop = val;
+        else if (key === "Flooring") f.flooring = val;
+      });
+    } else if (line.startsWith("Project Type: ")) {
+      inItems = false;
+      f.projectType = line.replace("Project Type: ", "").trim();
+    } else if (line.startsWith("Items Requested:")) {
+      inItems = true;
+    } else if (line.startsWith("Comments: ")) {
+      inItems = false;
+      f.comments = line.replace("Comments: ", "").trim();
+    } else if (line.startsWith("Render URL: ")) {
+      inItems = false;
+      f.renderUrl = line.replace("Render URL: ", "").trim();
+    } else if (inItems && line.trim()) {
+      itemLines.push(line.trim());
+    }
+  }
+
+  f.itemsList = itemLines;
+  return f;
+}
+
+async function downloadRender(url) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "kitchen-design-render.png";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, "_blank");
+  }
+}
+
+// ── Rich design detail view (design_ai source only) ───────────────────────────
+function DesignDetails({ description }) {
+  const d = parseDesignDescription(description);
+  if (!d) return null;
+
+  const detailRows = [
+    { label: "Concept", value: d.conceptName },
+    { label: "Project Type", value: d.projectType },
+    { label: "Layout", value: d.layout },
+    { label: "Cabinet Style", value: d.style },
+    { label: "Budget Style", value: d.budgetStyle },
+    { label: "Upper Cabinets", value: d.upperColor },
+    { label: "Lower Cabinets", value: d.lowerColor },
+    { label: "Countertop", value: d.countertop },
+    { label: "Flooring", value: d.flooring },
+  ].filter((r) => r.value && r.value !== "—");
+
+  return (
+    <div className="space-y-3">
+      {/* Render image + download */}
+      {d.renderUrl && (
+        <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={d.renderUrl}
+            alt="AI Kitchen Render"
+            className="w-full object-cover"
+            style={{ maxHeight: 220 }}
+          />
+          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
+            <p className="text-xs text-gray-400 font-medium">AI Render (DALL·E 3)</p>
+            <button
+              onClick={() => downloadRender(d.renderUrl)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Download
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Structured detail rows */}
+      <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+        {detailRows.map(({ label, value }) => (
+          <div key={label} className="flex items-start px-4 py-2.5 gap-3">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">{label}</span>
+            <span className="text-sm text-gray-800 flex-1">{value}</span>
+          </div>
+        ))}
+        {d.itemsList?.length > 0 && (
+          <div className="flex items-start px-4 py-2.5 gap-3">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Items Needed</span>
+            <ul className="flex-1 space-y-0.5">
+              {d.itemsList.map((item, i) => (
+                <li key={i} className="text-sm text-gray-800 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {d.comments && (
+          <div className="flex items-start px-4 py-2.5 gap-3">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Comments</span>
+            <span className="text-sm text-gray-700 flex-1 italic">{d.comments}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const STATUS_COLORS = {
   new: "bg-blue-100 text-blue-700",
   contacted: "bg-yellow-100 text-yellow-700",
@@ -73,7 +218,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
             <p className="text-sm text-gray-500">{lead.email}</p>
             {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
             {lead.company && <p className="text-sm text-gray-500">{lead.company}</p>}
-            {lead.project_description && (
+            {lead.source !== "design_ai" && lead.project_description && (
               <p className="text-sm text-gray-600 pt-2 border-t border-gray-200 mt-2">
                 {lead.project_description}
               </p>
@@ -89,6 +234,11 @@ function LeadDetail({ lead, onClose, onUpdate }) {
             </p>
             <p className="text-xs text-gray-400 capitalize">Source: {lead.source?.replace("_", " ") || "—"}</p>
           </div>
+
+          {/* Design AI structured details */}
+          {lead.source === "design_ai" && lead.project_description && (
+            <DesignDetails description={lead.project_description} />
+          )}
 
           {/* Status pipeline */}
           <div>

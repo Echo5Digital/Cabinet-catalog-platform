@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import DesignResultBoard from "@/components/catalog/DesignResultBoard";
 
 const PROJECT_TYPES = [
@@ -78,23 +77,31 @@ const HARDWARE_OPTIONS = ["Gold", "Silver", "Black", "Bronze", "None"];
 
 const APPLIANCE_COLORS = ["Stainless", "White", "Black", "Panel Ready"];
 
+const BUDGET_STYLES = [
+  { id: "Budget-friendly", label: "Budget-friendly", desc: "Affordable, functional & clean" },
+  { id: "Modern Euro",     label: "Modern Euro",     desc: "Sleek, handleless, contemporary" },
+  { id: "Premium Luxury",  label: "Premium Luxury",  desc: "High-end materials & custom details" },
+];
+
 export default function KitchenDesignForm({ countertopColors, floorColors, finishes }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
+    address: "",
     project_type: "",
     layout: "",
     cabinet_style: "",
+    budget_style: "",
     upper_color: "",
     lower_color: "",
     countertop: "",
     flooring: "",
     hood_style: "",
-    backsplash: "",
     hardware: "",
     appliance_color: "",
     items_list: "",
+    design_comments: "",
     image_status: "No",
     image_url: "",
     image_source: "url",
@@ -104,6 +111,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Quote submission state
+  const [quoteStatus, setQuoteStatus] = useState("idle"); // idle | submitting | success | error
+  const [quoteError, setQuoteError] = useState("");
 
   function set(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -122,6 +133,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setLoading(true);
     setError(null);
     setResult(null);
+    setQuoteStatus("idle");
     try {
       const effectiveImageUrl =
         form.image_status === "Yes"
@@ -138,7 +150,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed.");
       setResult(data);
-      // Scroll to result
       setTimeout(() => {
         document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -154,6 +165,43 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     await navigator.clipboard.writeText(result.sales_summary);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleQuoteSubmit() {
+    if (!result) return;
+    setQuoteStatus("submitting");
+    setQuoteError("");
+    try {
+      const projectDescription = [
+        `AI Kitchen Design — ${result.concept?.name || "Custom Design"}`,
+        `Style: ${form.cabinet_style || "—"} | Layout: ${form.layout || "—"} | Budget Style: ${form.budget_style || "—"}`,
+        `Upper: ${form.upper_color || "—"} | Lower: ${form.lower_color || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
+        `Project Type: ${form.project_type || "—"}`,
+        form.items_list ? `Items Requested:\n${form.items_list}` : "",
+        form.design_comments ? `Comments: ${form.design_comments}` : "",
+        result.image_url ? `Render URL: ${result.image_url}` : "",
+      ].filter(Boolean).join("\n");
+
+      const res = await fetch("/api/public/design-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          project_description: projectDescription,
+          notes: form.design_comments || undefined,
+          products: result.products || [],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Submission failed.");
+      setQuoteStatus("success");
+    } catch (err) {
+      setQuoteError(err.message);
+      setQuoteStatus("error");
+    }
   }
 
   // Build name → image_url maps from props for the result board
@@ -177,7 +225,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             Your Information
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Name</label>
               <input
@@ -205,6 +253,15 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 placeholder="(555) 000-0000"
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Address</label>
+              <input
+                className={inputCls}
+                placeholder="Street address, city, state…"
+                value={form.address}
+                onChange={(e) => set("address", e.target.value)}
               />
             </div>
           </div>
@@ -333,7 +390,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             Additional Details
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Hood Style</label>
               <input
@@ -341,15 +398,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 placeholder="e.g. Chimney, Downdraft, Under-cabinet"
                 value={form.hood_style}
                 onChange={(e) => set("hood_style", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Backsplash</label>
-              <input
-                className={inputCls}
-                placeholder="e.g. Subway tile, Marble, Mosaic"
-                value={form.backsplash}
-                onChange={(e) => set("backsplash", e.target.value)}
               />
             </div>
             <div>
@@ -385,15 +433,27 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             Items Needed
           </h2>
-          <div>
-            <label className={labelCls}>List what you need (one item per line)</label>
-            <textarea
-              className={`${inputCls} resize-none`}
-              rows={5}
-              placeholder={"Base cabinets\nWall cabinets\nCorner cabinet\nSink base\nIsland"}
-              value={form.items_list}
-              onChange={(e) => set("items_list", e.target.value)}
-            />
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>List what you need (one item per line)</label>
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={5}
+                placeholder={"Base cabinets\nWall cabinets\nCorner cabinet\nSink base\nIsland"}
+                value={form.items_list}
+                onChange={(e) => set("items_list", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Comments / Notes</label>
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={3}
+                placeholder="Any special requests, constraints, or notes for our team…"
+                value={form.design_comments}
+                onChange={(e) => set("design_comments", e.target.value)}
+              />
+            </div>
           </div>
         </section>
 
@@ -405,103 +465,132 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             Kitchen Photo <span className="text-stone-400 font-normal text-base">(optional)</span>
           </h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-stone-700">Do you have a photo of your kitchen?</label>
-              <div className="flex items-center gap-3">
-                {["Yes", "No"].map((opt) => (
+          <div className="space-y-6">
+            {/* Photo upload */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-stone-700">Do you have a photo of your kitchen?</label>
+                <div className="flex items-center gap-3">
+                  {["Yes", "No"].map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => set("image_status", opt)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                        form.image_status === opt
+                          ? "border-stone-900 bg-stone-900 text-white"
+                          : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {form.image_status === "Yes" && (
+                <div className="space-y-3">
+                  {/* Source toggle */}
+                  <div className="flex items-center gap-2">
+                    {[
+                      { value: "upload", label: "Upload from device" },
+                      { value: "url",    label: "Paste URL" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => set("image_source", opt.value)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                          form.image_source === opt.value
+                            ? "border-stone-700 bg-stone-800 text-white"
+                            : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Upload mode */}
+                  {form.image_source === "upload" && (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                      />
+                      {form.image_file_data && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={form.image_file_data}
+                            alt="Preview"
+                            className="w-16 h-16 object-cover rounded-lg border border-stone-200"
+                          />
+                          <div>
+                            <p className="text-xs text-stone-600 font-medium">Image ready</p>
+                            <button
+                              type="button"
+                              onClick={() => set("image_file_data", "")}
+                              className="text-xs text-red-500 hover:text-red-700 transition mt-0.5"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-stone-400 mt-1">
+                        The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* URL mode */}
+                  {form.image_source === "url" && (
+                    <div>
+                      <label className={labelCls}>Image URL</label>
+                      <input
+                        type="url"
+                        className={inputCls}
+                        placeholder="https://example.com/my-kitchen.jpg"
+                        value={form.image_url}
+                        onChange={(e) => set("image_url", e.target.value)}
+                      />
+                      <p className="text-xs text-stone-400 mt-1">
+                        The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Kitchen Style */}
+            <div>
+              <label className={labelCls}>Kitchen Style (Budget Range)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                {BUDGET_STYLES.map((s) => (
                   <button
-                    key={opt}
+                    key={s.id}
                     type="button"
-                    onClick={() => set("image_status", opt)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
-                      form.image_status === opt
+                    onClick={() => set("budget_style", s.id)}
+                    className={`flex flex-col text-left rounded-xl border p-4 transition ${
+                      form.budget_style === s.id
                         ? "border-stone-900 bg-stone-900 text-white"
                         : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
                     }`}
                   >
-                    {opt}
+                    <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
+                      {s.label}
+                    </span>
+                    <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
+                      {s.desc}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
-
-            {form.image_status === "Yes" && (
-              <div className="space-y-3">
-                {/* Source toggle */}
-                <div className="flex items-center gap-2">
-                  {[
-                    { value: "upload", label: "Upload from device" },
-                    { value: "url",    label: "Paste URL" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => set("image_source", opt.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                        form.image_source === opt.value
-                          ? "border-stone-700 bg-stone-800 text-white"
-                          : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Upload mode */}
-                {form.image_source === "upload" && (
-                  <div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
-                    />
-                    {form.image_file_data && (
-                      <div className="mt-2 flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={form.image_file_data}
-                          alt="Preview"
-                          className="w-16 h-16 object-cover rounded-lg border border-stone-200"
-                        />
-                        <div>
-                          <p className="text-xs text-stone-600 font-medium">Image ready</p>
-                          <button
-                            type="button"
-                            onClick={() => set("image_file_data", "")}
-                            className="text-xs text-red-500 hover:text-red-700 transition mt-0.5"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    <p className="text-xs text-stone-400 mt-1">
-                      Select an image from your device. The AI will analyze it.
-                    </p>
-                  </div>
-                )}
-
-                {/* URL mode */}
-                {form.image_source === "url" && (
-                  <div>
-                    <label className={labelCls}>Image URL</label>
-                    <input
-                      type="url"
-                      className={inputCls}
-                      placeholder="https://example.com/my-kitchen.jpg"
-                      value={form.image_url}
-                      onChange={(e) => set("image_url", e.target.value)}
-                    />
-                    <p className="text-xs text-stone-400 mt-1">
-                      Paste a publicly accessible URL to your kitchen photo. The AI will analyze it.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </section>
 
@@ -579,16 +668,87 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             floorImageMap={floorImageMap}
           />
 
-          <div className="mt-8 text-center">
-            <p className="text-stone-500 text-sm mb-4">
-              Ready to move forward? Our team will help you build the perfect quote.
-            </p>
-            <Link
-              href="/catalog"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
-            >
-              Browse Collections &amp; Request a Quote →
-            </Link>
+          {/* ── Request a Quote ── */}
+          <div className="mt-8 rounded-2xl border border-stone-200 bg-stone-50 p-6 sm:p-8">
+            {quoteStatus === "success" ? (
+              <div className="flex flex-col items-center text-center gap-3 py-4">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-stone-900" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+                  Quote Request Submitted!
+                </h3>
+                <p className="text-stone-600 text-sm max-w-md">
+                  Your design and product selections have been sent to our team.
+                  {form.email && <> We&apos;ll reach out at <strong>{form.email}</strong> shortly.</>}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                  <div>
+                    <h3 className="text-base font-bold text-stone-900" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+                      Ready to get a quote for this design?
+                    </h3>
+                    <p className="text-stone-500 text-sm mt-1">
+                      We&apos;ll send your design concept, selected products, and comments to our team.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Summary of what will be submitted */}
+                <div className="grid sm:grid-cols-3 gap-3 mb-5 text-sm">
+                  <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Contact</p>
+                    <p className="text-stone-700 font-medium">{form.name || "—"}</p>
+                    <p className="text-stone-500 text-xs">{form.email || "—"}</p>
+                    {form.address && <p className="text-stone-400 text-xs mt-0.5">{form.address}</p>}
+                  </div>
+                  <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Design</p>
+                    <p className="text-stone-700 font-medium">{result.concept?.name || "Custom Design"}</p>
+                    <p className="text-stone-500 text-xs">{form.layout} · {form.cabinet_style}</p>
+                  </div>
+                  <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Products</p>
+                    <p className="text-stone-700 font-medium">{result.products?.length || 0} items selected</p>
+                    <p className="text-stone-500 text-xs">{result.products?.slice(0, 2).map(p => p.sku).join(", ")}{result.products?.length > 2 ? "…" : ""}</p>
+                  </div>
+                </div>
+
+                {quoteError && (
+                  <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                    {quoteError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleQuoteSubmit}
+                  disabled={quoteStatus === "submitting"}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {quoteStatus === "submitting" ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Submitting…
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Confirm &amp; Request Quote
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

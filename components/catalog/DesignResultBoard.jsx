@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 // ── Layout SVG configs (self-contained — mirrors KitchenDesignForm.jsx) ──────
 const LAYOUT_CONFIGS = [
   {
@@ -141,23 +143,40 @@ export default function DesignResultBoard({
     (l) => l.name.toLowerCase() === (layout || "").toLowerCase()
   );
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const upperImageUrl   = finishImageMap[upper_color]    || null;
   const lowerImageUrl   = finishImageMap[lower_color]    || null;
   const counterImageUrl = countertopImageMap[countertop] || null;
   const floorImg        = floorImageMap[flooring]        || null;
 
   return (
+    <>
     <div className="rounded-2xl overflow-hidden border border-stone-200 shadow-sm bg-white">
 
       {/* ── Zone 1: Hero render ───────────────────────────────────────────── */}
       <div className="relative w-full bg-stone-900" style={{ aspectRatio: "16/7" }}>
         {image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image_url}
-            alt={conceptName}
-            className="w-full h-full object-cover"
-          />
+          <button
+            type="button"
+            className="absolute inset-0 w-full h-full cursor-zoom-in"
+            onClick={() => setLightboxOpen(true)}
+            aria-label="View full size"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image_url}
+              alt={conceptName}
+              className="w-full h-full object-cover"
+            />
+            {/* Zoom hint */}
+            <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-6-3v6m-3-3h6" />
+              </svg>
+              Click to enlarge
+            </span>
+          </button>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3">
             <svg className="w-12 h-12 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -346,5 +365,31 @@ export default function DesignResultBoard({
       )}
 
     </div>
+
+      {/* ── Lightbox ──────────────────────────────────────────────────────── */}
+      {lightboxOpen && image_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center p-4 sm:p-8"
+          onClick={() => setLightboxOpen(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image_url}
+            alt={conceptName}
+            className="max-w-full max-h-full rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition"
+            aria-label="Close"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </>
   );
 }
