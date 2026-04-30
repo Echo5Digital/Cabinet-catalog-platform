@@ -6,14 +6,52 @@ import { buildKitchenDesignPrompt } from "@/lib/ai/kitchen-design-prompt";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
-// Maps customer layout names to explicit spatial descriptions DALL-E can render accurately.
+// Per-layout DALL-E rendering config: required phrase, spatial description, camera angle, and hard exclusions.
 const LAYOUT_VISUAL = {
-  "L-shaped":    "kitchen with two runs of cabinets: one along the back wall and one along the left side wall, meeting at a right-angle corner — viewed from a wide-angle perspective showing both runs clearly",
-  "U-shaped":    "kitchen with three runs of cabinets forming a U-shape: cabinets along the back wall, left side wall, and right side wall, with open space in the center — wide-angle view showing all three walls",
-  "Galley":      "narrow galley kitchen with two parallel rows of cabinets facing each other on opposite walls, with a walkway between them — straight-on perspective showing both sides",
-  "Island":      "kitchen with an L-shaped or straight cabinet run against the walls plus a large freestanding island in the center of the floor — wide-angle view showing both the perimeter cabinets and island",
-  "Single Wall": "kitchen with a single straight row of all cabinets and appliances lined up along one wall only — wide open floor plan visible, straight-on view",
-  "G-shaped":    "kitchen with cabinets on three full walls plus a partial peninsula extension on one end, forming a G-shape — wide-angle corner view showing the peninsula and three cabinet walls",
+  "L-shaped": {
+    required: "TWO PERPENDICULAR WALLS ONLY",
+    desc:     "L-SHAPED kitchen: upper wall cabinets and lower base cabinets installed along exactly TWO adjacent perpendicular walls — one long back wall run and one shorter side wall run meeting at a right-angle corner. No third wall. No island. No peninsula.",
+    camera:   "wide-angle corner perspective from the open room, 45-degree angle clearly showing both perpendicular cabinet wall runs and the corner junction",
+    exclude:  "no island, no peninsula, no third cabinet wall, no extra cabinetry on any other wall",
+  },
+  "U-shaped": {
+    required: "THREE CONNECTED CABINET WALLS ONLY",
+    desc:     "U-SHAPED kitchen: upper and lower cabinets covering exactly THREE connected walls — back wall, left wall, and right wall — forming a U-shape with a completely clear open floor in the center. No island. No peninsula.",
+    camera:   "wide-angle view from the open fourth side showing all three cabinet-lined walls in perspective",
+    exclude:  "no island, no peninsula in the open center floor, no extra cabinet walls",
+  },
+  "Galley": {
+    required: "TWO PARALLEL CABINET WALLS ONLY",
+    desc:     "GALLEY kitchen: TWO PARALLEL CABINET WALLS ONLY — two straight parallel rows of upper and lower cabinets installed on opposite facing walls with a clear walkway corridor between them. No corners. No turns. No island.",
+    camera:   "straight corridor perspective view looking down the full length showing both parallel cabinet rows",
+    exclude:  "no island, no corner cabinets, no L-shape, no extra walls, only two straight parallel rows",
+  },
+  "Island": {
+    required: "ONE CENTRAL ISLAND",
+    desc:     "ISLAND kitchen: wall cabinets along two or three perimeter walls PLUS ONE CENTRAL ISLAND — one large freestanding kitchen island with countertop surface in the center of the room with barstools. No peninsula.",
+    camera:   "wide-angle three-quarter perspective showing both the perimeter wall cabinets and the central island with open space around it",
+    exclude:  "",
+  },
+  "Single Wall": {
+    required: "ALL cabinets installed on EXACTLY ONE wall ONLY",
+    desc:     "SINGLE WALL kitchen: ALL cabinets installed on EXACTLY ONE wall ONLY — all upper wall cabinets, lower base cabinets, and appliances along one single straight wall only. Large completely open floor space. Nothing on any other wall.",
+    camera:   "straight-on frontal view facing the single cabinet wall with large completely open floor space in the foreground",
+    exclude:  "no second cabinet wall, no island, no corner cabinets, no peninsula, only one wall of cabinets",
+  },
+  "G-shaped": {
+    required: "ATTACHED PENINSULA ONLY",
+    desc:     "G-SHAPED kitchen: upper and lower cabinets on three full walls PLUS one ATTACHED PENINSULA ONLY — short partial peninsula counter extending inward from one end of the layout. No separate freestanding island.",
+    camera:   "wide-angle corner view showing the attached peninsula extension and all three cabinet walls in perspective",
+    exclude:  "no separate freestanding island, only the attached wall peninsula",
+  },
+};
+
+// Budget-appropriate realism descriptions for DALL-E image generation.
+// CRITICAL: Budget level controls ONLY material quality and visual styling — NEVER the layout type or geometry.
+const BUDGET_REALISM = {
+  "Budget-friendly": "Standard residential kitchen scale and proportions. Affordable standard cabinet materials. Clean and simple styling. Basic everyday residential kitchen. No luxury staging. No oversized custom features. Kitchen layout and geometry remain EXACTLY as specified above — this budget tier controls ONLY material quality and visual styling, NEVER the layout structure.",
+  "Modern Euro":     "Modern residential kitchen with quality materials. Practical contemporary upgrades. Clean tasteful styling. Moderate realistic residential proportions. No fantasy architecture. Kitchen layout and geometry remain EXACTLY as specified above — this budget tier controls ONLY material quality and visual styling, NEVER the layout structure. NOTE: this is a budget quality tier, NOT an instruction to use Euro/flat-panel cabinet doors — preserve the specified cabinet door style.",
+  "Premium Luxury":  "High-end residential kitchen with detailed cabinet craftsmanship. Premium appliances visible. Elegant but realistic proportions. Upscale everyday kitchen. No fantasy architecture. No impossible spaces. Kitchen layout and geometry remain EXACTLY as specified above — this budget tier controls ONLY material quality and visual styling, NEVER the layout structure.",
 };
 
 // Normalise a string for fuzzy matching (strip spaces, hyphens, lowercase)
@@ -104,7 +142,7 @@ export async function POST(request) {
       project_type, layout, cabinet_style, budget_style,
       upper_color, lower_color, countertop, flooring,
       hood_style, hardware, appliance_color,
-      items_list, design_comments,
+      design_comments,
       image_status, image_url,
     } = body;
 
@@ -161,7 +199,7 @@ export async function POST(request) {
         project_type, layout, cabinet_style, budget_style,
         upper_color, lower_color, countertop, flooring,
         hood_style, hardware, appliance_color,
-        items_list, design_comments,
+        design_comments,
       },
       catalogContext,
       includeImageAnalysis,
@@ -337,24 +375,67 @@ export async function POST(request) {
     // ── Stage 5: Generate DALL-E render + persist to Supabase Storage ─────────
     let dalleImageUrl = null;
     try {
-      const layoutVisual = layout ? (LAYOUT_VISUAL[layout] || `${layout} kitchen layout`) : null;
-      const layoutSpec   = layoutVisual ? `THIS IS A ${(layout || "").toUpperCase()} KITCHEN: ${layoutVisual}. ` : "";
+      const lv = layout ? LAYOUT_VISUAL[layout] : null;
 
-      const materialParts = [
-        upper_color   && `wall-mounted overhead upper cabinets (above the countertop) in ${upper_color} finish`,
-        lower_color   && `floor-level base lower cabinets (below the countertop) in ${lower_color} finish`,
-        countertop    && `${countertop} countertop surface`,
-        flooring      && `${flooring} floor`,
-        cabinet_style && `${cabinet_style}-style cabinet doors`,
-      ].filter(Boolean);
-
-      const materialSpec = materialParts.length > 0
-        ? `Exact finishes and materials: ${materialParts.join("; ")}. `
+      // SECTION 1 — STRICT GEOMETRY: required phrase + full spatial description + exclusions
+      const geometryLines = [];
+      if (lv) {
+        geometryLines.push(`${lv.required}.`);
+        geometryLines.push(lv.desc);
+        if (lv.exclude) {
+          geometryLines.push(`FORBIDDEN ELEMENTS: ${lv.exclude}. Repeated: ${lv.exclude}.`);
+        }
+      }
+      const geometryBlock = geometryLines.length > 0
+        ? `STRICT GEOMETRY: ${geometryLines.join(" ")}`
         : "";
 
-      const finalDallePrompt = effectiveImageUrl
-        ? `Photorealistic kitchen REDESIGN. Same room geometry, windows, ceiling height, and floor plan as existing. Only cabinets, countertop, and flooring changed. ${layoutSpec}${materialSpec}${dalle_prompt}`
-        : `Photorealistic architectural kitchen photograph, showroom quality. ${layoutSpec}${materialSpec}${dalle_prompt}`;
+      // SECTION 2 — CAMERA
+      const cameraBlock = lv ? `CAMERA: ${lv.camera}.` : "";
+
+      // SECTION 3 — STRICT COLOR ASSIGNMENTS: per-surface, explicit
+      const cabinetDoorDesc = cabinet_style ? `${cabinet_style}-style door panels` : "cabinet doors";
+      const colorParts = [
+        upper_color && `Upper wall cabinets ONLY (mounted above countertop on wall): ${upper_color} color, ${cabinetDoorDesc}`,
+        lower_color && `Lower base cabinets ONLY (floor-mounted below countertop): ${lower_color} color, ${cabinetDoorDesc}`,
+        countertop  && `Countertop surface: ${countertop}`,
+        flooring    && `Floor surface: ${flooring}`,
+        upper_color && lower_color && `IMPORTANT: upper cabinets are ${upper_color} and lower cabinets are ${lower_color} — do NOT mix these two colors`,
+      ].filter(Boolean);
+      const colorBlock = colorParts.length > 0
+        ? `STRICT COLOR ASSIGNMENTS: ${colorParts.join(". ")}.`
+        : "";
+
+      // SECTION 4 — STYLE (from GPT's dalle_prompt — style sentence only)
+      const styleBlock = dalle_prompt ? `STYLE: ${dalle_prompt}` : "";
+
+      // SECTION 5 — BUDGET REALISM
+      const budgetDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
+      const budgetBlock = `BUDGET REALISM: ${budgetDesc}`;
+
+      // SECTION 6 — LIGHTING (already embedded in GPT's dalle_prompt, reuse it)
+      // GPT writes style + lighting in dalle_prompt — both sections covered above.
+
+      // SECTION 7 — REALISM / QUALITY
+      const qualityBlock = "QUALITY: Ultra-realistic photographic render, professional interior design photography, natural residential scale, believable materials and lighting. No futuristic elements. No fantasy architecture. No impossible lighting. No oversized spaces.";
+
+      // Assemble following the exact 7-section template
+      const isRedesign = effectiveImageUrl;
+      const openingBlock = isRedesign
+        ? "Photorealistic kitchen REDESIGN interior photograph. Preserve exact room geometry, same walls, ceiling height, windows, and floor plan as the reference photo. ONLY update cabinets, countertop, and flooring."
+        : "Photorealistic kitchen interior photograph, professional residential photography.";
+
+      const finalDallePrompt = [
+        "STRICTLY FOLLOW THIS KITCHEN GEOMETRY.",
+        openingBlock,
+        geometryBlock,
+        cameraBlock,
+        colorBlock,
+        styleBlock,
+        budgetBlock,
+        qualityBlock,
+        "Image invalid if layout geometry is violated.",
+      ].filter(Boolean).join(" ");
 
       const imageResponse = await client.images.generate({
         model:   "dall-e-3",

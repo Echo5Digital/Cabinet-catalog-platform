@@ -117,7 +117,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     hood_style: "",
     hardware: "",
     appliance_color: "",
-    items_list: "",
     design_comments: "",
     image_status: "No",
     image_url: "",
@@ -208,7 +207,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         `Style: ${form.cabinet_style || "—"} | Layout: ${form.layout || "—"} | Budget Style: ${form.budget_style || "—"}`,
         `Upper: ${form.upper_color || "—"} | Lower: ${form.lower_color || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
         `Project Type: ${form.project_type || "—"}`,
-        form.items_list ? `Items Requested:\n${form.items_list}` : "",
         form.design_comments ? `Comments: ${form.design_comments}` : "",
         result.image_url ? `Render URL: ${result.image_url}` : "",
       ].filter(Boolean).join("\n");
@@ -625,35 +623,23 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </div>
         </section>
 
-        {/* ── Section 6: Items Needed ── */}
+        {/* ── Section 6: Comments ── */}
         <section>
           <h2
             className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
-            Items Needed
+            Comments / Notes
           </h2>
-          <div className="space-y-4">
-            <div>
-              <label className={labelCls}>List what you need (one item per line)</label>
-              <textarea
-                className={`${inputCls} resize-none`}
-                rows={5}
-                placeholder={"Base cabinets\nWall cabinets\nCorner cabinet\nSink base\nIsland"}
-                value={form.items_list}
-                onChange={(e) => set("items_list", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Comments / Notes</label>
-              <textarea
-                className={`${inputCls} resize-none`}
-                rows={3}
-                placeholder="Any special requests, constraints, or notes for our team…"
-                value={form.design_comments}
-                onChange={(e) => set("design_comments", e.target.value)}
-              />
-            </div>
+          <div>
+            <label className={labelCls}>Any special requests, constraints, or notes for our team</label>
+            <textarea
+              className={`${inputCls} resize-none`}
+              rows={3}
+              placeholder="Any special requests, constraints, or notes for our team…"
+              value={form.design_comments}
+              onChange={(e) => set("design_comments", e.target.value)}
+            />
           </div>
         </section>
 
