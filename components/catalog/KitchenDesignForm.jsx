@@ -11,6 +11,9 @@ const PROJECT_TYPES = [
   "Full Design + Quote",
 ];
 
+// Project types that REQUIRE a kitchen photo (existing kitchen present)
+const PHOTO_REQUIRED_TYPES = ["Remodel Existing Kitchen", "Replace Cabinets Only", "Countertop Only"];
+
 const LAYOUT_CONFIGS = [
   {
     name: "L-shaped",
@@ -71,7 +74,7 @@ const LAYOUT_CONFIGS = [
   },
 ];
 
-const CABINET_STYLES = ["Euro", "Shaker", "Modern", "Traditional", "American"];
+const CABINET_STYLES = ["American", "Euro", "Shaker", "Modern", "Traditional"];
 
 const HARDWARE_OPTIONS = ["Gold", "Silver", "Black", "Bronze", "None"];
 
@@ -83,7 +86,21 @@ const BUDGET_STYLES = [
   { id: "Premium Luxury",  label: "Premium Luxury",  desc: "High-end materials & custom details" },
 ];
 
-export default function KitchenDesignForm({ countertopColors, floorColors, finishes }) {
+// RFC-5321 inspired regex: requires local@domain.tld (TLD ≥ 2 chars, no spaces)
+function isValidEmail(email) {
+  return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
+}
+
+// Match a layout name to the closest structure by normalising both sides
+function findStructureImage(layoutName, structures) {
+  if (!structures || structures.length === 0) return null;
+  const norm = (s) => s.toLowerCase().replace(/[-\s]/g, "");
+  const key  = norm(layoutName);
+  const found = structures.find((s) => norm(s.name).includes(key));
+  return found?.image_url ?? null;
+}
+
+export default function KitchenDesignForm({ countertopColors, floorColors, finishes, structures = [] }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -112,6 +129,12 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Field touched tracking (shows inline errors after blur or submit attempt)
+  const [touched, setTouched] = useState({});
+  function touch(field) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
   // Quote submission state
   const [quoteStatus, setQuoteStatus] = useState("idle"); // idle | submitting | success | error
   const [quoteError, setQuoteError] = useState("");
@@ -130,6 +153,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
   async function handleSubmit(e) {
     e.preventDefault();
+    // Mark all info fields as touched so errors become visible
+    setTouched({ name: true, email: true, phone: true, address: true });
+    if (
+      !form.name.trim() ||
+      !form.email.trim() || !isValidEmail(form.email) ||
+      !form.phone.trim() ||
+      !form.address.trim()
+    ) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -209,6 +240,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const countertopImageMap = Object.fromEntries((countertopColors || []).map((c) => [c.name, c.image_url]));
   const floorImageMap = Object.fromEntries((floorColors || []).map((c) => [c.name, c.image_url]));
 
+  // Photo requirement logic
+  const photoRequired = PHOTO_REQUIRED_TYPES.includes(form.project_type);
+  const hasPhoto = form.image_source === "upload" ? !!form.image_file_data : !!form.image_url;
+
   const inputCls = "w-full border border-stone-300 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder:text-stone-400";
   const selectCls = `${inputCls} cursor-pointer`;
   const labelCls = "block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide";
@@ -227,42 +262,74 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Name</label>
+              <label className={labelCls}>Name <span className="text-red-500">*</span></label>
               <input
-                className={inputCls}
+                required
+                className={`${inputCls} ${touched.name && !form.name.trim() ? "border-red-400 focus:ring-red-300" : ""}`}
                 placeholder="Full name"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
+                onBlur={() => touch("name")}
               />
+              {touched.name && !form.name.trim() && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  Name is required
+                </p>
+              )}
             </div>
             <div>
-              <label className={labelCls}>Email</label>
+              <label className={labelCls}>Email <span className="text-red-500">*</span></label>
               <input
+                required
                 type="email"
-                className={inputCls}
+                className={`${inputCls} ${touched.email && (!form.email.trim() || !isValidEmail(form.email)) ? "border-red-400 focus:ring-red-300" : ""}`}
                 placeholder="you@email.com"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
+                onBlur={() => touch("email")}
               />
+              {touched.email && (!form.email.trim() || !isValidEmail(form.email)) && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  {!form.email.trim() ? "Email is required" : "Enter a valid email address (e.g. name@domain.com)"}
+                </p>
+              )}
             </div>
             <div>
-              <label className={labelCls}>Phone</label>
+              <label className={labelCls}>Phone <span className="text-red-500">*</span></label>
               <input
+                required
                 type="tel"
-                className={inputCls}
+                className={`${inputCls} ${touched.phone && !form.phone.trim() ? "border-red-400 focus:ring-red-300" : ""}`}
                 placeholder="(555) 000-0000"
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
+                onBlur={() => touch("phone")}
               />
+              {touched.phone && !form.phone.trim() && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  Phone is required
+                </p>
+              )}
             </div>
             <div>
-              <label className={labelCls}>Address</label>
+              <label className={labelCls}>Address <span className="text-red-500">*</span></label>
               <input
-                className={inputCls}
+                required
+                className={`${inputCls} ${touched.address && !form.address.trim() ? "border-red-400 focus:ring-red-300" : ""}`}
                 placeholder="Street address, city, state…"
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
+                onBlur={() => touch("address")}
               />
+              {touched.address && !form.address.trim() && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  Address is required
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -282,36 +349,174 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 required
                 className={selectCls}
                 value={form.project_type}
-                onChange={(e) => set("project_type", e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm((prev) => ({
+                    ...prev,
+                    project_type: val,
+                    // Required types: force Yes. Optional/none: reset to No.
+                    image_status: PHOTO_REQUIRED_TYPES.includes(val) ? "Yes" : "No",
+                  }));
+                }}
               >
                 <option value="">— Select project type —</option>
                 {PROJECT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+
+            {/* ── Kitchen Photo — positioned between Project Type and Layout ── */}
+            {form.project_type && (
+              <div>
+                <label className={labelCls}>
+                  Kitchen Photo
+                  {photoRequired
+                    ? <span className="text-red-500 ml-1">*</span>
+                    : <span className="ml-1.5 text-stone-400 font-normal normal-case tracking-normal">(optional)</span>
+                  }
+                </label>
+
+                {photoRequired ? (
+                  /* Required: always-visible upload, no toggle */
+                  <div className="space-y-3">
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                      A photo of your existing kitchen is required for <strong>{form.project_type}</strong>. The AI will preserve your room geometry and only update cabinetry, countertop, and flooring.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {[{ value: "upload", label: "Upload from device" }, { value: "url", label: "Paste URL" }].map((opt) => (
+                        <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                            form.image_source === opt.value
+                              ? "border-stone-700 bg-stone-800 text-white"
+                              : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                          }`}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {form.image_source === "upload" ? (
+                      <div>
+                        <input type="file" accept="image/*" onChange={handleFileChange}
+                          className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
+                        {form.image_file_data && (
+                          <div className="mt-2 flex items-center gap-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
+                            <div>
+                              <p className="text-xs text-stone-600 font-medium">Image ready</p>
+                              <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <input type="url" className={inputCls} placeholder="https://example.com/my-kitchen.jpg"
+                          value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Optional: Yes/No toggle */
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      {["Yes", "No"].map((opt) => (
+                        <button key={opt} type="button" onClick={() => set("image_status", opt)}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                            form.image_status === opt
+                              ? "border-stone-900 bg-stone-900 text-white"
+                              : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                          }`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    {form.image_status === "Yes" && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          {[{ value: "upload", label: "Upload from device" }, { value: "url", label: "Paste URL" }].map((opt) => (
+                            <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                                form.image_source === opt.value
+                                  ? "border-stone-700 bg-stone-800 text-white"
+                                  : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                              }`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        {form.image_source === "upload" ? (
+                          <div>
+                            <input type="file" accept="image/*" onChange={handleFileChange}
+                              className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
+                            {form.image_file_data && (
+                              <div className="mt-2 flex items-center gap-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
+                                <div>
+                                  <p className="text-xs text-stone-600 font-medium">Image ready</p>
+                                  <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
+                                </div>
+                              </div>
+                            )}
+                            <p className="text-xs text-stone-400 mt-1">The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <label className={labelCls}>Image URL</label>
+                            <input type="url" className={inputCls} placeholder="https://example.com/my-kitchen.jpg"
+                              value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
+                            <p className="text-xs text-stone-400 mt-1">The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <label className={labelCls}>Kitchen Layout *</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
-                {LAYOUT_CONFIGS.map(({ name, svg }) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => set("layout", name)}
-                    className={`flex flex-col items-center rounded-xl border p-3 transition ${
-                      form.layout === name
-                        ? "border-stone-900 bg-stone-900 text-white"
-                        : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
-                    }`}
-                  >
-                    <div className="w-16 h-12 mb-2">
-                      {svg}
-                    </div>
-                    <span className={`text-xs font-medium leading-tight text-center ${
-                      form.layout === name ? "text-white" : "text-stone-700"
-                    }`}>
-                      {name}
-                    </span>
-                  </button>
-                ))}
+                {LAYOUT_CONFIGS.map(({ name, svg }) => {
+                  const imgUrl = findStructureImage(name, structures);
+                  const selected = form.layout === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => set("layout", name)}
+                      className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
+                        selected
+                          ? "border-stone-900 bg-stone-900 text-white"
+                          : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
+                      }`}
+                    >
+                      {imgUrl ? (
+                        <div className="w-full relative" style={{ paddingTop: "66%" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={imgUrl}
+                            alt={name}
+                            className={`absolute inset-0 w-full h-full object-cover transition-opacity ${selected ? "opacity-80" : "opacity-100"}`}
+                          />
+                          {selected && (
+                            <div className="absolute inset-0 bg-stone-900/30" />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-16 h-12 my-3">
+                          {svg}
+                        </div>
+                      )}
+                      <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${
+                        selected ? "text-white" : "text-stone-700"
+                      }`}>
+                        {name}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -332,7 +537,19 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 <button
                   key={style}
                   type="button"
-                  onClick={() => set("cabinet_style", style)}
+                  onClick={() => {
+                    setForm((prev) => {
+                      const wasFiltered = ["American", "Euro"].includes(prev.cabinet_style);
+                      const willFilter  = ["American", "Euro"].includes(style);
+                      const clearColors = wasFiltered || willFilter;
+                      return {
+                        ...prev,
+                        cabinet_style: style,
+                        upper_color: clearColors ? "" : prev.upper_color,
+                        lower_color: clearColors ? "" : prev.lower_color,
+                      };
+                    });
+                  }}
                   className={`py-3 px-4 rounded-xl border text-sm font-medium transition ${
                     form.cabinet_style === style
                       ? "border-stone-900 bg-stone-900 text-white"
@@ -360,6 +577,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             floorColors={floorColors}
             form={form}
             set={set}
+            setForm={setForm}
+            cabinet_style={form.cabinet_style}
           />
         </section>
 
@@ -438,139 +657,36 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </div>
         </section>
 
-        {/* ── Section 7: Kitchen Photo ── */}
+        {/* ── Section 7: Budget Range ── */}
         <section>
           <h2
             className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
-            Kitchen Photo <span className="text-stone-400 font-normal text-base">(optional)</span>
+            Budget Range
           </h2>
-          <div className="space-y-6">
-            {/* Photo upload */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <label className="text-sm font-medium text-stone-700">Do you have a photo of your kitchen?</label>
-                <div className="flex items-center gap-3">
-                  {["Yes", "No"].map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => set("image_status", opt)}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
-                        form.image_status === opt
-                          ? "border-stone-900 bg-stone-900 text-white"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {form.image_status === "Yes" && (
-                <div className="space-y-3">
-                  {/* Source toggle */}
-                  <div className="flex items-center gap-2">
-                    {[
-                      { value: "upload", label: "Upload from device" },
-                      { value: "url",    label: "Paste URL" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => set("image_source", opt.value)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                          form.image_source === opt.value
-                            ? "border-stone-700 bg-stone-800 text-white"
-                            : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Upload mode */}
-                  {form.image_source === "upload" && (
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
-                      />
-                      {form.image_file_data && (
-                        <div className="mt-2 flex items-center gap-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={form.image_file_data}
-                            alt="Preview"
-                            className="w-16 h-16 object-cover rounded-lg border border-stone-200"
-                          />
-                          <div>
-                            <p className="text-xs text-stone-600 font-medium">Image ready</p>
-                            <button
-                              type="button"
-                              onClick={() => set("image_file_data", "")}
-                              className="text-xs text-red-500 hover:text-red-700 transition mt-0.5"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      <p className="text-xs text-stone-400 mt-1">
-                        The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* URL mode */}
-                  {form.image_source === "url" && (
-                    <div>
-                      <label className={labelCls}>Image URL</label>
-                      <input
-                        type="url"
-                        className={inputCls}
-                        placeholder="https://example.com/my-kitchen.jpg"
-                        value={form.image_url}
-                        onChange={(e) => set("image_url", e.target.value)}
-                      />
-                      <p className="text-xs text-stone-400 mt-1">
-                        The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Kitchen Style */}
-            <div>
-              <label className={labelCls}>Kitchen Style (Budget Range)</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
-                {BUDGET_STYLES.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => set("budget_style", s.id)}
-                    className={`flex flex-col text-left rounded-xl border p-4 transition ${
-                      form.budget_style === s.id
-                        ? "border-stone-900 bg-stone-900 text-white"
-                        : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
-                    }`}
-                  >
-                    <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
-                      {s.label}
-                    </span>
-                    <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
-                      {s.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
+          <div>
+            <label className={labelCls}>Kitchen Style</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+              {BUDGET_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => set("budget_style", s.id)}
+                  className={`flex flex-col text-left rounded-xl border p-4 transition ${
+                    form.budget_style === s.id
+                      ? "border-stone-900 bg-stone-900 text-white"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                  }`}
+                >
+                  <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
+                    {s.label}
+                  </span>
+                  <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
+                    {s.desc}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </section>
@@ -584,7 +700,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           )}
           <button
             type="submit"
-            disabled={loading || !form.project_type || !form.layout}
+            disabled={
+              loading ||
+              !form.name.trim() || !form.email.trim() || !isValidEmail(form.email) ||
+              !form.phone.trim() || !form.address.trim() ||
+              !form.project_type || !form.layout ||
+              (photoRequired && !hasPhoto)
+            }
             className="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
@@ -599,8 +721,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               "Generate Design Concepts →"
             )}
           </button>
-          {(!form.project_type || !form.layout) && (
-            <p className="text-xs text-stone-400 mt-2">Project type and layout are required to generate concepts.</p>
+          {(!form.project_type || !form.layout || (photoRequired && !hasPhoto)) && (
+            <p className="text-xs text-stone-400 mt-2">
+              {!form.project_type
+                ? "Project type and layout are required to generate concepts."
+                : !form.layout
+                ? "Please select a kitchen layout."
+                : "A kitchen photo is required for this project type."}
+            </p>
           )}
         </div>
       </form>
@@ -767,7 +895,7 @@ function TabIcon({ id, active }) {
 }
 
 // ── Tabbed carousel for Colors & Materials ────────────────────────────────────
-function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, set }) {
+function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, set, setForm, cabinet_style }) {
   const [activeTab, setActiveTab] = useState("upper_color");
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -781,8 +909,14 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
     { id: "flooring",    label: "Flooring",             shortLabel: "Flooring",    subtitle: "Pick the perfect flooring finish",                   items: floorColors },
   ];
 
-  const tab   = TABS.find((t) => t.id === activeTab);
-  const items = tab?.items || [];
+  const tab      = TABS.find((t) => t.id === activeTab);
+  const rawItems = tab?.items || [];
+
+  // Filter finishes for upper/lower tabs when American or Euro style is selected
+  const items = (activeTab === "upper_color" || activeTab === "lower_color") &&
+    (cabinet_style === "American" || cabinet_style === "Euro")
+    ? rawItems.filter((item) => item.style_category === cabinet_style)
+    : rawItems;
   const value = form[activeTab];
 
   // Reset scroll + re-check right-arrow on tab change
@@ -877,7 +1011,19 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => set(activeTab, item.name)}
+                    onClick={() => {
+                      set(activeTab, item.name);
+                      // Auto-select cabinet style when picking an American/Euro finish
+                      if (
+                        (activeTab === "upper_color" || activeTab === "lower_color") &&
+                        item.style_category
+                      ) {
+                        setForm((prev) => ({
+                          ...prev,
+                          cabinet_style: item.style_category,
+                        }));
+                      }
+                    }}
                     className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
                       selected
                         ? "border-2 border-blue-500 shadow-sm"
