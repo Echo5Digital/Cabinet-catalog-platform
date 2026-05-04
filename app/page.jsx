@@ -50,20 +50,25 @@ async function getData() {
   }
 }
 
+function getLineSubtitle(name) {
+  const lower = (name || "").toLowerCase();
+  if (lower.includes("american")) return "American Cabinets";
+  if (lower.includes("euro")) return "Euro Base";
+  return null;
+}
+
 export default async function HomePage() {
   const { tenant, lines } = await getData();
 
   const name = tenant.name || "Cabinet & Remodeling Depot";
   const primaryColor = tenant.primary_color || "#1C1917";
   const accentColor = tenant.accent_color || "#3B82F6";
-  const heroImage = lines[0]?.hero_image || null;
 
-  // Pick distinct images for cards 1 and 3
   const card1Image = lines[0]?.hero_image || null;
   const card3Image = lines[1]?.hero_image || lines[0]?.hero_image || null;
 
   return (
-    <div className="bg-[#FAFAF9]">
+    <div className="bg-white">
 
       {/* ── HEADER ───────────────────────────────────────────────────────── */}
       <HomeHeader tenant={tenant} primaryColor={primaryColor} name={name} />
@@ -73,7 +78,6 @@ export default async function HomePage() {
         className="relative min-h-screen flex items-end overflow-hidden"
         style={{ backgroundColor: primaryColor }}
       >
-        {/* Video background */}
         <video
           src="/Baner.mp4"
           autoPlay
@@ -99,7 +103,8 @@ export default async function HomePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/catalog"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold text-white transition hover:opacity-90 shadow-sm"
+                style={{ backgroundColor: primaryColor }}
               >
                 Browse Collections
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -131,8 +136,8 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-28">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
 
             {/* Left — copy */}
             <div>
@@ -151,15 +156,15 @@ export default async function HomePage() {
                 <span className="text-amber-400">in Minutes.</span>
               </h2>
 
-              <p className="text-white/60 text-lg leading-relaxed mb-8 max-w-md">
-                Describe your style, choose your colors, and our AI generates a photorealistic kitchen render — complete with matching products from our catalog.
+              <p className="text-white/60 text-base sm:text-lg leading-relaxed mb-8 max-w-md">
+                Describe your style, choose your colors, and start generating professional kitchen renders — complete with matching products from our catalog.
               </p>
 
               <ul className="space-y-3 mb-10">
                 {[
-                  "Photorealistic DALL-E kitchen renders",
-                  "Matched products from our live catalog",
-                  "Instant sales summary & next steps",
+                  "Personalized Design & Recommendations",
+                  "Instant product matches for your design",
+                  "Instant quote summary with AI pricing",
                 ].map((feat) => (
                   <li key={feat} className="flex items-center gap-3 text-white/70 text-sm">
                     <span className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
@@ -186,36 +191,57 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {/* Right — visual mockup */}
-            <div className="relative hidden md:block">
-              {/* Outer glow */}
-              <div className="absolute -inset-4 bg-amber-500/10 rounded-3xl blur-2xl" />
-              {/* Card */}
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-white/5 p-1">
-                {/* Mock header bar */}
-                <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/10">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
-                  <span className="ml-3 text-white/30 text-xs font-mono">Design AI — Kitchen Concept</span>
+            {/* Right — Design AI page mockup (visible on all screen sizes) */}
+            <div className="relative mt-6 md:mt-0">
+              {/* Glow */}
+              <div className="absolute -inset-4 rounded-3xl blur-2xl opacity-10 bg-white/20" />
+              {/* Browser window */}
+              <div
+                className="relative rounded-2xl overflow-hidden shadow-2xl"
+                style={{ border: "1px solid rgba(255,255,255,0.12)", backgroundColor: "rgba(0,0,0,0.32)" }}
+              >
+                {/* Title bar */}
+                <div
+                  className="flex items-center gap-2 px-4 py-2.5"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.22)" }}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                  <span className="ml-3 text-white/35 text-xs font-medium tracking-wide">AI Kitchen Designer</span>
                 </div>
-                {/* Mock render area */}
-                <div className="aspect-video bg-gradient-to-br from-stone-800 via-stone-700 to-stone-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+
+                {/* Render area */}
+                <div className="aspect-video bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_50%_50%,rgba(255,255,255,0.03),transparent)]" />
+                  <div className="text-center px-4">
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg"
+                      style={{ backgroundColor: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.35)" }}
+                    >
+                      <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                       </svg>
                     </div>
-                    <p className="text-white/40 text-sm">AI-generated kitchen render</p>
-                    <p className="text-white/20 text-xs mt-1">DALL·E 3 · 1792×1024</p>
+                    <p className="text-white/50 text-sm font-medium">AI-generated kitchen render</p>
+                    <p className="text-white/25 text-xs mt-1">Click ✦ to start your design</p>
                   </div>
                 </div>
-                {/* Mock product strip */}
-                <div className="flex gap-2 p-3">
+
+                {/* Product strip */}
+                <div
+                  className="flex gap-2 p-3"
+                  style={{ backgroundColor: "rgba(0,0,0,0.18)" }}
+                >
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex-1 aspect-square rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                      <span className="text-white/20 text-[10px] font-mono">SKU</span>
+                    <div
+                      key={i}
+                      className="flex-1 aspect-square rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" }}
+                    >
+                      <svg className="w-4 h-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
                     </div>
                   ))}
                 </div>
@@ -227,7 +253,11 @@ export default async function HomePage() {
       </section>
 
       {/* ── THREE FEATURE CARDS ─────────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+      <section
+        className="py-16 sm:py-20 bg-white"
+        style={{ borderTop: `1px solid ${primaryColor}28` }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="mb-10">
           <p className="text-xs uppercase tracking-widest text-stone-400 font-medium mb-2">Discover</p>
           <h2
@@ -238,40 +268,37 @@ export default async function HomePage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
           {/* Card 1 — Browse Collections */}
           <Link
             href="/catalog"
-            className="group relative rounded-2xl overflow-hidden block aspect-[3/4] bg-stone-900"
+            className="group bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
           >
-            {card1Image?.public_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={card1Image.public_url}
-                alt={card1Image.alt_text || "Browse Collections"}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-            ) : (
-              <div
-                className="absolute inset-0"
-                style={{ backgroundColor: primaryColor }}
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-white/60 text-[10px] uppercase tracking-widest font-medium mb-2">Explore</p>
+            <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative">
+              {card1Image?.public_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={card1Image.public_url}
+                  alt="Browse Collections"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <div className="w-full h-full" style={{ backgroundColor: primaryColor }} />
+              )}
+            </div>
+            <div className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium mb-2">Explore</p>
               <h3
-                className="text-white font-bold text-2xl mb-3 leading-tight"
+                className="text-stone-900 font-bold text-lg mb-2 leading-snug"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Browse Collections
               </h3>
-              <p className="text-white/65 text-sm mb-4 leading-relaxed">
-                Explore our full range of cabinet lines, each crafted for a distinct style and space.
+              <p className="text-stone-500 text-sm leading-relaxed mb-4">
+                Explore our wide range of cabinets crafted for style, quality, and function.
               </p>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-white/30 text-white text-sm font-medium group-hover:bg-white/25 transition">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium border border-stone-200 rounded-full px-4 py-1.5 text-stone-700 group-hover:border-stone-400 group-hover:text-stone-900 transition">
                 View All Collections →
               </span>
             </div>
@@ -280,29 +307,28 @@ export default async function HomePage() {
           {/* Card 2 — Finish Selections */}
           <Link
             href="/catalog/finishes"
-            className="group relative rounded-2xl overflow-hidden block aspect-[3/4] bg-stone-900"
+            className="group bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
           >
-            {/* Decorative 2×2 swatch grid as background */}
-            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-              <div style={{ backgroundColor: "#F0EDE8" }} />
-              <div style={{ backgroundColor: "#2C1A0E" }} />
-              <div style={{ backgroundColor: "#C8A96E" }} />
-              <div style={{ backgroundColor: "#1C1917" }} />
+            <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative">
+              <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+                <div style={{ backgroundColor: "#F0EDE8" }} />
+                <div style={{ backgroundColor: "#2C1A0E" }} />
+                <div style={{ backgroundColor: "#C8A96E" }} />
+                <div style={{ backgroundColor: "#1C1917" }} />
+              </div>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-white/60 text-[10px] uppercase tracking-widest font-medium mb-2">Materials</p>
+            <div className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium mb-2">Materials</p>
               <h3
-                className="text-white font-bold text-2xl mb-3 leading-tight"
+                className="text-stone-900 font-bold text-lg mb-2 leading-snug"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Finish Selections
               </h3>
-              <p className="text-white/65 text-sm mb-4 leading-relaxed">
-                Browse our complete finish palette — from painted shaker to stained wood and beyond.
+              <p className="text-stone-500 text-sm leading-relaxed mb-4">
+                Browse our complete finish palette — from painted classics to natural wood.
               </p>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-white/30 text-white text-sm font-medium group-hover:bg-white/25 transition">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium border border-stone-200 rounded-full px-4 py-1.5 text-stone-700 group-hover:border-stone-400 group-hover:text-stone-900 transition">
                 Explore Finishes →
               </span>
             </div>
@@ -311,43 +337,50 @@ export default async function HomePage() {
           {/* Card 3 — Design Gallery */}
           <Link
             href="/catalog/gallery"
-            className="group relative rounded-2xl overflow-hidden block aspect-[3/4] bg-stone-900"
+            className="group bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
           >
-            {card3Image?.public_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={card3Image.public_url}
-                alt={card3Image.alt_text || "Design Gallery"}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-            ) : (
-              <div className="absolute inset-0" style={{ backgroundColor: primaryColor }} />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-white/60 text-[10px] uppercase tracking-widest font-medium mb-2">Gallery</p>
+            <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative">
+              {card3Image?.public_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={card3Image.public_url}
+                  alt="Design Gallery"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <div className="w-full h-full" style={{ backgroundColor: primaryColor }} />
+              )}
+            </div>
+            <div className="p-5">
+              <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium mb-2">Gallery</p>
               <h3
-                className="text-white font-bold text-2xl mb-3 leading-tight"
+                className="text-stone-900 font-bold text-lg mb-2 leading-snug"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Design Gallery
               </h3>
-              <p className="text-white/65 text-sm mb-4 leading-relaxed">
-                Get inspired by real kitchen installations and design ideas from our collections.
+              <p className="text-stone-500 text-sm leading-relaxed mb-4">
+                Get inspired by real kitchen transformations and custom design ideas.
               </p>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-white/30 text-white text-sm font-medium group-hover:bg-white/25 transition">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium border border-stone-200 rounded-full px-4 py-1.5 text-stone-700 group-hover:border-stone-400 group-hover:text-stone-900 transition">
                 View Gallery →
               </span>
             </div>
           </Link>
 
         </div>
+        </div>
       </section>
 
       {/* ── FEATURED COLLECTIONS ────────────────────────────────────────── */}
       {lines.length > 0 && (
-        <section className="border-t border-stone-100 bg-stone-50/60">
+        <section
+          className="border-t"
+          style={{
+            borderColor: `${primaryColor}22`,
+            background: `linear-gradient(180deg, ${primaryColor}10 0%, #FAFAF9 70%)`,
+          }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
             <div className="flex items-baseline justify-between mb-10">
               <div>
@@ -359,67 +392,84 @@ export default async function HomePage() {
                   Featured Collections
                 </h2>
               </div>
-              <Link href="/catalog" className="text-sm text-stone-500 hover:text-stone-800 transition hidden sm:block">
-                View all →
+              <Link href="/catalog" className="text-sm text-stone-500 hover:text-stone-800 transition hidden sm:flex items-center gap-1">
+                View all collections →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lines.map((line) => (
-                <div
-                  key={line.id}
-                  className="group bg-white rounded-2xl overflow-hidden border border-stone-200 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative">
-                    {line.hero_image?.public_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={line.hero_image.public_url}
-                        alt={line.hero_image.alt_text || line.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        <span className="text-white/30 text-sm">{line.name}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {lines.slice(0, 4).map((line) => {
+                const subtitle = getLineSubtitle(line.name);
+                return (
+                  <Link
+                    key={line.id}
+                    href={`/catalog/${line.slug}`}
+                    className="group bg-white rounded-2xl overflow-hidden border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <div className="aspect-[16/7] overflow-hidden bg-stone-100 relative">
+                      {line.hero_image?.public_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={line.hero_image.public_url}
+                          alt={line.hero_image.alt_text || line.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          <span className="text-white/30 text-sm">{line.name}</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
+                    </div>
+                    <div className="px-5 py-4 flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <h3
+                          className="font-semibold text-stone-900 text-lg leading-snug"
+                          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                        >
+                          {line.name}
+                        </h3>
+                        {subtitle && (
+                          <p className="text-sm mt-0.5" style={{ color: primaryColor }}>
+                            {subtitle}
+                          </p>
+                        )}
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
-                  </div>
-                  <div className="p-5">
-                    <h3
-                      className="font-semibold text-stone-900 text-lg mb-1"
-                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                    >
-                      {line.name}
-                    </h3>
-                    {line.description && (
-                      <p className="text-stone-500 text-sm leading-relaxed line-clamp-2 mb-4">
-                        {line.description}
-                      </p>
-                    )}
-                    <Link
-                      href={`/catalog/${line.slug}`}
-                      className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium border border-current hover:opacity-80 transition"
-                      style={{ color: accentColor }}
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                      <span
+                        className="shrink-0 inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium border hover:opacity-80 transition whitespace-nowrap"
+                        style={{ color: primaryColor, borderColor: primaryColor }}
+                      >
+                        View Details →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 text-center sm:hidden">
+              <Link href="/catalog" className="text-sm text-stone-500 hover:text-stone-800 transition">
+                View all collections →
+              </Link>
             </div>
           </div>
         </section>
       )}
 
       {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
-      <section className="border-t border-stone-100 bg-white">
+      <section
+        className="border-t"
+        style={{
+          borderColor: `${primaryColor}18`,
+          backgroundColor: "#F8F6F3",
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="text-center mb-12">
-            <p className="text-xs uppercase tracking-widest text-stone-400 font-medium mb-2">Simple Process</p>
+            <p className="text-xs uppercase tracking-widest text-stone-400 font-medium mb-2">Fast &amp; Easy</p>
             <h2
               className="text-2xl sm:text-3xl font-bold text-stone-900"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
@@ -432,23 +482,23 @@ export default async function HomePage() {
               {
                 step: "01",
                 title: "Browse & Select",
-                desc: "Explore our collections, filter by category and size. Click any product to see finishes and specifications.",
+                desc: "Explore our collections. Filter by category and color. Click any product to see details and specifications.",
               },
               {
                 step: "02",
                 title: "Build Your List",
-                desc: "Add products to your quote as you browse. Adjust quantities and finishes at any time — your list is saved automatically.",
+                desc: "Add products to your quote or to a collection. Adjust quantities as per your need. It's that simple.",
               },
               {
                 step: "03",
                 title: "Request a Quote",
-                desc: "Submit your list with a brief project note. We'll respond with pricing within 1 business day.",
+                desc: "Submit your list and get a fast, transparent quote with pricing within 1 business day.",
               },
             ].map((item) => (
               <div key={item.step} className="flex gap-4">
                 <span
-                  className="text-2xl font-bold shrink-0 mt-0.5"
-                  style={{ color: accentColor, fontFamily: "Georgia, serif" }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5"
+                  style={{ backgroundColor: primaryColor, fontFamily: "Georgia, serif" }}
                 >
                   {item.step}
                 </span>
@@ -465,7 +515,7 @@ export default async function HomePage() {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold text-white hover:opacity-90 transition"
               style={{ backgroundColor: primaryColor }}
             >
-              Start Browsing
+              Start Your Quote
             </Link>
           </div>
         </div>
@@ -481,29 +531,36 @@ export default async function HomePage() {
 
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
-              {tenant.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={tenant.logo_url} alt={name} className="h-[90px] sm:h-[110px] w-auto mb-6 mix-blend-lighten" style={{ filter: 'grayscale(1) contrast(10) invert(1)' }} />
-              ) : (
-                <p
-                  className="text-white font-bold text-lg mb-4"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                >
-                  {name}
+              <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                {tenant.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={tenant.logo_url}
+                    alt={name}
+                    className="h-[54px] sm:h-[66px] w-auto mb-5 mix-blend-multiply"
+                  />
+                ) : (
+                  <p
+                    className="font-bold text-lg mb-4"
+                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: primaryColor }}
+                  >
+                    {name}
+                  </p>
+                )}
+                <p className="text-stone-500 text-sm leading-relaxed mb-5">
+                  Quality cabinetry crafted for every space — from kitchens to bathrooms and beyond.
                 </p>
-              )}
-              <p className="text-white/40 text-sm leading-relaxed mb-6">
-                Quality cabinetry crafted for every space — from kitchens to bathrooms and beyond.
-              </p>
-              <Link
-                href="/catalog"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/60 hover:text-white transition-colors duration-150 border-b border-white/20 hover:border-white/50 pb-0.5"
-              >
-                Browse Collections
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+                <Link
+                  href="/catalog"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-colors duration-150 border-b pb-0.5 hover:opacity-70"
+                  style={{ color: primaryColor, borderColor: `${primaryColor}35` }}
+                >
+                  Browse Collections
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             </div>
 
             {/* Navigate */}
