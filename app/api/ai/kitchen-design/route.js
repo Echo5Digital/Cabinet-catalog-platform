@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildKitchenDesignPrompt } from "@/lib/ai/kitchen-design-prompt";
 
@@ -64,6 +64,27 @@ const BUDGET_REALISM = {
   "Modern Euro":     "Mid-range residential kitchen. Quality materials. Contemporary tasteful styling.",
   "Premium Luxury":  "High-end residential kitchen. Premium appliances and materials. Elegant realistic proportions.",
 };
+
+// Project types that edit an existing customer photo (require photo upload)
+// These use gpt-image-1 images.edit — targeted image editing, not text-to-image.
+const REDESIGN_TYPES = new Set([
+  "Remodel Existing Kitchen",
+  "Replace Cabinets Only",
+  "Countertop Only",
+]);
+
+/**
+ * Convert a customer kitchen photo (HTTP URL or base64 data URL) to a Buffer.
+ * Used to feed the image into the gpt-image-1 edit endpoint.
+ */
+async function getImageBuffer(imageUrlOrBase64) {
+  if (imageUrlOrBase64.startsWith("data:")) {
+    const base64 = imageUrlOrBase64.split(",")[1];
+    return Buffer.from(base64, "base64");
+  }
+  const res = await fetch(imageUrlOrBase64);
+  return Buffer.from(await res.arrayBuffer());
+}
 
 // Normalise a string for fuzzy matching (strip spaces, hyphens, lowercase)
 function normalise(s) {
@@ -175,11 +196,11 @@ export async function POST(request) {
         .eq("is_active", true)
         .limit(60),
       admin.from("colors")
-        .select("name, color_type")
+        .select("name, color_type, description")
         .eq("tenant_id", TENANT_ID)
         .eq("is_active", true),
       admin.from("finishes")
-        .select("name, code")
+        .select("name, code, description, finish_family")
         .eq("tenant_id", TENANT_ID)
         .eq("is_active", true),
       fetchReferenceImages(admin, { layout, upper_color, lower_color, countertop, flooring }),
@@ -197,8 +218,30 @@ export async function POST(request) {
 
     const catalogContext = { lines, skus, countertopColors, floorColors, finishes };
 
+    // Build description lookup maps for the selected cabinet colors, countertop, and flooring.
+    // These come from the admin-entered description field on each finish/color record.
+    const finishDescMap = Object.fromEntries(
+      (finishesRes.data || []).map((f) => {
+        const parts = [f.description, f.finish_family ? `finish family: ${f.finish_family}` : null].filter(Boolean);
+        return [f.name, parts.join(". ")];
+      }).filter(([, desc]) => desc)
+    );
+    const colorDescMap = Object.fromEntries(
+      (colorsRes.data || [])
+        .filter((c) => c.description)
+        .map((c) => [c.name, c.description])
+    );
+
+    const upper_color_desc = upper_color ? (finishDescMap[upper_color] || "") : "";
+    const lower_color_desc = lower_color ? (finishDescMap[lower_color] || "") : "";
+    const countertop_desc  = countertop  ? (colorDescMap[countertop]   || "") : "";
+    const flooring_desc    = flooring    ? (colorDescMap[flooring]     || "") : "";
+
     const effectiveImageUrl = image_status === "Yes" && image_url ? image_url : "";
-    const includeImageAnalysis = !!effectiveImageUrl;
+    // includeImageAnalysis only fires for project types that are redesigns of an existing kitchen.
+    // "New Kitchen" with an inspiration photo should NOT trigger redesign addendum/mode.
+    const isRedesignType     = REDESIGN_TYPES.has(project_type);
+    const includeImageAnalysis = !!effectiveImageUrl && isRedesignType;
 
     // Determine which reference images are available
     const hasReferenceImages = Object.values(refImages).some(Boolean);
@@ -211,6 +254,7 @@ export async function POST(request) {
         upper_color, lower_color, countertop, flooring,
         hood_style, hardware, appliance_color,
         design_comments,
+        upper_color_desc, lower_color_desc, countertop_desc, flooring_desc,
       },
       catalogContext,
       includeImageAnalysis,
@@ -302,11 +346,22 @@ export async function POST(request) {
       );
     }
 
-    // Force-override: customer's locked selections always win over AI choices
-    if (upper_color) concept.upper_color = upper_color;
-    if (lower_color) concept.lower_color = lower_color;
-    if (countertop)  concept.countertop  = countertop;
-    if (flooring)    concept.flooring    = flooring;
+    // Force-override: only apply selections relevant to the project type.
+    // For partial-edit types, GPT analyzes the photo for unchanged elements — don't stomp them.
+    if (project_type === "Replace Cabinets Only") {
+      if (upper_color) concept.upper_color = upper_color;
+      if (lower_color) concept.lower_color = lower_color;
+      // countertop + flooring stay as GPT observed from the photo
+    } else if (project_type === "Countertop Only") {
+      if (countertop) concept.countertop = countertop;
+      // cabinet colors + flooring stay as GPT observed from the photo
+    } else {
+      // Remodel, New Kitchen, Full Design: all customer selections override
+      if (upper_color) concept.upper_color = upper_color;
+      if (lower_color) concept.lower_color = lower_color;
+      if (countertop)  concept.countertop  = countertop;
+      if (flooring)    concept.flooring    = flooring;
+    }
 
     // ── Stage 4: Resolve product images for recommended SKUs ──────────────────
     const skuList = (Array.isArray(recommendedSkus) ? recommendedSkus : [])
@@ -383,107 +438,198 @@ export async function POST(request) {
         .filter(Boolean);
     }
 
-    // ── Stage 5: Generate DALL-E render + persist to Supabase Storage ─────────
-    // NOTE: DALL-E 3 (images.generate) is text-to-image only — it does NOT accept
-    // image inputs. Reference images (layout, swatches) are passed to GPT-4o only
-    // (Stage 2 above). A future upgrade to gpt-image-1 or images.edit would allow
-    // image-guided generation directly in DALL-E.
+    // ── Stage 5: Generate image render + persist to Supabase Storage ─────────
+    // Two paths based on project type:
+    //   A) Redesign type + customer photo  → gpt-image-1 images.edit  (targeted image editing)
+    //   B) New build OR no photo           → DALL-E 3 images.generate (text-to-image)
     let dalleImageUrl = null;
     try {
-      const lv = layout ? LAYOUT_VISUAL[layout] : null;
 
-      // ── Build DALL-E prompt (labeled-section format) ──────────────────────────
-      // KEY RULES (from DALL-E 3 behavior research):
-      //  1. Layout name FIRST — activates training-data label recognition for that layout type.
-      //  2. Positive descriptions only — negative/forbidden language introduces unwanted concepts.
-      //  3. Keep prompt concise — DALL-E's spatial attention budget is ~150-200 tokens; longer prompts dilute geometry.
-      //  4. Geometry sections come before colors/style — geometry must occupy early token positions.
-      //  5. BUDGET REALISM goes last — it's visual styling, not geometry; keep it short.
-
-      // Layout name is the FIRST token cluster — highest-salience position for spatial accuracy.
-      const layoutLabel = layout ? `${layout} kitchen.` : "";
-      const openingLine = effectiveImageUrl
-        ? `${layoutLabel} Photorealistic residential kitchen redesign photograph. Preserve original room dimensions, window positions, and ceiling height.`
-        : `${layoutLabel} Photorealistic residential kitchen photograph.`;
-
-      const sections = [openingLine.trim()];
-
-      // Geometry sections first (highest priority — must be in early token positions)
-      if (lv) {
-        sections.push(`MANDATORY LAYOUT:\n${lv.structure}`);
-        sections.push(`MANDATORY CAMERA VIEW:\n${lv.camera}`);
-        sections.push(`MANDATORY SPATIAL RULES:\n${lv.spatial}`);
-        sections.push(`LAYOUT BOUNDARIES:\n${lv.negative}`);
+      // ── Helper: upload an image Buffer to Supabase Storage ───────────────────
+      async function persistImage(imgBuffer) {
+        const storagePath = `${TENANT_ID}/${Date.now()}.png`;
+        const { error: uploadError } = await admin.storage
+          .from("design-renders")
+          .upload(storagePath, imgBuffer, { contentType: "image/png", upsert: false });
+        if (!uploadError) {
+          const { data: urlData } = admin.storage.from("design-renders").getPublicUrl(storagePath);
+          return urlData.publicUrl;
+        }
+        console.warn("[kitchen-design] Storage upload failed:", uploadError.message);
+        return null;
       }
 
-      // Colors (after geometry)
-      if (upper_color) {
-        sections.push(`UPPER CABINETS:\nWall-mounted upper cabinets ONLY in ${upper_color}. Upper cabinets above countertop level only.`);
-      }
-      if (lower_color) {
-        sections.push(`LOWER CABINETS:\nFloor-mounted base cabinets ONLY in ${lower_color}. Lower cabinets below countertop level only.`);
-      }
-      if (upper_color && lower_color) {
-        sections.push(`COLOR SEPARATION:\nUpper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colors — do not blend them.`);
-      }
-      if (countertop)    sections.push(`COUNTERTOP:\n${countertop}`);
-      if (flooring)      sections.push(`FLOORING:\n${flooring}`);
-      if (cabinet_style) sections.push(`CABINET STYLE:\n${cabinet_style}`);
+      // ── PATH A: Redesign type + customer photo → gpt-image-1 edit ────────────
+      if (isRedesignType && effectiveImageUrl) {
+        console.log(`[kitchen-design] Using gpt-image-1 edit for project type: ${project_type}`);
 
-      // Visual style from GPT (aesthetic only — no layout language)
-      sections.push(
-        dalle_prompt
+        let editPrompt;
+
+        if (project_type === "Replace Cabinets Only") {
+          // Only cabinet doors, boxes, and hardware change — everything else preserved exactly.
+          const upperDesc = upper_color_desc ? ` ${upper_color_desc}.` : "";
+          const lowerDesc = lower_color_desc ? ` ${lower_color_desc}.` : "";
+          editPrompt = [
+            `Photorealistic residential kitchen photograph.`,
+            `TASK: Change ONLY the kitchen cabinets. Do not change anything else in this image.`,
+            upper_color ? `UPPER CABINETS: Replace wall-mounted upper cabinets with ${upper_color} finish.${upperDesc}` : "",
+            lower_color ? `LOWER CABINETS: Replace floor-mounted base cabinets with ${lower_color} finish.${lowerDesc}` : "",
+            cabinet_style ? `CABINET STYLE: ${cabinet_style} door style.` : "",
+            hardware ? `HARDWARE: ${hardware}.` : "",
+            `KEEP EXACTLY AS-IS: countertop, flooring, appliances, backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
+            dalle_prompt ? `VISUAL STYLE: ${dalle_prompt}` : "",
+          ].filter(Boolean).join("\n\n");
+
+        } else if (project_type === "Countertop Only") {
+          // Only the countertop changes — everything else preserved exactly.
+          const ctDesc = countertop_desc ? ` ${countertop_desc}.` : "";
+          editPrompt = [
+            `Photorealistic residential kitchen photograph.`,
+            `TASK: Change ONLY the kitchen countertop. Do not change anything else in this image.`,
+            countertop ? `COUNTERTOP: Replace the countertop with ${countertop}.${ctDesc}` : "",
+            `KEEP EXACTLY AS-IS: all cabinets, cabinet colors, cabinet doors, flooring, appliances, backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
+            dalle_prompt ? `VISUAL STYLE: ${dalle_prompt}` : "",
+          ].filter(Boolean).join("\n\n");
+
+        } else {
+          // Remodel Existing Kitchen — full redesign within the same room geometry.
+          const lv = layout ? LAYOUT_VISUAL[layout] : null;
+          const sections = [
+            `Photorealistic residential kitchen redesign photograph. Preserve exact room geometry: same walls, windows, ceiling height, door positions.`,
+          ];
+          if (lv) {
+            sections.push(`LAYOUT: ${lv.structure}`);
+            sections.push(`CAMERA: ${lv.camera}`);
+          }
+          if (upper_color) {
+            const d = upper_color_desc ? `\n${upper_color_desc}.` : "";
+            sections.push(`UPPER CABINETS: Replace upper cabinets with ${upper_color} finish.${d}`);
+          }
+          if (lower_color) {
+            const d = lower_color_desc ? `\n${lower_color_desc}.` : "";
+            sections.push(`LOWER CABINETS: Replace lower cabinets with ${lower_color} finish.${d}`);
+          }
+          if (upper_color && lower_color) {
+            sections.push(`COLOR SEPARATION: Upper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colors — do not blend them.`);
+          }
+          if (countertop) {
+            const d = countertop_desc ? ` ${countertop_desc}.` : "";
+            sections.push(`COUNTERTOP: Replace countertop with ${countertop}.${d}`);
+          }
+          if (flooring) {
+            const d = flooring_desc ? ` ${flooring_desc}.` : "";
+            sections.push(`FLOORING: Replace flooring with ${flooring}.${d}`);
+          }
+          if (cabinet_style) sections.push(`CABINET STYLE: ${cabinet_style}`);
+          if (dalle_prompt)  sections.push(`VISUAL STYLE:\n${dalle_prompt}`);
+          const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
+          sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
+          editPrompt = sections.join("\n\n");
+        }
+
+        // Convert customer's photo to Buffer → File object for the API
+        const imageBuffer = await getImageBuffer(effectiveImageUrl);
+        const imageFile   = await toFile(imageBuffer, "kitchen.png", { type: "image/png" });
+
+        const imageResponse = await client.images.edit({
+          model:   "gpt-image-1",
+          image:   imageFile,
+          prompt:  editPrompt,
+          size:    "1536x1024",
+          quality: "high",
+        });
+
+        // gpt-image-1 returns base64 in data[0].b64_json (not a URL like DALL-E 3)
+        const b64 = imageResponse.data?.[0]?.b64_json;
+        if (b64) {
+          const imgBuffer = Buffer.from(b64, "base64");
+          dalleImageUrl = await persistImage(imgBuffer);
+          if (!dalleImageUrl) {
+            // If Storage fails, serve base64 directly as a data URL fallback
+            dalleImageUrl = `data:image/png;base64,${b64}`;
+          }
+        }
+
+      // ── PATH B: New build / no photo → DALL-E 3 text-to-image ────────────────
+      } else {
+        const lv = layout ? LAYOUT_VISUAL[layout] : null;
+
+        // DALL-E 3 prompt engineering rules:
+        //  1. Layout name FIRST — activates training-data label recognition
+        //  2. Positive descriptions only — negative/forbidden introduces unwanted concepts
+        //  3. Geometry before colors/style — geometry in early token positions
+        //  4. BUDGET REALISM last — short, non-geometric
+        const layoutLabel = layout ? `${layout} kitchen.` : "";
+        const openingLine = effectiveImageUrl
+          ? `${layoutLabel} Photorealistic residential kitchen redesign photograph. Preserve original room dimensions, window positions, and ceiling height.`
+          : `${layoutLabel} Photorealistic residential kitchen photograph.`;
+
+        const sections = [openingLine.trim()];
+
+        if (lv) {
+          sections.push(`MANDATORY LAYOUT:\n${lv.structure}`);
+          sections.push(`MANDATORY CAMERA VIEW:\n${lv.camera}`);
+          sections.push(`MANDATORY SPATIAL RULES:\n${lv.spatial}`);
+          sections.push(`LAYOUT BOUNDARIES:\n${lv.negative}`);
+        }
+        if (upper_color) {
+          const desc = upper_color_desc ? `\n${upper_color_desc}.` : "";
+          sections.push(`UPPER CABINETS:\nWall-mounted upper cabinets ONLY in ${upper_color}.${desc}\nUpper cabinets above countertop level only.`);
+        }
+        if (lower_color) {
+          const desc = lower_color_desc ? `\n${lower_color_desc}.` : "";
+          sections.push(`LOWER CABINETS:\nFloor-mounted base cabinets ONLY in ${lower_color}.${desc}\nLower cabinets below countertop level only.`);
+        }
+        if (upper_color && lower_color) {
+          sections.push(`COLOR SEPARATION:\nUpper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colors — do not blend them.`);
+        }
+        if (countertop) {
+          const desc = countertop_desc ? ` ${countertop_desc}.` : "";
+          sections.push(`COUNTERTOP:\n${countertop}.${desc}`);
+        }
+        if (flooring) {
+          const desc = flooring_desc ? ` ${flooring_desc}.` : "";
+          sections.push(`FLOORING:\n${flooring}.${desc}`);
+        }
+        if (cabinet_style) sections.push(`CABINET STYLE:\n${cabinet_style}`);
+        sections.push(dalle_prompt
           ? `VISUAL STYLE:\n${dalle_prompt}`
           : `VISUAL STYLE:\nClean minimal materials, soft natural lighting, balanced exposure.`
-      );
+        );
+        const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
+        sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
 
-      // Budget realism LAST — short, non-geometric, low-priority visual note
-      const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
-      sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
+        const finalDallePrompt = sections.join("\n\n");
 
-      const finalDallePrompt = sections.join("\n\n");
+        const imageResponse = await client.images.generate({
+          model:   "dall-e-3",
+          prompt:  finalDallePrompt,
+          n:       1,
+          size:    "1792x1024",
+          quality: "hd",
+          style:   "vivid",
+        });
+        // Log revised_prompt to diagnose if DALL-E's rewriter strips geometry instructions
+        const revisedPrompt = imageResponse.data?.[0]?.revised_prompt;
+        if (revisedPrompt) {
+          console.log("[kitchen-design] DALL-E revised_prompt:", revisedPrompt);
+        }
+        const temporaryUrl = imageResponse.data?.[0]?.url || null;
 
-      const imageResponse = await client.images.generate({
-        model:   "dall-e-3",
-        prompt:  finalDallePrompt,
-        n:       1,
-        size:    "1792x1024",
-        quality: "hd",      // hd has documented better prompt adherence than standard
-        style:   "vivid",
-      });
-      // Log the revised_prompt to diagnose if DALL-E's rewriter is stripping geometry instructions
-      const revisedPrompt = imageResponse.data?.[0]?.revised_prompt;
-      if (revisedPrompt) {
-        console.log("[kitchen-design] DALL-E revised_prompt:", revisedPrompt);
-      }
-      const temporaryUrl = imageResponse.data?.[0]?.url || null;
-
-      if (temporaryUrl) {
-        try {
-          const imgRes    = await fetch(temporaryUrl);
-          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-          const storagePath = `${TENANT_ID}/${Date.now()}.png`;
-
-          const { error: uploadError } = await admin.storage
-            .from("design-renders")
-            .upload(storagePath, imgBuffer, { contentType: "image/png", upsert: false });
-
-          if (!uploadError) {
-            const { data: urlData } = admin.storage
-              .from("design-renders")
-              .getPublicUrl(storagePath);
-            dalleImageUrl = urlData.publicUrl;
-          } else {
-            console.warn("[kitchen-design] Storage upload failed, using temp URL:", uploadError.message);
+        if (temporaryUrl) {
+          try {
+            const imgRes    = await fetch(temporaryUrl);
+            const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+            dalleImageUrl   = await persistImage(imgBuffer) ?? temporaryUrl;
+          } catch (uploadErr) {
+            console.warn("[kitchen-design] Storage fetch/upload error, using temp URL:", uploadErr.message);
             dalleImageUrl = temporaryUrl;
           }
-        } catch (uploadErr) {
-          console.warn("[kitchen-design] Storage fetch/upload error, using temp URL:", uploadErr.message);
-          dalleImageUrl = temporaryUrl;
         }
       }
+
     } catch (dalleErr) {
-      console.warn("[kitchen-design] DALL-E failed (non-fatal):", dalleErr.message);
+      console.warn("[kitchen-design] Image generation failed (non-fatal):", dalleErr.message);
     }
 
     // ── Stage 6: Return structured response ───────────────────────────────────
