@@ -377,7 +377,12 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   /* Required: always-visible upload, no toggle */
                   <div className="space-y-3">
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                      A photo of your existing kitchen is required for <strong>{form.project_type}</strong>. The AI will preserve your room geometry and only update cabinetry, countertop, and flooring.
+                      {form.project_type === "Replace Cabinets Only"
+                        ? <>A photo of your existing kitchen is required for <strong>Replace Cabinets Only</strong>. The AI will preserve your room geometry and only update cabinetry.</>
+                        : form.project_type === "Countertop Only"
+                        ? <>A photo of your existing kitchen is required for <strong>Countertop Only</strong>. The AI will preserve your room geometry and only update countertop.</>
+                        : <>A photo of your existing kitchen is required for <strong>{form.project_type}</strong>. The AI will preserve your room geometry and only update cabinetry, countertop, and flooring.</>
+                      }
                     </p>
                     <div className="flex items-center gap-2">
                       {[{ value: "upload", label: "Upload from device" }, { value: "url", label: "Paste URL" }].map((opt) => (

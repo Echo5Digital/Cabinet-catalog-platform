@@ -35,7 +35,7 @@ const LAYOUT_VISUAL = {
   },
 
   "Island": {
-    structure: "Wall cabinets on the back wall and side walls. One large freestanding rectangular island in the center of the room, completely detached from all walls.",
+    structure: "Wall cabinets on the back wall and side wall. One large freestanding rectangular island in the center of the room, completely detached from all walls.",
     camera:    "Three-quarter view. Freestanding island prominent in the foreground center. Wall cabinets visible in the background.",
     spatial:   "Clear open walking space of 3-4 feet on all four sides of the island. Island is the visual centerpiece with open floor surrounding it.",
     negative:  "The island is freestanding — clear open floor completely surrounds all four sides of the island with no connection to any wall.",
