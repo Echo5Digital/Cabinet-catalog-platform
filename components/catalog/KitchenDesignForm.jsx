@@ -125,6 +125,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -163,6 +164,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setLoading(true);
     setError(null);
     setResult(null);
+    setOriginalPhotoUrl(null);
     setQuoteStatus("idle");
     try {
       const effectiveImageUrl =
@@ -180,6 +182,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed.");
       setResult(data);
+      if (PHOTO_REQUIRED_TYPES.includes(form.project_type) && effectiveImageUrl) {
+        setOriginalPhotoUrl(effectiveImageUrl);
+      }
       setTimeout(() => {
         document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -759,6 +764,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           <DesignResultBoard
             concept={result.concept}
             image_url={result.image_url}
+            original_image_url={originalPhotoUrl}
             products={result.products}
             sales_summary={result.sales_summary}
             next_steps={result.next_steps}

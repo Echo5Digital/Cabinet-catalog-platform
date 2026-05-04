@@ -38,25 +38,16 @@ function Header({ tenant, lines }) {
   const primaryColor = tenant.primary_color || "#1C1917";
 
   return (
-    <header className="sticky top-0 z-30 px-4 sm:px-6 pt-3 pb-0 pointer-events-none" style={{ background: "transparent" }}>
-      {/* Pill navbar */}
-      <div
-        className="max-w-7xl mx-auto h-14 px-6 rounded-full flex items-center justify-between gap-4 pointer-events-auto"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor}f2 0%, ${primaryColor}b8 55%, ${primaryColor}d4 100%)`,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          boxShadow: "0 4px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
-          border: "1px solid rgba(255,255,255,0.10)",
-        }}
-      >
+    <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-stone-200 shadow-sm">
+      {/* Navbar */}
+      <div className="max-w-7xl mx-auto h-[76px] sm:h-[88px] px-5 sm:px-6 flex items-center justify-between gap-4">
         {/* Logo / Name */}
         <Link href="/" className="flex items-center shrink-0">
           {tenant.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={tenant.logo_url} alt={name} className="h-8 w-auto object-contain" />
+            <img src={tenant.logo_url} alt={name} className="h-12 sm:h-14 w-auto max-w-[150px] sm:max-w-[230px] object-contain" />
           ) : (
-            <span className="text-white font-semibold text-base tracking-tight">{name}</span>
+            <span className="text-stone-900 font-semibold text-base tracking-tight">{name}</span>
           )}
         </Link>
 
@@ -64,7 +55,7 @@ function Header({ tenant, lines }) {
         <nav className="hidden md:flex items-center gap-1">
           {/* Collections dropdown */}
           <div className="relative group">
-            <button className="flex items-center gap-1 px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition">
+            <button className="flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide">
               Collections
               <svg className="w-3.5 h-3.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -108,9 +99,8 @@ function Header({ tenant, lines }) {
 
           <Link
             href="/catalog/design"
-            className={`px-4 py-1.5 rounded-full text-sm hover:text-white hover:bg-white/10 transition flex items-center gap-1.5 ${
-              pathname.startsWith("/catalog/design") ? "text-white font-medium" : "text-white/80"
-            }`}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition hover:opacity-90 shadow-sm"
+            style={{ backgroundColor: primaryColor }}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -120,14 +110,14 @@ function Header({ tenant, lines }) {
 
           <Link
             href="/catalog"
-            className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
+            className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
           >
             About Us
           </Link>
 
           <a
             href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
-            className="px-4 py-1.5 rounded-full text-sm text-white/80 hover:text-white hover:bg-white/10 transition"
+            className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
           >
             Contact
           </a>
@@ -140,7 +130,7 @@ function Header({ tenant, lines }) {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition"
+            className="md:hidden w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 transition"
           >
             {menuOpen ? (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -155,20 +145,17 @@ function Header({ tenant, lines }) {
         </div>
       </div>
 
-      {/* Mobile menu — floats below pill */}
+      {/* Mobile menu — drops below fixed header */}
       {menuOpen && (
-        <div
-          className="md:hidden max-w-7xl mx-auto mt-2 rounded-2xl overflow-hidden shadow-lg pointer-events-auto"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <div className="px-4 py-3 space-y-1">
-            <p className="text-xs text-white/40 uppercase tracking-widest font-medium px-2 pb-1">Collections</p>
+        <div className="md:hidden border-t border-stone-100 bg-white shadow-md">
+          <div className="max-w-7xl mx-auto px-5 py-3 space-y-1">
+            <p className="text-xs text-stone-400 uppercase tracking-widest font-medium px-2 pb-1">Collections</p>
             {lines.map((line) => (
               <Link
                 key={line.id}
                 href={`/catalog/${line.slug}`}
                 onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+                className="block px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition"
               >
                 {line.name}
               </Link>
@@ -176,22 +163,23 @@ function Header({ tenant, lines }) {
             <Link
               href="/catalog/colors"
               onClick={() => setMenuOpen(false)}
-              className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              className="block px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition"
             >
               Colors &amp; Tiles
             </Link>
             <Link
               href="/catalog/structures"
               onClick={() => setMenuOpen(false)}
-              className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              className="block px-3 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition"
             >
               Structures
             </Link>
-            <div className="border-t border-white/10 pt-2 mt-2">
+            <div className="border-t border-stone-100 pt-2 mt-2 space-y-1">
               <Link
                 href="/catalog/design"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-full transition hover:opacity-90 shadow-sm"
+                style={{ backgroundColor: primaryColor }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -201,14 +189,14 @@ function Header({ tenant, lines }) {
               <Link
                 href="/catalog"
                 onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+                className="block px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition uppercase tracking-wide"
               >
                 About Us
               </Link>
               <a
                 href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
                 onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+                className="block px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition uppercase tracking-wide"
               >
                 Contact
               </a>
@@ -237,7 +225,7 @@ function Footer({ tenant, lines }) {
           <div className="sm:col-span-2 lg:col-span-1">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={tenant.logo_url} alt={name} className="h-9 w-auto object-contain mb-4 brightness-0 invert" />
+              <img src={tenant.logo_url} alt={name} className="h-24 sm:h-32 w-auto max-w-[220px] sm:max-w-[300px] object-contain mb-5 brightness-0 invert" />
             ) : (
               <p
                 className="text-white font-bold text-lg mb-4"
@@ -362,7 +350,7 @@ export default function CatalogShell({ tenant, lines, children }) {
     <QuoteProvider>
       <div className="min-h-screen flex flex-col bg-[#FAFAF9]">
         <Header tenant={tenant} lines={lines} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-[76px] sm:pt-[88px]">{children}</main>
         <Footer tenant={tenant} lines={lines} />
         <QuotePanel />
         <QuoteModal />

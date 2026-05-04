@@ -127,6 +127,7 @@ const SUGGESTION_FIELD_LABELS = {
 export default function DesignResultBoard({
   concept,
   image_url,
+  original_image_url = null,
   products = [],
   sales_summary,
   next_steps = [],
@@ -152,6 +153,7 @@ export default function DesignResultBoard({
   );
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("generated"); // "generated" | "compare"
 
   const upperImageUrl   = finishImageMap[upper_color]    || null;
   const lowerImageUrl   = finishImageMap[lower_color]    || null;
@@ -163,8 +165,62 @@ export default function DesignResultBoard({
     <div className="rounded-2xl overflow-hidden border border-stone-200 shadow-sm bg-white">
 
       {/* ── Zone 1: Hero render ───────────────────────────────────────────── */}
+
+      {/* View toggle — only shown when an original photo is available */}
+      {original_image_url && image_url && (
+        <div className="flex items-center gap-1.5 px-4 py-2.5 bg-stone-50 border-b border-stone-200">
+          <span className="text-xs text-stone-500 font-medium mr-1">View:</span>
+          {[
+            { id: "generated", label: "AI Generated" },
+            { id: "compare",   label: "Compare Before / After" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setViewMode(tab.id)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition border ${
+                viewMode === tab.id
+                  ? "bg-stone-900 text-white border-stone-900"
+                  : "bg-white text-stone-600 border-stone-300 hover:border-stone-500"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="relative w-full bg-stone-900" style={{ aspectRatio: "16/7" }}>
-        {image_url ? (
+        {viewMode === "compare" && original_image_url && image_url ? (
+          /* ── Compare mode: side-by-side ── */
+          <div className="absolute inset-0 flex">
+            {/* Original photo */}
+            <div className="relative flex-1 overflow-hidden border-r border-white/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={original_image_url}
+                alt="Original kitchen"
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm">
+                Before
+              </span>
+            </div>
+            {/* AI generated */}
+            <div className="relative flex-1 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image_url}
+                alt={conceptName}
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-stone-900/70 text-white text-[10px] font-semibold backdrop-blur-sm">
+                AI Generated
+              </span>
+            </div>
+          </div>
+        ) : image_url ? (
+          /* ── Generated mode (default): single image with zoom ── */
           <button
             type="button"
             className="absolute inset-0 w-full h-full cursor-zoom-in"
@@ -186,6 +242,7 @@ export default function DesignResultBoard({
             </span>
           </button>
         ) : (
+          /* ── No image ── */
           <div className="w-full h-full flex flex-col items-center justify-center gap-3">
             <svg className="w-12 h-12 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -193,20 +250,22 @@ export default function DesignResultBoard({
             <p className="text-stone-500 text-sm">Render unavailable</p>
           </div>
         )}
-        {/* Concept name + summary overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/65 to-transparent">
-          <p
-            className="text-white font-bold text-xl sm:text-2xl leading-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            {conceptName}
-          </p>
-          {style_summary && (
-            <p className="text-white/75 text-sm mt-1 leading-snug max-w-xl">
-              {style_summary}
+        {/* Concept name + summary overlay — hidden in compare mode */}
+        {viewMode !== "compare" && (
+          <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/65 to-transparent">
+            <p
+              className="text-white font-bold text-xl sm:text-2xl leading-tight"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
+              {conceptName}
             </p>
-          )}
-        </div>
+            {style_summary && (
+              <p className="text-white/75 text-sm mt-1 leading-snug max-w-xl">
+                {style_summary}
+              </p>
+            )}
+          </div>
+        )}
         {/* Budget badge */}
         {budget_range && (
           <div className="absolute top-4 right-4">
