@@ -38,14 +38,14 @@ function Header({ tenant, lines }) {
   const primaryColor = tenant.primary_color || "#1C1917";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-stone-200 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-30 bg-white/75 backdrop-blur-xl border-b border-white/40 shadow-sm isolate">
       {/* Navbar */}
-      <div className="max-w-7xl mx-auto h-[76px] sm:h-[88px] px-5 sm:px-6 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto h-[76px] sm:h-[88px] px-5 sm:px-6 flex items-center justify-between gap-3">
         {/* Logo / Name */}
         <Link href="/" className="flex items-center shrink-0">
           {tenant.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={tenant.logo_url} alt={name} className="h-12 sm:h-14 w-auto max-w-[150px] sm:max-w-[230px] object-contain" />
+            <img src={tenant.logo_url} alt={name} className="h-[54px] sm:h-[66px] w-auto mix-blend-multiply" />
           ) : (
             <span className="text-stone-900 font-semibold text-base tracking-tight">{name}</span>
           )}
@@ -98,17 +98,6 @@ function Header({ tenant, lines }) {
           </div>
 
           <Link
-            href="/catalog/design"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition hover:opacity-90 shadow-sm"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            Design AI
-          </Link>
-
-          <Link
             href="/catalog"
             className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
           >
@@ -125,7 +114,16 @@ function Header({ tenant, lines }) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          <QuoteButton />
+          <Link
+            href="/catalog/design"
+            className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition hover:opacity-90 shadow-sm"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            Design AI
+          </Link>
 
           {/* Mobile menu toggle */}
           <button
@@ -147,7 +145,7 @@ function Header({ tenant, lines }) {
 
       {/* Mobile menu — drops below fixed header */}
       {menuOpen && (
-        <div className="md:hidden border-t border-stone-100 bg-white shadow-md">
+        <div className="md:hidden border-t border-white/40 bg-white/90 backdrop-blur-xl shadow-md">
           <div className="max-w-7xl mx-auto px-5 py-3 space-y-1">
             <p className="text-xs text-stone-400 uppercase tracking-widest font-medium px-2 pb-1">Collections</p>
             {lines.map((line) => (
@@ -215,17 +213,17 @@ function Footer({ tenant, lines }) {
 
   return (
     <footer
-      className="border-t"
+      className="border-t isolate"
       style={{ backgroundColor: primaryColor, borderColor: "rgba(255,255,255,0.08)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-10 sm:gap-12 items-start">
 
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={tenant.logo_url} alt={name} className="h-24 sm:h-32 w-auto max-w-[220px] sm:max-w-[300px] object-contain mb-5 brightness-0 invert" />
+              <img src={tenant.logo_url} alt={name} className="h-[90px] sm:h-[110px] w-auto mb-6 mix-blend-lighten" style={{ filter: 'grayscale(1) contrast(10) invert(1)' }} />
             ) : (
               <p
                 className="text-white font-bold text-lg mb-4"
@@ -331,13 +329,10 @@ function Footer({ tenant, lines }) {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-white/[0.07] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mt-12 pt-6 border-t border-white/[0.07]">
           <p className="text-white/20 text-xs">
             © {new Date().getFullYear()} {name}. All rights reserved.
           </p>
-          <Link href="/admin" className="text-white/15 hover:text-white/35 text-xs transition-colors duration-150">
-            Admin
-          </Link>
         </div>
       </div>
     </footer>
@@ -354,7 +349,7 @@ export default function CatalogShell({ tenant, lines, children }) {
         <Footer tenant={tenant} lines={lines} />
         <QuotePanel />
         <QuoteModal />
-        <ChatWidget tenant={tenant} />
+        {/* <ChatWidget tenant={tenant} /> */}
       </div>
     </QuoteProvider>
   );

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
+import HomeHeader from "@/components/HomeHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -64,74 +65,8 @@ export default async function HomePage() {
   return (
     <div className="bg-[#FAFAF9]">
 
-      {/* ── HEADER — pill navbar ─────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-30 px-4 sm:px-6 pt-4 pb-2">
-        <div
-          className="max-w-7xl mx-auto h-[76px] sm:h-[88px] px-5 sm:px-6 rounded-full flex items-center justify-between gap-4"
-          style={{
-            background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}e8 55%, ${primaryColor}f4 100%)`,
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            boxShadow: "0 4px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22)",
-            border: "1px solid rgba(255,255,255,0.18)",
-          }}
-        >
-          {/* Logo / Name */}
-          <Link href="/" className="shrink-0 flex items-center">
-            {tenant.logo_url ? (
-              <div className="bg-white rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 shadow-md ring-1 ring-black/[0.07] flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={tenant.logo_url} alt={name} className="h-12 sm:h-14 w-auto max-w-[150px] sm:max-w-[230px] object-contain" />
-              </div>
-            ) : (
-              <span className="text-white font-semibold text-base tracking-tight">{name}</span>
-            )}
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            <Link
-              href="/catalog"
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition uppercase tracking-wide"
-            >
-              Catalog
-            </Link>
-
-            <Link
-              href="/catalog"
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition uppercase tracking-wide"
-            >
-              About Us
-            </Link>
-
-            <a
-              href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition uppercase tracking-wide"
-            >
-              Contact
-            </a>
-
-            <Link
-              href="/catalog/design"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-white/15 hover:bg-white/25 transition border border-white/30"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              Design AI
-            </Link>
-          </nav>
-
-          {/* Request a Quote CTA */}
-          <Link
-            href="/catalog"
-            className="px-4 sm:px-5 py-2 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition shrink-0 whitespace-nowrap"
-          >
-            <span className="sm:hidden">Quote</span>
-            <span className="hidden sm:inline">Request a Quote</span>
-          </Link>
-        </div>
-      </header>
+      {/* ── HEADER ───────────────────────────────────────────────────────── */}
+      <HomeHeader tenant={tenant} primaryColor={primaryColor} name={name} />
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <section
@@ -538,17 +473,17 @@ export default async function HomePage() {
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
       <footer
-        className="border-t"
+        className="border-t isolate"
         style={{ backgroundColor: primaryColor, borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-10 sm:gap-12 items-start">
 
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               {tenant.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={tenant.logo_url} alt={name} className="h-24 sm:h-32 w-auto max-w-[220px] sm:max-w-[300px] object-contain mb-5 brightness-0 invert" />
+                <img src={tenant.logo_url} alt={name} className="h-[90px] sm:h-[110px] w-auto mb-6 mix-blend-lighten" style={{ filter: 'grayscale(1) contrast(10) invert(1)' }} />
               ) : (
                 <p
                   className="text-white font-bold text-lg mb-4"
@@ -654,13 +589,10 @@ export default async function HomePage() {
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-12 pt-6 border-t border-white/[0.07] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="mt-12 pt-6 border-t border-white/[0.07]">
             <p className="text-white/20 text-xs">
               © {new Date().getFullYear()} {name}. All rights reserved.
             </p>
-            <Link href="/admin" className="text-white/15 hover:text-white/35 text-xs transition-colors duration-150">
-              Admin
-            </Link>
           </div>
         </div>
       </footer>

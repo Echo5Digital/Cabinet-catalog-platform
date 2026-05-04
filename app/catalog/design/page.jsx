@@ -126,32 +126,33 @@ export default async function KitchenDesignPage() {
   const { countertopColors, floorColors, finishes, structures } = await getCatalogData();
 
   return (
-    <div>
+    <div className="bg-stone-50">
       {/* Page header */}
-      <div className="border-b border-stone-100 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-          <nav className="text-xs text-stone-500 mb-4 flex items-center gap-1.5">
-            <Link href="/catalog" className="hover:text-stone-800 transition font-medium">
+      <div className="relative overflow-hidden bg-gradient-to-b from-stone-950 via-stone-900 to-stone-800">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(59,130,246,0.10),transparent)] pointer-events-none" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-16 relative z-10">
+          <nav className="text-xs mb-5 flex items-center gap-1.5">
+            <Link href="/catalog" className="text-stone-400 hover:text-stone-200 transition font-medium">
               Collections
             </Link>
-            <span className="text-stone-400">/</span>
-            <span className="text-stone-700 font-medium">Design AI</span>
+            <span className="text-stone-600">/</span>
+            <span className="text-stone-300 font-medium">Design AI</span>
           </nav>
 
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-1">
-              <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-12 h-12 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0 mt-1">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
             <div>
               <h1
-                className="text-3xl sm:text-4xl font-bold text-stone-900 mb-3"
+                className="text-3xl sm:text-4xl font-bold text-white mb-3"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Kitchen Design AI
               </h1>
-              <p className="text-stone-500 max-w-2xl leading-relaxed">
+              <p className="text-stone-300/90 max-w-2xl leading-relaxed">
                 Tell us about your dream kitchen and we&apos;ll generate personalized design concepts,
                 cabinet recommendations, and a sales-ready summary — instantly.
               </p>
@@ -165,13 +166,13 @@ export default async function KitchenDesignPage() {
               { step: "2", title: "AI generates concepts", desc: "2–3 realistic designs matched to your inputs" },
               { step: "3", title: "Request your quote", desc: "Browse the catalog and start building your order" },
             ].map((item) => (
-              <div key={item.step} className="flex items-start gap-3 p-4 bg-stone-50 rounded-xl">
-                <span className="w-7 h-7 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
+              <div key={item.step} className="flex items-start gap-3 p-4 bg-white/[0.06] border border-white/[0.08] rounded-xl backdrop-blur-sm">
+                <span className="w-7 h-7 rounded-full bg-[#2C3E50] text-white text-xs font-bold flex items-center justify-center shrink-0">
                   {item.step}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-stone-800">{item.title}</p>
-                  <p className="text-xs text-stone-500 mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-semibold text-white/90">{item.title}</p>
+                  <p className="text-xs text-stone-400 mt-0.5">{item.desc}</p>
                 </div>
               </div>
             ))}

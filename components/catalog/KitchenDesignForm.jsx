@@ -247,18 +247,18 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const photoRequired = PHOTO_REQUIRED_TYPES.includes(form.project_type);
   const hasPhoto = form.image_source === "upload" ? !!form.image_file_data : !!form.image_url;
 
-  const inputCls = "w-full border border-stone-300 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder:text-stone-400";
+  const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 shadow-sm placeholder:text-stone-400 transition";
   const selectCls = `${inputCls} cursor-pointer`;
   const labelCls = "block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide";
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="space-y-10">
+      <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* ── Section 1: Your Info ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Your Information
@@ -338,9 +338,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 2: Project ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Project Details
@@ -496,7 +496,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                       onClick={() => set("layout", name)}
                       className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
                         selected
-                          ? "border-stone-900 bg-stone-900 text-white"
+                          ? "border-[#2C3E50] bg-[#2C3E50] text-white"
                           : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
                       }`}
                     >
@@ -531,9 +531,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 3: Style ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Design Style
@@ -560,7 +560,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   }}
                   className={`py-3 px-4 rounded-xl border text-sm font-medium transition ${
                     form.cabinet_style === style
-                      ? "border-stone-900 bg-stone-900 text-white"
+                      ? "border-[#2C3E50] bg-[#2C3E50] text-white"
                       : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
                   }`}
                 >
@@ -572,9 +572,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 4: Colors ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Colors &amp; Materials
@@ -591,9 +591,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 5: Details ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Additional Details
@@ -634,9 +634,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 6: Comments ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Comments / Notes
@@ -654,9 +654,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 7: Budget Range ── */}
-        <section>
+        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           <h2
-            className="text-lg font-bold text-stone-900 mb-5 pb-3 border-b border-stone-100"
+            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Budget Range
@@ -671,7 +671,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   onClick={() => set("budget_style", s.id)}
                   className={`flex flex-col text-left rounded-xl border p-4 transition ${
                     form.budget_style === s.id
-                      ? "border-stone-900 bg-stone-900 text-white"
+                      ? "border-[#2C3E50] bg-[#2C3E50] text-white"
                       : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
                   }`}
                 >
@@ -688,7 +688,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Submit ── */}
-        <div className="pt-2">
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
           {error && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
               {error}
@@ -731,7 +731,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
       {/* ── Result ── */}
       {result && (
-        <div id="design-result" className="mt-16 pt-10 border-t border-stone-200">
+        <div id="design-result" className="mt-4 bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-8">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h2
               className="text-2xl font-bold text-stone-900"
@@ -776,7 +776,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           />
 
           {/* ── Request a Quote ── */}
-          <div className="mt-8 rounded-2xl border border-stone-200 bg-stone-50 p-6 sm:p-8">
+          <div className="mt-6 rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/60 to-stone-50 p-6 sm:p-8">
             {quoteStatus === "success" ? (
               <div className="flex flex-col items-center text-center gap-3 py-4">
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -961,7 +961,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-3.5 text-[11px] sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === t.id
-                ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                ? "border-blue-500 text-blue-700 bg-blue-50/50"
                 : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
             }`}
           >
@@ -1024,7 +1024,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                     className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
                       selected
                         ? "border-2 border-blue-500 shadow-sm"
-                        : "border-2 border-stone-200 hover:border-stone-300"
+                        : "border-2 border-stone-200 hover:border-stone-300 hover:shadow-sm"
                     }`}
                     style={{ width: 110 }}
                   >
@@ -1076,7 +1076,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
               <span
                 key={i}
                 className={`rounded-full transition-all duration-200 ${
-                  i === activeDot ? "w-4 h-2 bg-blue-500" : "w-2 h-2 bg-stone-300"
+                  i === activeDot ? "w-4 h-2 bg-blue-500" : "w-2 h-2 bg-stone-200"
                 }`}
               />
             ))}
