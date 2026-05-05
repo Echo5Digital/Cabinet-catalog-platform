@@ -309,7 +309,7 @@ export async function POST(request) {
 
     const completion = await client.chat.completions.create({
       model,
-      max_tokens: 2000,
+      max_tokens: 4000,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -337,6 +337,13 @@ export async function POST(request) {
       sales_summary = "",
       next_steps = [],
       color_suggestions = [],
+      design_concept = null,
+      layout_plan = null,
+      material_plan = null,
+      budget_logic = null,
+      cabinet_plan = [],
+      product_recommendations = [],
+      design_validation = null,
     } = gptData;
 
     if (!concept || !dalle_prompt) {
@@ -635,12 +642,20 @@ export async function POST(request) {
     // ── Stage 6: Return structured response ───────────────────────────────────
     return NextResponse.json({
       concept,
-      image_url:         dalleImageUrl,
+      image_url:              dalleImageUrl,
       products,
       sales_summary,
-      next_steps:        Array.isArray(next_steps) ? next_steps : [],
-      color_suggestions: Array.isArray(color_suggestions) ? color_suggestions : [],
+      next_steps:             Array.isArray(next_steps) ? next_steps : [],
+      color_suggestions:      Array.isArray(color_suggestions) ? color_suggestions : [],
       layout,
+      // Expert design fields (NKBA schema)
+      design_concept,
+      layout_plan,
+      material_plan,
+      budget_logic,
+      cabinet_plan:           Array.isArray(cabinet_plan) ? cabinet_plan : [],
+      product_recommendations: Array.isArray(product_recommendations) ? product_recommendations : [],
+      design_validation,
     });
 
   } catch (err) {

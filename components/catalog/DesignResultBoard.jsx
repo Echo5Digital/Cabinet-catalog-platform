@@ -136,6 +136,13 @@ export default function DesignResultBoard({
   finishImageMap = {},
   countertopImageMap = {},
   floorImageMap = {},
+  design_concept = null,
+  layout_plan = null,
+  material_plan = null,
+  budget_logic = null,
+  cabinet_plan = [],
+  product_recommendations = [],
+  design_validation = null,
 }) {
   const {
     name: conceptName = "Your Design",
@@ -382,6 +389,186 @@ export default function DesignResultBoard({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Zone 3c: Expert Design Concept ───────────────────────────────── */}
+      {design_concept && (design_concept.workflow_strategy || design_concept.space_optimization || design_concept.budget_strategy) && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">
+            Design Strategy
+          </p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {design_concept.workflow_strategy && (
+              <div className="rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Workflow</p>
+                <p className="text-xs text-stone-700 leading-relaxed">{design_concept.workflow_strategy}</p>
+              </div>
+            )}
+            {design_concept.space_optimization && (
+              <div className="rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Space</p>
+                <p className="text-xs text-stone-700 leading-relaxed">{design_concept.space_optimization}</p>
+              </div>
+            )}
+            {design_concept.budget_strategy && (
+              <div className="rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Budget</p>
+                <p className="text-xs text-stone-700 leading-relaxed">{design_concept.budget_strategy}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Zone 3d: Layout Plan & Zones ─────────────────────────────────── */}
+      {layout_plan && (Array.isArray(layout_plan.zones) && layout_plan.zones.length > 0) && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">
+            Functional Zones
+          </p>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {layout_plan.zones.map((z, i) => (
+              <div key={i} className="flex gap-3 rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-stone-900 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-stone-900">{z.zone}</p>
+                  {z.position && <p className="text-[10px] text-stone-500 mt-0.5">{z.position}</p>}
+                  {z.reasoning && <p className="text-[11px] text-stone-600 mt-1 leading-snug">{z.reasoning}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {layout_plan.traffic_flow && (
+            <p className="mt-3 text-xs text-stone-500 leading-relaxed">
+              <span className="font-semibold text-stone-600">Traffic flow: </span>
+              {layout_plan.traffic_flow}
+            </p>
+          )}
+          {layout_plan.clearance_notes && (
+            <p className="mt-1.5 text-xs text-stone-500 leading-relaxed">
+              <span className="font-semibold text-stone-600">Clearances: </span>
+              {layout_plan.clearance_notes}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Zone 3e: Cabinet Plan ─────────────────────────────────────────── */}
+      {Array.isArray(cabinet_plan) && cabinet_plan.length > 0 && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">
+            Cabinet Plan
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs min-w-[480px]">
+              <thead>
+                <tr className="border-b border-stone-100">
+                  <th className="text-left text-[9px] font-bold uppercase tracking-widest text-stone-400 pb-2 pr-3">Type</th>
+                  <th className="text-left text-[9px] font-bold uppercase tracking-widest text-stone-400 pb-2 pr-3">Width</th>
+                  <th className="text-left text-[9px] font-bold uppercase tracking-widest text-stone-400 pb-2 pr-3">Zone</th>
+                  <th className="text-left text-[9px] font-bold uppercase tracking-widest text-stone-400 pb-2">Purpose</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-50">
+                {cabinet_plan.map((c, i) => (
+                  <tr key={i} className="group">
+                    <td className="py-2 pr-3 font-medium text-stone-800">{c.cabinet_type}</td>
+                    <td className="py-2 pr-3 font-mono text-stone-500">{c.estimated_width}</td>
+                    <td className="py-2 pr-3 text-stone-600">{c.placement_zone}</td>
+                    <td className="py-2 text-stone-500">{c.functional_role}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Zone 3f: Budget Logic ─────────────────────────────────────────── */}
+      {budget_logic && (
+        Array.isArray(budget_logic.design_tradeoffs) && budget_logic.design_tradeoffs.length > 0 ||
+        Array.isArray(budget_logic.cost_saving_choices) && budget_logic.cost_saving_choices.length > 0 ||
+        Array.isArray(budget_logic.premium_features) && budget_logic.premium_features.length > 0
+      ) && (
+        <div className="px-6 py-5 border-t border-stone-100 bg-amber-50/40">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">
+            Budget Analysis — {budget_logic.tier || ""}
+          </p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {Array.isArray(budget_logic.design_tradeoffs) && budget_logic.design_tradeoffs.length > 0 && (
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-2">Tradeoffs</p>
+                <ul className="space-y-1">
+                  {budget_logic.design_tradeoffs.map((t, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[11px] text-stone-600">
+                      <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-stone-400" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {Array.isArray(budget_logic.cost_saving_choices) && budget_logic.cost_saving_choices.length > 0 && (
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-2">Cost Savings</p>
+                <ul className="space-y-1">
+                  {budget_logic.cost_saving_choices.map((t, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[11px] text-stone-600">
+                      <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-green-500" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {Array.isArray(budget_logic.premium_features) && budget_logic.premium_features.length > 0 && (
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-2">Premium Features</p>
+                <ul className="space-y-1">
+                  {budget_logic.premium_features.map((t, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[11px] text-stone-600">
+                      <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-amber-500" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Zone 3g: Design Validation ────────────────────────────────────── */}
+      {design_validation && Array.isArray(design_validation.notes) && design_validation.notes.length > 0 && (
+        <div className="px-6 py-4 border-t border-blue-100 bg-blue-50/40">
+          <div className="flex items-center gap-2 mb-2.5">
+            <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-blue-500">Design Validation</p>
+            <div className="flex items-center gap-2 ml-auto">
+              {design_validation.layout_valid && (
+                <span className="text-[9px] font-semibold text-green-600 bg-green-100 rounded-full px-2 py-0.5">Layout ✓</span>
+              )}
+              {design_validation.workflow_valid && (
+                <span className="text-[9px] font-semibold text-green-600 bg-green-100 rounded-full px-2 py-0.5">Workflow ✓</span>
+              )}
+              {design_validation.budget_aligned && (
+                <span className="text-[9px] font-semibold text-green-600 bg-green-100 rounded-full px-2 py-0.5">Budget ✓</span>
+              )}
+            </div>
+          </div>
+          <ul className="space-y-1">
+            {design_validation.notes.map((note, i) => (
+              <li key={i} className="flex items-start gap-2 text-[11px] text-blue-700">
+                <span className="shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-300" />
+                {note}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

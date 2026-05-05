@@ -773,6 +773,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             finishImageMap={finishImageMap}
             countertopImageMap={countertopImageMap}
             floorImageMap={floorImageMap}
+            design_concept={result.design_concept}
+            layout_plan={result.layout_plan}
+            material_plan={result.material_plan}
+            budget_logic={result.budget_logic}
+            cabinet_plan={result.cabinet_plan}
+            product_recommendations={result.product_recommendations}
+            design_validation={result.design_validation}
           />
 
           {/* ── Request a Quote ── */}
