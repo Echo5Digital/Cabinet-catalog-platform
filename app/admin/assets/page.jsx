@@ -78,7 +78,7 @@ function AssetUploader({ onComplete }) {
     <div className="border border-gray-200 rounded-xl p-5 bg-gray-50 mb-5">
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Upload Assets</h3>
       <p className="text-xs text-gray-400 mb-3">
-        Name files using the pattern: <code className="bg-gray-100 px-1 rounded">line-category-SKU.png</code>, <code className="bg-gray-100 px-1 rounded">finish-line-code.png</code>, <code className="bg-gray-100 px-1 rounded">color-countertop-code.png</code>, or <code className="bg-gray-100 px-1 rounded">structure-code.png</code>. The system will auto-detect the type.
+        Name files using the pattern: <code className="bg-gray-100 px-1 rounded">line-category-SKU.png</code>, <code className="bg-gray-100 px-1 rounded">finish-line-code.png</code>, <code className="bg-gray-100 px-1 rounded">color-countertop-code.png</code>, <code className="bg-gray-100 px-1 rounded">structure-code.png</code>, or <code className="bg-gray-100 px-1 rounded">structure-code-reference.png</code> (AI reference only). The system will auto-detect the type.
       </p>
       <div
         onDrop={handleDrop}
@@ -300,6 +300,7 @@ function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selec
               <option value="lifestyle">Lifestyle</option>
               <option value="color_swatch">Color Swatch</option>
               <option value="structure_image">Structure Image</option>
+              <option value="structure_reference">Structure Reference (AI only)</option>
             </select>
 
             {(form.asset_type === "product_diagram" || !form.asset_type) && (
@@ -335,7 +336,7 @@ function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selec
               </select>
             )}
 
-            {form.asset_type === "structure_image" && (
+            {(form.asset_type === "structure_image" || form.asset_type === "structure_reference") && (
               <select value={form.structure_id} onChange={(e) => setForm((p) => ({ ...p, structure_id: e.target.value }))}
                 className="w-full border border-gray-300 rounded text-xs px-2 py-1">
                 <option value="">— Select structure —</option>

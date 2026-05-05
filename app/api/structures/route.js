@@ -25,6 +25,10 @@ export async function GET() {
         (assets || []).find(
           (a) => a.status === "confirmed" && a.asset_type === "structure_image"
         ) ?? null,
+      reference_asset:
+        (assets || []).find(
+          (a) => a.status === "confirmed" && a.asset_type === "structure_reference"
+        ) ?? null,
     }));
 
     return NextResponse.json({ structures });

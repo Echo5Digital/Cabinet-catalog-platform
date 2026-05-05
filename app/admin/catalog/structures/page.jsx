@@ -78,6 +78,23 @@ function StructureRow({ structure, onUpdated, onDeleted }) {
           </Link>
         )}
       </td>
+      <td className="px-4 py-3 hidden sm:table-cell">
+        {structure.reference_asset ? (
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={structure.reference_asset.public_url}
+              alt={`${structure.name} reference`}
+              className="w-8 h-8 rounded object-cover border border-stone-200"
+            />
+            <span className="text-xs text-blue-600 font-medium">Set</span>
+          </div>
+        ) : (
+          <Link href="/admin/assets" className="text-xs text-stone-400 hover:text-stone-600 hover:underline">
+            None
+          </Link>
+        )}
+      </td>
       <td className="px-4 py-3">
         <button
           onClick={handleToggleActive}
@@ -259,9 +276,17 @@ export default function StructuresPage() {
       )}
 
       {/* Filename hint */}
-      <div className="mb-5 px-4 py-3 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-500">
-        <strong className="text-stone-700">Filename convention:</strong>{" "}
-        <span className="font-mono">structure-shaker-door.png</span>
+      <div className="mb-5 px-4 py-3 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-500 space-y-1">
+        <p>
+          <strong className="text-stone-700">Display image:</strong>{" "}
+          <span className="font-mono">structure-{"{code}"}.png</span>
+          <span className="ml-2 text-stone-400">shown in catalog + used as AI layout diagram</span>
+        </p>
+        <p>
+          <strong className="text-stone-700">AI reference:</strong>{" "}
+          <span className="font-mono">structure-{"{code}"}-reference.png</span>
+          <span className="ml-2 text-stone-400">admin only · AI analyzes for layout proportions, never shown publicly</span>
+        </p>
       </div>
 
       {/* Table */}
@@ -282,6 +307,7 @@ export default function StructuresPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Image</th>
+                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide hidden sm:table-cell">AI Reference</th>
                 <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
                 <th className="px-4 py-3" />
               </tr>

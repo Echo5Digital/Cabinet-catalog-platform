@@ -102,7 +102,7 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
     const colorNames  = [countertop, flooring].filter(Boolean);
 
     // Round 1: resolve names → IDs + structure images in parallel
-    const [finishesData, colorsData, structuresData, structureImgsData] = await Promise.all([
+    const [finishesData, colorsData, structuresData, structureImgsData, structureRefImgsData] = await Promise.all([
       finishNames.length > 0
         ? admin.from("finishes").select("id, name").eq("tenant_id", TENANT_ID).in("name", finishNames).then((r) => r.data || [])
         : Promise.resolve([]),
@@ -114,6 +114,10 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
         : Promise.resolve([]),
       layout
         ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "structure_image").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
+        : Promise.resolve([]),
+      // Admin-only AI reference images — never shown publicly, used only for GPT layout analysis
+      layout
+        ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "structure_reference").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
         : Promise.resolve([]),
     ]);
 
@@ -143,10 +147,14 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
       if (!colorIdToUrl[a.color_id]) colorIdToUrl[a.color_id] = a.public_url;
     }
 
-    // Resolve layout → structure image
+    // Resolve layout → structure diagram image + admin-only AI reference image
     const structureImgMap = {};
     for (const img of structureImgsData) {
       if (!structureImgMap[img.structure_id]) structureImgMap[img.structure_id] = img.public_url;
+    }
+    const structureRefMap = {};
+    for (const img of structureRefImgsData) {
+      if (!structureRefMap[img.structure_id]) structureRefMap[img.structure_id] = img.public_url;
     }
     const layoutKey = normalise(layout || "");
     const matchedStructure = layoutKey
@@ -154,7 +162,8 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
       : null;
 
     return {
-      layout:      matchedStructure ? (structureImgMap[matchedStructure.id] || null) : null,
+      layout:           matchedStructure ? (structureImgMap[matchedStructure.id] || null) : null,
+      layout_reference: matchedStructure ? (structureRefMap[matchedStructure.id]  || null) : null,
       upper_color: upper_color && finishNameToId[upper_color] ? (finishIdToUrl[finishNameToId[upper_color]] || null) : null,
       lower_color: lower_color && finishNameToId[lower_color] ? (finishIdToUrl[finishNameToId[lower_color]] || null) : null,
       countertop:  countertop  && colorNameToId[countertop]   ? (colorIdToUrl[colorNameToId[countertop]]   || null) : null,
@@ -264,9 +273,17 @@ export async function POST(request) {
     // Build vision content: text prompt + reference images + customer photo (if any)
     const visionParts = [{ type: "text", text: userPrompt }];
 
+    // Admin-only AI layout reference image — sent FIRST so GPT analyzes it before other inputs.
+    // This is a real kitchen photo matching the selected layout type, for spatial analysis only.
+    if (refImages.layout_reference) {
+      visionParts.push(
+        { type: "text", text: `\n[AI LAYOUT REFERENCE — ${layout || "selected layout"}. Analyze spatial proportions, cabinet arrangement, and workflow zones ONLY. Do NOT copy or reproduce this image in the generated design.]` },
+        { type: "image_url", image_url: { url: refImages.layout_reference, detail: "high" } }
+      );
+    }
     if (refImages.layout) {
       visionParts.push(
-        { type: "text", text: `\n[LAYOUT STRUCTURE IMAGE — ${layout || "selected layout"}:]` },
+        { type: "text", text: `\n[LAYOUT STRUCTURE DIAGRAM — ${layout || "selected layout"}:]` },
         { type: "image_url", image_url: { url: refImages.layout, detail: "low" } }
       );
     }

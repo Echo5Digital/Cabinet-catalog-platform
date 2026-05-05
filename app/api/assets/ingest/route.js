@@ -132,7 +132,7 @@ export async function POST(request) {
           catalog_line_id: resolvedLineId,
           finish_id: scored.assetType === "finish_swatch" ? resolvedFinishId : null,
           color_id: scored.assetType === "color_swatch" ? resolvedColorId : null,
-          structure_id: scored.assetType === "structure_image" ? resolvedStructureId : null,
+          structure_id: (scored.assetType === "structure_image" || scored.assetType === "structure_reference") ? resolvedStructureId : null,
         })
         .select("id, original_filename, asset_type, confidence, status, parsed_sku, parsed_line_slug, parse_notes")
         .single();

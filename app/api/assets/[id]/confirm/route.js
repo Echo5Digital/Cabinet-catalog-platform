@@ -59,9 +59,9 @@ export async function POST(request, { params }) {
       );
     }
 
-    if (asset.asset_type === "structure_image" && !asset.structure_id) {
+    if ((asset.asset_type === "structure_image" || asset.asset_type === "structure_reference") && !asset.structure_id) {
       return NextResponse.json(
-        { error: "structure_image assets require structure_id to be set before confirming." },
+        { error: `${asset.asset_type} assets require structure_id to be set before confirming.` },
         { status: 422 }
       );
     }
