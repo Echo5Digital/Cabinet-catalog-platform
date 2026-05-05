@@ -56,13 +56,23 @@ const LAYOUT_VISUAL = {
   },
 };
 
-// Budget-appropriate realism descriptions for DALL-E image generation.
-// Kept SHORT intentionally — long budget paragraphs dilute the geometric signal.
-// Budget controls ONLY material quality and styling, never layout or geometry.
+// Per-layout functional zone placement — ensures sink and cooking area appear in correct positions.
+// Used in image generation prompts for all paths so mandatory kitchen elements are always visible.
+const LAYOUT_WORKFLOW = {
+  "L-shaped":    "SINK: On the back wall cabinet run, visible above the countertop. RANGE/COOKTOP: On the side wall cabinet run with visible burners and a hood or over-range microwave above.",
+  "U-shaped":    "SINK: Centered on the back wall, clearly visible above the countertop. RANGE/COOKTOP: On one of the side wall runs with a hood above.",
+  "Galley":      "SINK: On one parallel wall run. RANGE/COOKTOP: On the opposite parallel wall run with a hood or over-range microwave above.",
+  "Island":      "SINK: On the back wall run or integrated into the island top. RANGE/COOKTOP: On the back wall run with a hood above.",
+  "Single Wall": "SINK: Centered in the single cabinet wall run, visible above the countertop. RANGE/COOKTOP: On the same single wall adjacent to the sink, with a hood or over-range microwave above.",
+  "G-shaped":    "SINK: On the back wall run, visible above the countertop. RANGE/COOKTOP: On one of the side wall runs with a hood above.",
+};
+
+// Budget-appropriate realism descriptions for image generation.
+// These differentiate visual output (appliances, hardware, lighting, staging) without affecting layout or geometry.
 const BUDGET_REALISM = {
-  "Budget-friendly": "Standard residential kitchen. Affordable simple materials. Clean practical styling.",
-  "Modern Euro":     "Mid-range residential kitchen. Quality materials. Contemporary tasteful styling.",
-  "Premium Luxury":  "High-end residential kitchen. Premium appliances and materials. Elegant realistic proportions.",
+  "Budget-friendly": "Standard practical residential kitchen. Simple painted or thermofoil cabinet finish. Basic chrome or satin nickel knob hardware. Freestanding electric range with basic overhead hood or over-range microwave. Recessed can lighting or overhead fluorescent fixture. Minimal accessories — clean, uncluttered, functional.",
+  "Modern Euro":     "Mid-range contemporary residential kitchen. Clean flat-panel or shaker cabinet doors. Brushed nickel or matte black bar pull hardware. Slide-in gas or electric range with a standard stainless-steel hood. Recessed LED lighting with under-cabinet light strips. Tasteful minimal staging — a coffee maker, a small plant, a clean countertop.",
+  "Premium Luxury":  "High-end realistic residential kitchen. Refined inset or full-overlay cabinet doors. Premium solid-metal or unlacquered brass bar pull hardware. Professional-grade range with a statement metal or plaster range hood. Warm directional LED under-cabinet lighting. Elegant natural-material staging — cookbooks, fresh herbs, quality small appliances. Believable refined luxury — never fantasy-scale or exaggerated.",
 };
 
 // Project types that edit an existing customer photo (require photo upload)
@@ -161,9 +171,16 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
       ? structuresData.find((s) => normalise(s.name).includes(layoutKey))
       : null;
 
+    const layoutRef = matchedStructure ? (structureRefMap[matchedStructure.id] || null) : null;
+    console.log(
+      `[kitchen-design] layout="${layout}" → structure="${matchedStructure?.name ?? "no match"}"` +
+      ` | reference=${layoutRef ? "FOUND" : "not found"}` +
+      ` | structuresInDB=${structuresData.map((s) => s.name).join(", ")}`
+    );
+
     return {
       layout:           matchedStructure ? (structureImgMap[matchedStructure.id] || null) : null,
-      layout_reference: matchedStructure ? (structureRefMap[matchedStructure.id]  || null) : null,
+      layout_reference: layoutRef,
       upper_color: upper_color && finishNameToId[upper_color] ? (finishIdToUrl[finishNameToId[upper_color]] || null) : null,
       lower_color: lower_color && finishNameToId[lower_color] ? (finishIdToUrl[finishNameToId[lower_color]] || null) : null,
       countertop:  countertop  && colorNameToId[countertop]   ? (colorIdToUrl[colorNameToId[countertop]]   || null) : null,
@@ -463,9 +480,10 @@ export async function POST(request) {
     }
 
     // ── Stage 5: Generate image render + persist to Supabase Storage ─────────
-    // Two paths based on project type:
-    //   A) Redesign type + customer photo  → gpt-image-1 images.edit  (targeted image editing)
-    //   B) New build OR no photo           → DALL-E 3 images.generate (text-to-image)
+    // Three paths based on project type + available images:
+    //   A)  Redesign type + customer photo           → gpt-image-1 edit (customer photo)
+    //   A2) New build + admin layout reference image → gpt-image-1 edit (reference photo)
+    //   B)  New build, no reference image            → DALL-E 3 text-to-image
     let dalleImageUrl = null;
     try {
 
@@ -481,6 +499,23 @@ export async function POST(request) {
         }
         console.warn("[kitchen-design] Storage upload failed:", uploadError.message);
         return null;
+      }
+
+      // ── Helper: run gpt-image-1 edit and persist the result ─────────────────
+      async function editAndPersist(sourceImageUrl, editPrompt) {
+        const imgBuffer = await getImageBuffer(sourceImageUrl);
+        const imgFile   = await toFile(imgBuffer, "kitchen.png", { type: "image/png" });
+        const imageResponse = await client.images.edit({
+          model:   "gpt-image-1",
+          image:   imgFile,
+          prompt:  editPrompt,
+          size:    "1536x1024",
+          quality: "high",
+        });
+        const b64 = imageResponse.data?.[0]?.b64_json;
+        if (!b64) return null;
+        const outBuffer = Buffer.from(b64, "base64");
+        return (await persistImage(outBuffer)) ?? `data:image/png;base64,${b64}`;
       }
 
       // ── PATH A: Redesign type + customer photo → gpt-image-1 edit ────────────
@@ -525,6 +560,10 @@ export async function POST(request) {
             sections.push(`LAYOUT: ${lv.structure}`);
             sections.push(`CAMERA: ${lv.camera}`);
           }
+          const remWorkflowNote = layout ? (LAYOUT_WORKFLOW[layout] || null) : null;
+          if (remWorkflowNote) {
+            sections.push(`FUNCTIONAL ZONES: Preserve the existing sink and cooking range positions from the customer's photo.\n${remWorkflowNote}`);
+          }
           if (upper_color) {
             const d = upper_color_desc ? `\n${upper_color_desc}.` : "";
             sections.push(`UPPER CABINETS: Replace upper cabinets with ${upper_color} finish.${d}`);
@@ -551,30 +590,55 @@ export async function POST(request) {
           editPrompt = sections.join("\n\n");
         }
 
-        // Convert customer's photo to Buffer → File object for the API
-        const imageBuffer = await getImageBuffer(effectiveImageUrl);
-        const imageFile   = await toFile(imageBuffer, "kitchen.png", { type: "image/png" });
+        // Edit the customer's photo using the constructed prompt
+        dalleImageUrl = await editAndPersist(effectiveImageUrl, editPrompt);
 
-        const imageResponse = await client.images.edit({
-          model:   "gpt-image-1",
-          image:   imageFile,
-          prompt:  editPrompt,
-          size:    "1536x1024",
-          quality: "high",
-        });
+      // ── PATH A2: New build + admin layout reference image → gpt-image-1 edit ─
+      // The admin has uploaded a real kitchen photo for this layout type.
+      // We edit it with the customer's selected materials so the output is
+      // guaranteed to match the correct layout geometry — DALL-E 3 cannot do this.
+      } else if (refImages.layout_reference) {
+        console.log(`[kitchen-design] Using gpt-image-1 edit with admin layout reference for: ${layout}`);
 
-        // gpt-image-1 returns base64 in data[0].b64_json (not a URL like DALL-E 3)
-        const b64 = imageResponse.data?.[0]?.b64_json;
-        if (b64) {
-          const imgBuffer = Buffer.from(b64, "base64");
-          dalleImageUrl = await persistImage(imgBuffer);
-          if (!dalleImageUrl) {
-            // If Storage fails, serve base64 directly as a data URL fallback
-            dalleImageUrl = `data:image/png;base64,${b64}`;
-          }
+        const sections = [
+          `Photorealistic residential kitchen photograph. Using this reference kitchen as the spatial template, redesign it with the following materials and finishes. Keep the exact same layout structure, cabinet count, wall arrangement, and camera angle — only update the colors, materials, and finish style.`,
+        ];
+        const refWorkflowNote = layout ? (LAYOUT_WORKFLOW[layout] || null) : null;
+        if (refWorkflowNote) {
+          sections.push(`FUNCTIONAL ZONES: Preserve the sink and cooking range positions from the reference photo.\n${refWorkflowNote}`);
         }
+        if (upper_color) {
+          const d = upper_color_desc ? `\n${upper_color_desc}.` : "";
+          sections.push(`UPPER CABINETS: ${upper_color} finish.${d}`);
+        }
+        if (lower_color) {
+          const d = lower_color_desc ? `\n${lower_color_desc}.` : "";
+          sections.push(`LOWER CABINETS: ${lower_color} finish.${d}`);
+        }
+        if (upper_color && lower_color) {
+          sections.push(`COLOR SEPARATION: Upper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colors — do not blend them.`);
+        }
+        if (countertop) {
+          const d = countertop_desc ? ` ${countertop_desc}.` : "";
+          sections.push(`COUNTERTOP: ${countertop}.${d}`);
+        }
+        if (flooring) {
+          const d = flooring_desc ? ` ${flooring_desc}.` : "";
+          sections.push(`FLOORING: ${flooring}.${d}`);
+        }
+        if (cabinet_style) sections.push(`CABINET STYLE: ${cabinet_style} door style.`);
+        if (hardware)       sections.push(`HARDWARE: ${hardware}.`);
+        sections.push(dalle_prompt
+          ? `VISUAL STYLE:\n${dalle_prompt}`
+          : `VISUAL STYLE:\nClean minimal materials, soft natural lighting, balanced exposure.`
+        );
+        const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
+        sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
 
-      // ── PATH B: New build / no photo → DALL-E 3 text-to-image ────────────────
+        const refEditPrompt = sections.join("\n\n");
+        dalleImageUrl = await editAndPersist(refImages.layout_reference, refEditPrompt);
+
+      // ── PATH B: New build, no reference image → DALL-E 3 text-to-image ───────
       } else {
         const lv = layout ? LAYOUT_VISUAL[layout] : null;
 
@@ -595,6 +659,10 @@ export async function POST(request) {
           sections.push(`MANDATORY CAMERA VIEW:\n${lv.camera}`);
           sections.push(`MANDATORY SPATIAL RULES:\n${lv.spatial}`);
           sections.push(`LAYOUT BOUNDARIES:\n${lv.negative}`);
+        }
+        const genWorkflowNote = layout ? (LAYOUT_WORKFLOW[layout] || null) : null;
+        if (genWorkflowNote) {
+          sections.push(`MANDATORY FUNCTIONAL ZONES:\n${genWorkflowNote}`);
         }
         if (upper_color) {
           const desc = upper_color_desc ? `\n${upper_color_desc}.` : "";
