@@ -25,10 +25,10 @@ export default function CategoryPills({ categories, activeCategory, activeWidth,
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setParam("category", "")}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-150 ${
             !activeCategory
-              ? "bg-stone-900 text-white border-stone-900"
-              : "border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900"
+              ? "bg-stone-900 text-white border-stone-900 shadow-sm"
+              : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900 hover:shadow-sm"
           }`}
         >
           All
@@ -37,10 +37,10 @@ export default function CategoryPills({ categories, activeCategory, activeWidth,
           <button
             key={cat.id}
             onClick={() => setParam("category", cat.slug)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-150 ${
               activeCategory === cat.slug
-                ? "bg-stone-900 text-white border-stone-900"
-                : "border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900"
+                ? "bg-stone-900 text-white border-stone-900 shadow-sm"
+                : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900 hover:shadow-sm"
             }`}
           >
             {cat.name}
@@ -50,16 +50,16 @@ export default function CategoryPills({ categories, activeCategory, activeWidth,
 
       {/* Width row — only visible after category is selected */}
       {activeCategory && widths.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          <span className="text-xs text-stone-400 self-center mr-1">Width:</span>
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 pl-1 border-t border-stone-100">
+          <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest mr-2">Width</span>
           {widths.map((w) => (
             <button
               key={w}
               onClick={() => setParam("width", activeWidth === String(w) ? "" : String(w))}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
                 activeWidth === String(w)
-                  ? "bg-stone-700 text-white border-stone-700"
-                  : "border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-700"
+                  ? "bg-stone-800 text-white border-stone-800 shadow-sm"
+                  : "border-stone-200 bg-white text-stone-500 hover:border-stone-400 hover:text-stone-700"
               }`}
             >
               {w}&quot;
