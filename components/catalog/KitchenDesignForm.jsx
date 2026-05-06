@@ -247,22 +247,20 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const photoRequired = PHOTO_REQUIRED_TYPES.includes(form.project_type);
   const hasPhoto = form.image_source === "upload" ? !!form.image_file_data : !!form.image_url;
 
-  const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 shadow-sm placeholder:text-stone-400 transition";
+  const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 shadow-sm placeholder:text-stone-400 transition";
   const selectCls = `${inputCls} cursor-pointer`;
   const labelCls = "block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide";
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* ── Section 1: Your Info ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Your Information
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-1">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>1</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Your Information</h2>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Name <span className="text-red-500">*</span></label>
@@ -338,13 +336,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 2: Project ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Project Details
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-2">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>2</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Project Details</h2>
+          </div>
           <div className="space-y-6">
             <div>
               <label className={labelCls}>Project Type *</label>
@@ -394,7 +390,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                         <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
                             form.image_source === opt.value
-                              ? "border-stone-700 bg-stone-800 text-white"
+                              ? "border-[#1C1917] bg-[#1C1917] text-white"
                               : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
                           }`}>
                           {opt.label}
@@ -431,7 +427,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                         <button key={opt} type="button" onClick={() => set("image_status", opt)}
                           className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
                             form.image_status === opt
-                              ? "border-stone-900 bg-stone-900 text-white"
+                              ? "border-[#1C1917] bg-[#1C1917] text-white"
                               : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
                           }`}>
                           {opt}
@@ -445,7 +441,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                             <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
                                 form.image_source === opt.value
-                                  ? "border-stone-700 bg-stone-800 text-white"
+                                  ? "border-[#1C1917] bg-[#1C1917] text-white"
                                   : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
                               }`}>
                               {opt.label}
@@ -496,7 +492,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                       onClick={() => set("layout", name)}
                       className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
                         selected
-                          ? "border-[#2C3E50] bg-[#2C3E50] text-white"
+                          ? "border-[#1C1917] bg-[#1C1917] text-white"
                           : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
                       }`}
                     >
@@ -531,13 +527,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 3: Style ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Design Style
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-3">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>3</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Design Style</h2>
+          </div>
           <div>
             <label className={labelCls}>Cabinet Style *</label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-1">
@@ -560,7 +554,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   }}
                   className={`py-3 px-4 rounded-xl border text-sm font-medium transition ${
                     form.cabinet_style === style
-                      ? "border-[#2C3E50] bg-[#2C3E50] text-white"
+                      ? "border-[#1C1917] bg-[#1C1917] text-white"
                       : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
                   }`}
                 >
@@ -572,13 +566,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 4: Colors ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Colors &amp; Materials
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-4">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>4</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Colors &amp; Materials</h2>
+          </div>
           <ColorMaterialsSection
             finishes={finishes}
             countertopColors={countertopColors}
@@ -591,13 +583,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 5: Details ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Additional Details
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-5">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>5</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Additional Details</h2>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Hood Style</label>
@@ -634,13 +624,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 6: Comments ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Comments / Notes
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-6">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>6</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Comments / Notes</h2>
+          </div>
           <div>
             <label className={labelCls}>Any special requests, constraints, or notes for our team</label>
             <textarea
@@ -654,13 +642,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Section 7: Budget Range ── */}
-        <section className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
-          <h2
-            className="text-base font-semibold text-stone-800 mb-5 pb-3 border-b border-stone-100 tracking-tight"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-          >
-            Budget Range
-          </h2>
+        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-7">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>7</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
+          </div>
           <div>
             <label className={labelCls}>Kitchen Style</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
@@ -671,7 +657,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   onClick={() => set("budget_style", s.id)}
                   className={`flex flex-col text-left rounded-xl border p-4 transition ${
                     form.budget_style === s.id
-                      ? "border-[#2C3E50] bg-[#2C3E50] text-white"
+                      ? "border-[#1C1917] bg-[#1C1917] text-white"
                       : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
                   }`}
                 >
@@ -688,7 +674,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </section>
 
         {/* ── Submit ── */}
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-7">
+        <div className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-8">
           {error && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
               {error}
@@ -731,7 +717,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
       {/* ── Result ── */}
       {result && (
-        <div id="design-result" className="mt-4 bg-white rounded-2xl border border-stone-100 shadow-sm p-5 sm:p-8">
+        <div id="design-result" className="mt-4 form-section-card rounded-2xl p-5 sm:p-8">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h2
               className="text-2xl font-bold text-stone-900"
@@ -872,7 +858,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
 // ── Tab icons for the Colors & Materials section ──────────────────────────────
 function TabIcon({ id, active }) {
-  const cls = `w-4 h-4 shrink-0 ${active ? "text-blue-500" : "text-stone-400"}`;
+  const cls = `w-4 h-4 shrink-0 ${active ? "text-amber-500" : "text-stone-400"}`;
   if (id === "upper_color")
     return (
       <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -968,7 +954,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-3.5 text-[11px] sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === t.id
-                ? "border-blue-500 text-blue-700 bg-blue-50/50"
+                ? "border-amber-500 text-amber-700 bg-amber-50/50"
                 : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
             }`}
           >
@@ -1030,7 +1016,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                     }}
                     className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
                       selected
-                        ? "border-2 border-blue-500 shadow-sm"
+                        ? "border-2 border-amber-500 shadow-sm"
                         : "border-2 border-stone-200 hover:border-stone-300 hover:shadow-sm"
                     }`}
                     style={{ width: 110 }}
@@ -1045,15 +1031,15 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                         </div>
                       )}
                       {selected && (
-                        <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center shadow">
+                        <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       )}
                     </div>
-                    <div className={`px-2 py-2 ${selected ? "bg-blue-50" : "bg-white"}`}>
-                      <p className={`text-[11px] font-medium leading-snug line-clamp-2 text-center ${selected ? "text-blue-700" : "text-stone-700"}`}>
+                    <div className={`px-2 py-2 ${selected ? "bg-amber-50" : "bg-white"}`}>
+                      <p className={`text-[11px] font-medium leading-snug line-clamp-2 text-center ${selected ? "text-amber-700" : "text-stone-700"}`}>
                         {item.name}
                       </p>
                     </div>
@@ -1083,7 +1069,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
               <span
                 key={i}
                 className={`rounded-full transition-all duration-200 ${
-                  i === activeDot ? "w-4 h-2 bg-blue-500" : "w-2 h-2 bg-stone-200"
+                  i === activeDot ? "w-4 h-2 bg-amber-500" : "w-2 h-2 bg-stone-200"
                 }`}
               />
             ))}

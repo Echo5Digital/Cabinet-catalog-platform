@@ -126,62 +126,78 @@ export default async function KitchenDesignPage() {
   const { countertopColors, floorColors, finishes, structures } = await getCatalogData();
 
   return (
-    <div className="bg-stone-50">
+    <div className="bg-[#F8F6F3]">
       {/* Page header */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-stone-950 via-stone-900 to-stone-800">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(59,130,246,0.10),transparent)] pointer-events-none" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-16 relative z-10">
-          <nav className="text-xs mb-5 flex items-center gap-1.5">
-            <Link href="/catalog" className="text-stone-400 hover:text-stone-200 transition font-medium">
-              Collections
-            </Link>
-            <span className="text-stone-600">/</span>
-            <span className="text-stone-300 font-medium">Design AI</span>
-          </nav>
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, #4A0A15 0%, #6E1020 55%, #7D1528 100%)" }}>
+        {/* Amber radial warm glow — right side */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 55% 80% at 95% 50%, rgba(245,158,11,0.09) 0%, transparent 65%)" }} />
+        {/* Diagonal grid texture */}
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0 mt-1">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-            </div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+
+            {/* ── Left column: existing content ── */}
             <div>
+              {/* AI badge row */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center shrink-0 icon-float">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-bold tracking-widest text-amber-400 uppercase">Powered by AI</span>
+              </div>
+
               <h1
-                className="text-3xl sm:text-4xl font-bold text-white mb-3"
+                className="text-3xl sm:text-4xl lg:text-[2.6rem] font-bold text-white mb-4 anim-fade-in-up leading-tight"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Kitchen Design AI
               </h1>
-              <p className="text-stone-300/90 max-w-2xl leading-relaxed">
+              <p className="text-red-100/75 max-w-lg leading-relaxed mb-8">
                 Tell us about your dream kitchen and we&apos;ll generate personalized design concepts,
                 cabinet recommendations, and a sales-ready summary — instantly.
               </p>
-            </div>
-          </div>
 
-          {/* How it works */}
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { step: "1", title: "Fill in your details", desc: "Layout, style, colors, and what you need" },
-              { step: "2", title: "AI generates concepts", desc: "2–3 realistic designs matched to your inputs" },
-              { step: "3", title: "Request your quote", desc: "Browse the catalog and start building your order" },
-            ].map((item) => (
-              <div key={item.step} className="flex items-start gap-3 p-4 bg-white/[0.06] border border-white/[0.08] rounded-xl backdrop-blur-sm">
-                <span className="w-7 h-7 rounded-full bg-[#2C3E50] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                  {item.step}
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-white/90">{item.title}</p>
-                  <p className="text-xs text-stone-400 mt-0.5">{item.desc}</p>
-                </div>
+              {/* How it works */}
+              <div className="space-y-3">
+                {[
+                  { step: "1", title: "Fill in your details", desc: "Layout, style, colors, and what you need" },
+                  { step: "2", title: "AI generates concepts", desc: "2–3 realistic designs matched to your inputs" },
+                  { step: "3", title: "Request your quote", desc: "Browse the catalog and start building your order" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-start gap-3 p-4 rounded-xl design-step-card">
+                    <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>
+                      {item.step}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white/90">{item.title}</p>
+                      <p className="text-xs text-red-200/55 mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* ── Right column: decorative kitchen preview card ── */}
+            <div className="hidden lg:flex items-center justify-end">
+              <div className="w-full max-w-[460px] bg-white rounded-3xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10 p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=80"
+                  alt="Modern kitchen design preview"
+                  className="w-full h-72 object-cover rounded-2xl"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
       {/* Form */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
         <KitchenDesignForm
           countertopColors={countertopColors}
           floorColors={floorColors}

@@ -43,12 +43,14 @@ export default function FinishGallery({ finishes, lineMap }) {
         <div className="space-y-14">
           {families.map((family) => (
             <div key={family}>
-              <h2
-                className="text-xl font-bold text-stone-900 mb-6 capitalize"
-                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-              >
-                {family}
-              </h2>
+              <div className="section-band mb-6 inline-flex">
+                <h2
+                  className="text-xl font-bold text-stone-900 capitalize"
+                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                >
+                  {family}
+                </h2>
+              </div>
               <FinishGrid
                 finishes={familyGroups[family]}
                 lineMap={lineMap}
@@ -154,7 +156,7 @@ function FinishGrid({ finishes, lineMap, onSelect }) {
         <button
           key={finish.id}
           onClick={() => onSelect(finish)}
-          className="group text-left rounded-xl overflow-hidden border border-stone-200 bg-white hover:shadow-md hover:border-stone-300 transition-all duration-200 cursor-pointer"
+          className="group text-left rounded-xl overflow-hidden border border-stone-200 bg-white hover:shadow-lg hover:border-amber-200 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shimmer-card"
         >
           {/* Swatch */}
           <div className="aspect-square overflow-hidden relative">
@@ -163,16 +165,16 @@ function FinishGrid({ finishes, lineMap, onSelect }) {
               <img
                 src={finish.swatch.public_url}
                 alt={finish.swatch.alt_text || finish.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             ) : (
               <div
-                className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full group-hover:scale-110 transition-transform duration-500"
                 style={{ backgroundColor: finish.fallbackColor || "#E5E2DE" }}
               />
             )}
             {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-200" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
           {/* Info */}

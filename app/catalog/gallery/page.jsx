@@ -63,27 +63,27 @@ export default async function GalleryPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="border-b border-stone-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <nav className="text-xs text-stone-500 mb-4 flex items-center gap-1.5">
-            <Link href="/catalog" className="hover:text-stone-800 transition font-medium">
+      <div className="page-header-warm border-b border-stone-800/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 relative z-10">
+          <nav className="text-xs text-stone-400 mb-4 flex items-center gap-1.5">
+            <Link href="/catalog" className="hover:text-stone-200 transition font-medium">
               Collections
             </Link>
-            <span className="text-stone-400">/</span>
-            <span className="text-stone-700 font-medium">Design Gallery</span>
+            <span className="text-stone-600">/</span>
+            <span className="text-stone-200 font-medium">Design Gallery</span>
           </nav>
           <h1
-            className="text-3xl sm:text-4xl font-bold text-stone-900 mb-3"
+            className="text-3xl sm:text-4xl font-bold text-white mb-3 anim-fade-in-up"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Design Gallery
           </h1>
-          <p className="text-stone-500 max-w-2xl leading-relaxed">
+          <p className="text-stone-300/90 max-w-2xl leading-relaxed">
             Browse inspiration from our cabinet collections — real kitchen designs to help you envision
             your perfect space.
           </p>
           {totalImages > 0 && (
-            <p className="text-stone-400 text-sm mt-3">
+            <p className="text-stone-400/80 text-sm mt-3">
               {totalImages} photo{totalImages !== 1 ? "s" : ""}
             </p>
           )}
@@ -92,7 +92,7 @@ export default async function GalleryPage() {
 
       {/* Filter tabs by line */}
       {lines.length > 1 && orderedLineIds.length > 0 && (
-        <div className="border-b border-stone-100 bg-white sticky top-16 z-20">
+        <div className="border-b border-stone-200 bg-[#F8F6F3] sticky top-16 z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
               <a
@@ -115,7 +115,7 @@ export default async function GalleryPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12" id="all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 bg-[#F8F6F3] min-h-[60vh]" id="all">
 
         {totalImages === 0 ? (
           <div className="py-20 text-center">
@@ -135,16 +135,19 @@ export default async function GalleryPage() {
             {/* Grouped by line */}
             {orderedLineIds.map((lineId) => (
               <div key={lineId} id={`line-${lineId}`}>
-                <div className="flex items-center justify-between mb-6">
-                  <h2
-                    className="text-xl font-bold text-stone-900"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                  >
-                    {lineMap[lineId].name}
-                  </h2>
+                <div className="flex items-center justify-between mb-6 section-band">
+                  <div className="flex items-center gap-3">
+                    <h2
+                      className="text-xl font-bold text-stone-900"
+                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                    >
+                      {lineMap[lineId].name}
+                    </h2>
+                    <span className="count-badge">{lineGroups[lineId].length}</span>
+                  </div>
                   <Link
                     href={`/catalog/${lineMap[lineId].slug}`}
-                    className="text-sm text-stone-500 hover:text-stone-800 transition"
+                    className="text-sm text-stone-500 hover:text-stone-800 transition shrink-0"
                   >
                     Browse {lineMap[lineId].name} →
                   </Link>
@@ -173,13 +176,13 @@ export default async function GalleryPage() {
 
         {/* CTA */}
         {totalImages > 0 && (
-          <div className="mt-16 pt-10 border-t border-stone-100 text-center">
+          <div className="mt-16 pt-10 border-t border-stone-200 text-center">
             <p className="text-stone-500 text-sm mb-5">
               Love what you see? Start building your quote today.
             </p>
             <Link
               href="/catalog"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white btn-glow-amber"
             >
               Browse Collections →
             </Link>
@@ -198,16 +201,17 @@ function GalleryGrid({ images }) {
       {images.map((img, idx) => (
         <div
           key={img.id || idx}
-          className={`group relative overflow-hidden rounded-xl bg-stone-100 ${
+          className={`group relative overflow-hidden rounded-xl bg-stone-100 shimmer-card ${
             idx === 0 ? "col-span-2 row-span-2 sm:col-span-2 sm:row-span-2" : ""
           }`}
+          style={{ animationName: 'fade-in-up-sm', animationDuration: '0.45s', animationFillMode: 'both', animationTimingFunction: 'ease', animationDelay: `${idx * 0.05}s` }}
         >
           <div className={`${idx === 0 ? "aspect-square" : "aspect-[4/3]"} overflow-hidden`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={img.public_url}
               alt={img.alt_text || "Kitchen design inspiration"}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               loading={idx < 4 ? "eager" : "lazy"}
             />
           </div>

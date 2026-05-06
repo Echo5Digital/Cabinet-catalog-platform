@@ -101,18 +101,20 @@ export default function ColorGallery({ countertop, floor }) {
 function ColorSection({ title, items, onSelect }) {
   return (
     <div>
-      <h2
-        className="text-xl font-bold text-stone-900 mb-6"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-      >
-        {title}
-      </h2>
+      <div className="section-band mb-6 inline-flex">
+        <h2
+          className="text-xl font-bold text-stone-900"
+          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        >
+          {title}
+        </h2>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {items.map((color) => (
           <button
             key={color.id}
             onClick={() => onSelect(color)}
-            className="group text-left rounded-xl overflow-hidden border border-stone-100 bg-white hover:shadow-md hover:border-stone-300 transition-all duration-200 cursor-pointer"
+            className="group text-left rounded-xl overflow-hidden border border-stone-100 bg-white hover:shadow-lg hover:border-amber-200 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shimmer-card"
           >
             <div className="aspect-square bg-stone-100 overflow-hidden relative">
               {color.image ? (
@@ -120,7 +122,7 @@ function ColorSection({ title, items, onSelect }) {
                 <img
                   src={color.image.public_url}
                   alt={color.image.alt_text || color.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -129,7 +131,7 @@ function ColorSection({ title, items, onSelect }) {
                   </svg>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
             <div className="px-3 py-2.5">
               <p className="text-sm font-medium text-stone-900 truncate">{color.name}</p>

@@ -30,7 +30,7 @@ export default function StructureGallery({ structures }) {
           <button
             key={structure.id}
             onClick={() => setSelected(structure)}
-            className="group text-left rounded-xl overflow-hidden border border-stone-100 bg-white hover:shadow-md hover:border-stone-300 transition-all duration-200 cursor-pointer"
+            className="group text-left rounded-xl overflow-hidden border border-stone-100 bg-white hover:shadow-lg hover:border-amber-200 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shimmer-card"
           >
             <div className="aspect-square bg-stone-100 overflow-hidden relative">
               {structure.image ? (
@@ -38,7 +38,7 @@ export default function StructureGallery({ structures }) {
                 <img
                   src={structure.image.public_url}
                   alt={structure.image.alt_text || structure.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -47,7 +47,7 @@ export default function StructureGallery({ structures }) {
                   </svg>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
             <div className="px-3 py-2.5">
               <p className="text-sm font-medium text-stone-900 truncate">{structure.name}</p>

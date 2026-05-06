@@ -102,10 +102,11 @@ export default async function CatalogPage() {
   const [lines, primaryColor] = await Promise.all([getLines(), getPrimaryColor()]);
 
   return (
+    <div className="min-h-screen bg-[#F8F6F3]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
 
       {/* Header */}
-      <div className="mb-12">
+      <div className="mb-12 anim-fade-in-up">
         <p
           className="text-xs uppercase tracking-widest font-semibold mb-2"
           style={{ color: primaryColor }}
@@ -150,18 +151,19 @@ export default async function CatalogPage() {
               <Link
                 key={line.id}
                 href={`/catalog/${line.slug}`}
-                className={`group block rounded-2xl overflow-hidden border border-stone-200 bg-white hover:shadow-xl transition-all duration-300 ${
-                  isLarge ? "sm:col-span-2" : ""
+                className={`group block rounded-2xl overflow-hidden border border-stone-200 bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 shimmer-card ${
+                  isLarge ? "sm:col-span-2 gradient-border-card" : ""
                 }`}
+                style={{ animationName: 'fade-in-up-sm', animationDuration: '0.5s', animationFillMode: 'both', animationTimingFunction: 'ease', animationDelay: `${index * 0.1}s` }}
               >
                 {/* Image */}
-                <div className={`overflow-hidden bg-stone-100 relative ${isLarge ? "aspect-[21/9]" : "aspect-[4/3]"}`}>
+                <div className={`overflow-hidden bg-stone-100 relative img-hover-burn ${isLarge ? "aspect-[21/9]" : "aspect-[4/3]"}`}>
                   {hero?.public_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={hero.public_url}
                       alt={hero.alt_text || line.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-stone-200 flex items-center justify-center">
@@ -195,7 +197,7 @@ export default async function CatalogPage() {
                     </div>
                   )}
 
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
+                  {/* overlay handled by img-hover-burn */}
                 </div>
 
                 {/* Info */}
@@ -249,13 +251,13 @@ export default async function CatalogPage() {
       {/* Features strip */}
       <div className="mt-16 sm:mt-20 pt-10 sm:pt-12 border-t border-stone-100">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-          {FEATURES.map((f) => (
+          {FEATURES.map((f, fi) => (
             <div
               key={f.title}
-              className="flex flex-col items-start gap-3 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+              className="flex flex-col items-start gap-3 rounded-2xl p-5 shadow-sm feature-strip-card shimmer-card"
               style={{ backgroundColor: primaryColor }}
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 icon-float" style={{ backgroundColor: "rgba(255,255,255,0.15)", animationDelay: `${fi * 0.3}s` }}>
                 {f.icon}
               </div>
               <div>
@@ -267,6 +269,7 @@ export default async function CatalogPage() {
         </div>
       </div>
 
+    </div>
     </div>
   );
 }

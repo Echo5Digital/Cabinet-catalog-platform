@@ -53,33 +53,33 @@ export default async function StructuresPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="border-b border-stone-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <nav className="text-xs text-stone-500 mb-4 flex items-center gap-1.5">
-            <Link href="/catalog" className="hover:text-stone-800 transition font-medium">
+      <div className="page-header-warm border-b border-stone-800/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 relative z-10">
+          <nav className="text-xs text-stone-400 mb-4 flex items-center gap-1.5">
+            <Link href="/catalog" className="hover:text-stone-200 transition font-medium">
               Collections
             </Link>
-            <span className="text-stone-400">/</span>
-            <span className="text-stone-700 font-medium">Structures</span>
+            <span className="text-stone-600">/</span>
+            <span className="text-stone-200 font-medium">Structures</span>
           </nav>
           <h1
-            className="text-3xl sm:text-4xl font-bold text-stone-900 mb-3"
+            className="text-3xl sm:text-4xl font-bold text-white mb-3 anim-fade-in-up"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             Structures
           </h1>
-          <p className="text-stone-500 max-w-2xl leading-relaxed">
+          <p className="text-stone-300/90 max-w-2xl leading-relaxed">
             Browse our available structural options and configurations for your cabinet project.
           </p>
           {structures.length > 0 && (
-            <p className="text-stone-400 text-sm mt-3">
+            <p className="text-stone-400/80 text-sm mt-3">
               {structures.length} option{structures.length !== 1 ? "s" : ""}
             </p>
           )}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 bg-[#F8F6F3] min-h-[60vh]">
         {structures.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-stone-400 mb-4">No structures available yet.</p>
@@ -98,7 +98,7 @@ export default async function StructuresPage() {
             </p>
             <Link
               href="/catalog"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white btn-glow-amber"
             >
               Browse Collections →
             </Link>
