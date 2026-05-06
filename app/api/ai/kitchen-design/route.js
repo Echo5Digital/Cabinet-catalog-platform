@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import OpenAI, { toFile } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildKitchenDesignPrompt } from "@/lib/ai/kitchen-design-prompt";
+import { getAIConfig } from "@/lib/ai/config";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 // Per-layout DALL-E visual blocks.
@@ -207,6 +207,10 @@ export async function POST(request) {
     if (!TENANT_ID) {
       return NextResponse.json({ error: "Tenant not configured." }, { status: 500 });
     }
+
+    // Load AI credentials from DB (falls back to env if not yet configured in admin panel)
+    const { apiKey: openaiApiKey } = await getAIConfig(TENANT_ID);
+    const client = new OpenAI({ apiKey: openaiApiKey });
 
     // ── Stage 1: Load catalog context + reference images in parallel ──────────
     const admin = createAdminClient();

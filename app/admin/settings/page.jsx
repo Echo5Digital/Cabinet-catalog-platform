@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 function ColorSwatch({ color }) {
   return (
@@ -32,6 +32,175 @@ function Field({ label, hint, children }) {
     </div>
   );
 }
+
+// ── AI Configuration section (separate from branding form) ────────────────────
+
+function AIConfigSection() {
+  // null = not yet loaded, { exists, maskedKey, maskedModel } after load
+  const [cfg, setCfg] = useState(null);
+  const [loadError, setLoadError] = useState("");
+
+  // Form values — only visible while typing before first save
+  const [form, setForm] = useState({ openai_api_key: "", openai_model: "gpt-4o-mini" });
+
+  const [saving,   setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [opError,  setOpError]  = useState("");
+
+  const loadConfig = useCallback(async () => {
+    setLoadError("");
+    try {
+      const res = await fetch("/api/admin/ai-config");
+      if (!res.ok) throw new Error("Failed to load AI configuration");
+      const data = await res.json();
+      setCfg(data);
+    } catch (e) {
+      setLoadError(e.message);
+    }
+  }, []);
+
+  useEffect(() => { loadConfig(); }, [loadConfig]);
+
+  async function handleSave() {
+    setSaving(true);
+    setOpError("");
+    setSaved(false);
+    try {
+      const res = await fetch("/api/admin/ai-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setSaved(true);
+      setForm({ openai_api_key: "", openai_model: "gpt-4o-mini" });
+      setTimeout(() => setSaved(false), 3000);
+      await loadConfig();
+    } catch (e) {
+      setOpError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("Delete AI configuration? AI features will stop working until a new key is saved.")) return;
+    setDeleting(true);
+    setOpError("");
+    try {
+      const res = await fetch("/api/admin/ai-config", { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      setForm({ openai_api_key: "", openai_model: "gpt-4o-mini" });
+      await loadConfig();
+    } catch (e) {
+      setOpError(e.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white";
+  const lockedCls = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono bg-gray-50 text-gray-400 cursor-not-allowed select-none";
+
+  return (
+    <Section
+      title="AI Configuration"
+      description="Manage OpenAI API credentials used for AI-powered kitchen design generation."
+    >
+      {loadError && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
+      {cfg === null && !loadError && (
+        <p className="text-sm text-gray-400">Loading…</p>
+      )}
+
+      {cfg !== null && (
+        <>
+          {opError && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {opError}
+            </div>
+          )}
+
+          {/* CASE: key already exists — show masked, locked */}
+          {cfg.exists ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                A key is already saved. Delete the current configuration before entering a new one.
+              </div>
+
+              <Field label="OPENAI_API_KEY">
+                <div className={lockedCls}>{cfg.maskedKey}</div>
+              </Field>
+
+              <Field label="OPENAI_MODEL">
+                <div className={lockedCls}>{cfg.maskedModel}</div>
+              </Field>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                >
+                  {deleting ? "Deleting…" : "Delete Configuration"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* CASE: no key — show editable form */
+            <div className="space-y-4">
+              <Field label="OPENAI_API_KEY" hint="Your OpenAI secret key. Starts with sk-">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  className={inputCls}
+                  placeholder="sk-proj-••••••••••••••••••••••"
+                  value={form.openai_api_key}
+                  onChange={(e) => setForm((p) => ({ ...p, openai_api_key: e.target.value }))}
+                />
+              </Field>
+
+              <Field label="OPENAI_MODEL" hint="Model used for AI design generation (e.g. gpt-4o-mini)">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  className={inputCls}
+                  placeholder="gpt-4o-mini"
+                  value={form.openai_model}
+                  onChange={(e) => setForm((p) => ({ ...p, openai_model: e.target.value }))}
+                />
+              </Field>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !form.openai_api_key.trim() || !form.openai_model.trim()}
+                  className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save Configuration"}
+                </button>
+                {saved && (
+                  <span className="text-sm text-green-600 font-medium">Saved!</span>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </Section>
+  );
+}
+
+// ── Main settings page ─────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -339,6 +508,11 @@ export default function SettingsPage() {
           )}
         </div>
       </form>
+
+      {/* AI Configuration — separate section, own state & API */}
+      <div className="mt-6">
+        <AIConfigSection />
+      </div>
     </div>
   );
 }
