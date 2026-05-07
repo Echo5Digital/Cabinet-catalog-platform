@@ -135,6 +135,21 @@ function AIConfigSection() {
                 A key is already saved. Delete the current configuration before entering a new one.
               </div>
 
+              {cfg.lastError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <p className="font-semibold mb-0.5">AI Error Detected</p>
+                  <p className="text-xs">{cfg.lastError}</p>
+                  {cfg.lastErrorAt && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Last occurred: {new Date(cfg.lastErrorAt).toLocaleString()}
+                    </p>
+                  )}
+                  <p className="text-xs text-red-600 mt-1.5">
+                    Delete the current configuration and save a new API key to resolve this.
+                  </p>
+                </div>
+              )}
+
               <Field label="OPENAI_API_KEY">
                 <div className={lockedCls}>{cfg.maskedKey}</div>
               </Field>

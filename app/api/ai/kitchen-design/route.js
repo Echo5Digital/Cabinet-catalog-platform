@@ -6,6 +6,22 @@ import { getAIConfig } from "@/lib/ai/config";
 
 const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
+/** Persist an OpenAI error message to ai_settings for the admin to see. */
+async function recordAIError(errorMessage) {
+  try {
+    const adminDb = createAdminClient();
+    await adminDb
+      .from("ai_settings")
+      .update({
+        last_error:    errorMessage,
+        last_error_at: new Date().toISOString(),
+      })
+      .eq("tenant_id", TENANT_ID);
+  } catch {
+    // Never block the response — this is informational only
+  }
+}
+
 // Per-layout DALL-E visual blocks.
 // structure = concise 1-2 sentence cabinet/wall geometry description
 // camera    = camera angle that inherently shows this layout's defining shape
@@ -726,6 +742,7 @@ export async function POST(request) {
 
     } catch (dalleErr) {
       console.warn("[kitchen-design] Image generation failed (non-fatal):", dalleErr.message);
+      await recordAIError(dalleErr.message);
     }
 
     // ── Stage 6: Return structured response ───────────────────────────────────
@@ -749,6 +766,9 @@ export async function POST(request) {
 
   } catch (err) {
     console.error("[kitchen-design] error:", err);
+    if (err instanceof OpenAI.APIError) {
+      await recordAIError(err.message);
+    }
     return NextResponse.json(
       { error: err.message || "Failed to generate design concepts." },
       { status: 500 }

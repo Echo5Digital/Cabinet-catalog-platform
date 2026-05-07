@@ -22,7 +22,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data } = await admin
     .from("ai_settings")
-    .select("openai_api_key, openai_model")
+    .select("openai_api_key, openai_model, last_error, last_error_at")
     .eq("tenant_id", ctx.tenantId)
     .single();
 
@@ -31,9 +31,11 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    exists: true,
+    exists:      true,
     maskedKey:   maskValue(data.openai_api_key),
     maskedModel: maskValue(data.openai_model),
+    lastError:   data.last_error    ?? null,
+    lastErrorAt: data.last_error_at ?? null,
   });
 }
 
@@ -68,6 +70,8 @@ export async function POST(request) {
         tenant_id:      ctx.tenantId,
         openai_api_key: apiKey,
         openai_model:   model,
+        last_error:     null,
+        last_error_at:  null,
         updated_at:     new Date().toISOString(),
       },
       { onConflict: "tenant_id" }
