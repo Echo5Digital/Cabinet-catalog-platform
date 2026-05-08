@@ -122,12 +122,30 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     image_url: "",
     image_source: "url",
     image_file_data: "",
+    room_width: "",
+    room_length: "",
+    ceiling_height: "",
+    window_positions: "",
+    door_positions: "",
+    refrigerator_position: "",
+    sink_position: "",
+    special_features: "",
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [originalPhotoUrl, setOriginalPhotoUrl] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // OTP / email-verification state
+  const [resultState,  setResultState]  = useState(null); // null | "pending" | "verified"
+  const [otpSending,   setOtpSending]   = useState(false);
+  const [otpSent,      setOtpSent]      = useState(false);
+  const [otpInput,     setOtpInput]     = useState("");
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError,     setOtpError]     = useState("");
+  const [otpSendError, setOtpSendError] = useState("");
 
   // Field touched tracking (shows inline errors after blur or submit attempt)
   const [touched, setTouched] = useState({});
@@ -151,6 +169,55 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     reader.readAsDataURL(file);
   }
 
+  async function sendOTP() {
+    setOtpSending(true);
+    setOtpSendError("");
+    try {
+      const res = await fetch("/api/public/design/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Failed to send code.");
+      }
+      setOtpSent(true);
+    } catch (err) {
+      setOtpSendError(err.message);
+    } finally {
+      setOtpSending(false);
+    }
+  }
+
+  async function handleVerifyOTP() {
+    setOtpVerifying(true);
+    setOtpError("");
+    try {
+      const res = await fetch("/api/public/design/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email:   form.email,
+          otp:     otpInput,
+          name:    form.name,
+          phone:   form.phone,
+          address: form.address,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Verification failed.");
+      setResultState("verified");
+      setTimeout(() => {
+        document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (err) {
+      setOtpError(err.message);
+    } finally {
+      setOtpVerifying(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     // Mark all info fields as touched so errors become visible
@@ -166,6 +233,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setResult(null);
     setOriginalPhotoUrl(null);
     setQuoteStatus("idle");
+    setResultState(null);
+    setOtpInput("");
+    setOtpError("");
+    setOtpSendError("");
+    setOtpSent(false);
     try {
       const effectiveImageUrl =
         form.image_status === "Yes"
@@ -182,9 +254,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed.");
       setResult(data);
+      setResultState("pending");
       if (PHOTO_REQUIRED_TYPES.includes(form.project_type) && effectiveImageUrl) {
         setOriginalPhotoUrl(effectiveImageUrl);
       }
+      sendOTP(); // auto-send OTP immediately
       setTimeout(() => {
         document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -673,6 +747,132 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </div>
         </section>
 
+        {/* ── Section 8: Advanced (accordion) ── */}
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-8">
+          {/* Clickable header — always visible */}
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="w-full flex items-center gap-3 px-5 sm:px-7 py-5 text-left"
+          >
+            <span
+              className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}
+            >8</span>
+            <h2
+              className="text-base font-semibold text-stone-800 tracking-tight flex-1"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >Advanced</h2>
+            <span className="text-xs text-stone-400 font-normal mr-2 hidden sm:inline">Optional</span>
+            <svg
+              className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Collapsible content */}
+          {advancedOpen && (
+            <div className="px-5 sm:px-7 pb-6 border-t border-stone-100 pt-5 space-y-4">
+              <p className="text-xs text-stone-400">
+                Providing room details helps the AI generate a more accurate layout. All fields are optional.
+              </p>
+
+              {/* Dimensions */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelCls}>Kitchen Width</label>
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      placeholder="e.g. 12"
+                      value={form.room_width}
+                      onChange={(e) => set("room_width", e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Kitchen Length</label>
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      placeholder="e.g. 14"
+                      value={form.room_length}
+                      onChange={(e) => set("room_length", e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Ceiling Height</label>
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      placeholder="e.g. 9"
+                      value={form.ceiling_height}
+                      onChange={(e) => set("ceiling_height", e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Positions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Window Positions</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. South wall, 3 ft from left corner"
+                    value={form.window_positions}
+                    onChange={(e) => set("window_positions", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Door Positions</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Entry door on east wall"
+                    value={form.door_positions}
+                    onChange={(e) => set("door_positions", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Refrigerator Position</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Left end of kitchen, north wall"
+                    value={form.refrigerator_position}
+                    onChange={(e) => set("refrigerator_position", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Sink Position</label>
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Center of main counter, under window"
+                    value={form.sink_position}
+                    onChange={(e) => set("sink_position", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Special features */}
+              <div>
+                <label className={labelCls}>Special Features / Constraints</label>
+                <input
+                  className={inputCls}
+                  placeholder="e.g. Pantry cabinet, breakfast bar, structural column in corner"
+                  value={form.special_features}
+                  onChange={(e) => set("special_features", e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* ── Submit ── */}
         <div className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-8">
           {error && (
@@ -715,8 +915,97 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </div>
       </form>
 
-      {/* ── Result ── */}
-      {result && (
+      {/* ── Result: Pending verification — blurred preview + OTP form ── */}
+      {result && resultState === "pending" && (
+        <div id="design-result" className="mt-4">
+          {/* Blurred image preview */}
+          <div className="form-section-card rounded-2xl overflow-hidden relative">
+            {result.image_url && (
+              <div className="relative w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={result.image_url}
+                  alt="Design preview"
+                  className="w-full block"
+                  draggable="false"
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ filter: "blur(1.5px)", userSelect: "none", pointerEvents: "none" }}
+                />
+                <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
+                  <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-stone-800">Verify email to unlock</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Blurred content placeholders */}
+            <div className="p-5 sm:p-7 space-y-3" style={{ filter: "blur(6px)", userSelect: "none", pointerEvents: "none" }}>
+              <div className="h-5 bg-stone-200 rounded w-2/3" />
+              <div className="h-4 bg-stone-100 rounded w-full" />
+              <div className="h-4 bg-stone-100 rounded w-5/6" />
+              <div className="h-4 bg-stone-100 rounded w-3/4" />
+            </div>
+          </div>
+
+          {/* OTP verification card */}
+          <div className="mt-4 form-section-card rounded-2xl p-5 sm:p-7">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-stone-100">
+              <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-stone-800">Verify your email to view your design</h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  {otpSending ? "Sending code…" : otpSent ? `Code sent to ${form.email}` : "Preparing your code…"}
+                </p>
+              </div>
+            </div>
+
+            {otpSendError && (
+              <div className="mb-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{otpSendError}</div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6-digit code"
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="w-full sm:w-40 border border-stone-200 rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 shadow-sm"
+              />
+              <button
+                type="button"
+                onClick={handleVerifyOTP}
+                disabled={otpInput.length !== 6 || otpVerifying}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {otpVerifying ? "Verifying…" : "Verify & View Design"}
+              </button>
+              <button
+                type="button"
+                onClick={sendOTP}
+                disabled={otpSending}
+                className="text-xs text-stone-400 hover:text-stone-600 transition underline underline-offset-2 shrink-0"
+              >
+                {otpSending ? "Sending…" : "Resend code"}
+              </button>
+            </div>
+            {otpError && (
+              <p className="mt-2 text-xs text-red-600">{otpError}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Result: Verified — full design ── */}
+      {result && resultState === "verified" && (
         <div id="design-result" className="mt-4 form-section-card rounded-2xl p-5 sm:p-8">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h2

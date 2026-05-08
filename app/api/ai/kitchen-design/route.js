@@ -219,6 +219,10 @@ export async function POST(request) {
       hood_style, hardware, appliance_color,
       design_comments,
       image_status, image_url,
+      room_width, room_length, ceiling_height,
+      window_positions, door_positions,
+      refrigerator_position, sink_position,
+      special_features,
     } = body;
 
     if (!TENANT_ID) {
@@ -302,6 +306,10 @@ export async function POST(request) {
         hood_style, hardware, appliance_color,
         design_comments,
         upper_color_desc, lower_color_desc, countertop_desc, flooring_desc,
+        room_width, room_length, ceiling_height,
+        window_positions, door_positions,
+        refrigerator_position, sink_position,
+        special_features,
       },
       catalogContext,
       includeImageAnalysis,
