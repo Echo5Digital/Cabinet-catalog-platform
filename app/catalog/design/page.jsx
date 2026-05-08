@@ -129,8 +129,8 @@ export default async function KitchenDesignPage() {
     <div className="bg-[#F8F6F3]">
       {/* Page header */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, #4A0A15 0%, #6E1020 55%, #7D1528 100%)" }}>
-        {/* Amber radial warm glow — right side */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 55% 80% at 95% 50%, rgba(245,158,11,0.09) 0%, transparent 65%)" }} />
+        {/* Warm radial glow — right side */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 55% 80% at 95% 50%, rgba(180,30,60,0.15) 0%, transparent 65%)" }} />
         {/* Diagonal grid texture */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
@@ -146,7 +146,7 @@ export default async function KitchenDesignPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold tracking-widest text-amber-400 uppercase">Powered by AI</span>
+                <span className="text-xs font-bold tracking-widest text-rose-300 uppercase">Powered by AI</span>
               </div>
 
               <h1
@@ -168,7 +168,7 @@ export default async function KitchenDesignPage() {
                   { step: "3", title: "Request your quote", desc: "Browse the catalog and start building your order" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3 p-4 rounded-xl design-step-card">
-                    <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>
+                    <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.15)" }}>
                       {item.step}
                     </span>
                     <div>

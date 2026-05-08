@@ -144,8 +144,8 @@ export default function CustomersPage() {
                           Quoted
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                           Not Quoted
                         </span>
                       )}
@@ -171,8 +171,8 @@ export default function CustomersPage() {
                       Quoted
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-500 border border-gray-200 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                       Not Quoted
                     </span>
                   )}

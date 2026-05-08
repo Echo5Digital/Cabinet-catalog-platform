@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import DesignResultBoard from "@/components/catalog/DesignResultBoard";
+import { MagicCard } from "@/registry/magicui/magic-card";
 
 const PROJECT_TYPES = [
   "New Kitchen",
@@ -321,7 +322,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const photoRequired = PHOTO_REQUIRED_TYPES.includes(form.project_type);
   const hasPhoto = form.image_source === "upload" ? !!form.image_file_data : !!form.image_url;
 
-  const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 shadow-sm placeholder:text-stone-400 transition";
+  const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
   const selectCls = `${inputCls} cursor-pointer`;
   const labelCls = "block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide";
 
@@ -330,9 +331,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* ── Section 1: Your Info ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-1">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-1">
+          <MagicCard glowFrom="#6E1020" glowTo="#1C1917" gradientSize={350} gradientOpacity={0.15} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>1</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>1</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Your Information</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -407,12 +409,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               )}
             </div>
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 2: Project ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-2">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-2">
+          <MagicCard gradientColor="#6E102018" gradientSize={350} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>2</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>2</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Project Details</h2>
           </div>
           <div className="space-y-6">
@@ -451,7 +455,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 {photoRequired ? (
                   /* Required: always-visible upload, no toggle */
                   <div className="space-y-3">
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                    <p className="text-xs text-rose-900 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2.5">
                       {form.project_type === "Replace Cabinets Only"
                         ? <>A photo of your existing kitchen is required for <strong>Replace Cabinets Only</strong>. The AI will preserve your room geometry and only update cabinetry.</>
                         : form.project_type === "Countertop Only"
@@ -598,12 +602,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               </div>
             </div>
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 3: Style ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-3">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-3">
+          <MagicCard glowFrom="#6E1020" glowTo="#1C1917" gradientSize={350} gradientOpacity={0.15} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>3</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>3</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Design Style</h2>
           </div>
           <div>
@@ -637,12 +643,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               ))}
             </div>
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 4: Colors ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-4">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-4">
+          <MagicCard gradientColor="#6E102018" gradientSize={350} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>4</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>4</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Colors &amp; Materials</h2>
           </div>
           <ColorMaterialsSection
@@ -654,12 +662,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             setForm={setForm}
             cabinet_style={form.cabinet_style}
           />
+          </MagicCard>
         </section>
 
         {/* ── Section 5: Details ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-5">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-5">
+          <MagicCard glowFrom="#6E1020" glowTo="#1C1917" gradientSize={350} gradientOpacity={0.15} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>5</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>5</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Additional Details</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -695,12 +705,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               </select>
             </div>
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 6: Comments ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-6">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-6">
+          <MagicCard gradientColor="#6E102018" gradientSize={350} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>6</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>6</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Comments / Notes</h2>
           </div>
           <div>
@@ -713,12 +725,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               onChange={(e) => set("design_comments", e.target.value)}
             />
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 7: Budget Range ── */}
-        <section className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-7">
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-7">
+          <MagicCard glowFrom="#6E1020" glowTo="#1C1917" gradientSize={350} gradientOpacity={0.15} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}>7</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>7</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
           </div>
           <div>
@@ -745,6 +759,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               ))}
             </div>
           </div>
+          </MagicCard>
         </section>
 
         {/* ── Section 8: Advanced (accordion) ── */}
@@ -757,7 +772,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           >
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)" }}
+              style={{ background: "#6E1020" }}
             >8</span>
             <h2
               className="text-base font-semibold text-stone-800 tracking-tight flex-1"
@@ -774,6 +789,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
           {/* Collapsible content */}
           {advancedOpen && (
+            <MagicCard gradientColor="#6E102018" gradientSize={350}>
             <div className="px-5 sm:px-7 pb-6 border-t border-stone-100 pt-5 space-y-4">
               <p className="text-xs text-stone-400">
                 Providing room details helps the AI generate a more accurate layout. All fields are optional.
@@ -870,48 +886,99 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 />
               </div>
             </div>
+            </MagicCard>
           )}
         </section>
 
         {/* ── Submit ── */}
-        <div className="form-section-card rounded-2xl p-5 sm:p-7 anim-stagger-8">
+        <div className="rounded-2xl overflow-hidden anim-stagger-8" style={{ background: "#1C1917" }}>
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="mx-5 sm:mx-8 mt-6 px-4 py-3 rounded-lg bg-red-900/30 border border-red-500/30 text-red-300 text-sm">
               {error}
             </div>
           )}
-          <button
-            type="submit"
-            disabled={
-              loading ||
-              !form.name.trim() || !form.email.trim() || !isValidEmail(form.email) ||
-              !form.phone.trim() || !form.address.trim() ||
-              !form.project_type || !form.layout ||
-              (photoRequired && !hasPhoto)
-            }
-            className="w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Generating your design…
-              </>
-            ) : (
-              "Generate Design Concepts →"
-            )}
-          </button>
-          {(!form.project_type || !form.layout || (photoRequired && !hasPhoto)) && (
-            <p className="text-xs text-stone-400 mt-2">
-              {!form.project_type
-                ? "Project type and layout are required to generate concepts."
-                : !form.layout
-                ? "Please select a kitchen layout."
-                : "A kitchen photo is required for this project type."}
+          <div className="px-6 sm:px-10 py-8 sm:py-10 flex flex-col items-center text-center">
+            {/* Icon */}
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mb-5" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+
+            {/* Headline */}
+            <h3
+              className="text-xl sm:text-2xl font-bold text-white mb-2"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
+              Generate My Design
+            </h3>
+            <p className="text-stone-400 text-sm mb-7 max-w-xs leading-relaxed">
+              Your personalized AI kitchen design, ready in seconds
             </p>
-          )}
+
+            {/* Button */}
+            <button
+              type="submit"
+              disabled={
+                loading ||
+                !form.name.trim() || !form.email.trim() || !isValidEmail(form.email) ||
+                !form.phone.trim() || !form.address.trim() ||
+                !form.project_type || !form.layout ||
+                (photoRequired && !hasPhoto)
+              }
+              className="w-full sm:w-auto px-10 py-4 rounded-full text-sm font-bold bg-white text-stone-900 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Generating your design…
+                </>
+              ) : (
+                <>
+                  GENERATE MY DESIGN
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </>
+              )}
+            </button>
+
+            {/* Validation hint */}
+            {(!form.project_type || !form.layout || (photoRequired && !hasPhoto)) && (
+              <p className="text-xs text-stone-500 mt-3">
+                {!form.project_type
+                  ? "Project type and layout are required to generate concepts."
+                  : !form.layout
+                  ? "Please select a kitchen layout."
+                  : "A kitchen photo is required for this project type."}
+              </p>
+            )}
+
+            {/* Trust badges */}
+            <div className="flex items-center flex-wrap justify-center gap-x-5 gap-y-2 mt-6 pt-5 border-t border-white/10 w-full">
+              <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                <svg className="w-3.5 h-3.5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Free to use
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                <svg className="w-3.5 h-3.5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                AI-Powered
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                <svg className="w-3.5 h-3.5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                No commitment
+              </span>
+            </div>
+          </div>
         </div>
       </form>
 
@@ -933,7 +1000,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 />
                 <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
                   <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow">
-                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-rose-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                     <span className="text-sm font-semibold text-stone-800">Verify email to unlock</span>
@@ -953,8 +1020,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           {/* OTP verification card */}
           <div className="mt-4 form-section-card rounded-2xl p-5 sm:p-7">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-stone-100">
-              <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-rose-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -978,13 +1045,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 placeholder="6-digit code"
                 value={otpInput}
                 onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="w-full sm:w-40 border border-stone-200 rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 shadow-sm"
+                className="w-full sm:w-40 border border-stone-200 rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm"
               />
               <button
                 type="button"
                 onClick={handleVerifyOTP}
                 disabled={otpInput.length !== 6 || otpVerifying}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full text-sm font-semibold bg-rose-800 hover:bg-rose-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {otpVerifying ? "Verifying…" : "Verify & View Design"}
               </button>
@@ -1058,7 +1125,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           />
 
           {/* ── Request a Quote ── */}
-          <div className="mt-6 rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/60 to-stone-50 p-6 sm:p-8">
+          <div className="mt-6 rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50/60 to-stone-50 p-6 sm:p-8">
             {quoteStatus === "success" ? (
               <div className="flex flex-col items-center text-center gap-3 py-4">
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -1117,7 +1184,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   type="button"
                   onClick={handleQuoteSubmit}
                   disabled={quoteStatus === "submitting"}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold bg-rose-800 hover:bg-rose-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {quoteStatus === "submitting" ? (
                     <>
@@ -1147,7 +1214,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
 // ── Tab icons for the Colors & Materials section ──────────────────────────────
 function TabIcon({ id, active }) {
-  const cls = `w-4 h-4 shrink-0 ${active ? "text-amber-500" : "text-stone-400"}`;
+  const cls = `w-4 h-4 shrink-0 ${active ? "text-rose-800" : "text-stone-400"}`;
   if (id === "upper_color")
     return (
       <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -1243,7 +1310,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
             onClick={() => setActiveTab(t.id)}
             className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-3.5 text-[11px] sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === t.id
-                ? "border-amber-500 text-amber-700 bg-amber-50/50"
+                ? "border-rose-800 text-rose-900 bg-rose-50/50"
                 : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
             }`}
           >
@@ -1305,7 +1372,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                     }}
                     className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
                       selected
-                        ? "border-2 border-amber-500 shadow-sm"
+                        ? "border-2 border-rose-800 shadow-sm"
                         : "border-2 border-stone-200 hover:border-stone-300 hover:shadow-sm"
                     }`}
                     style={{ width: 110 }}
@@ -1320,15 +1387,15 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                         </div>
                       )}
                       {selected && (
-                        <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shadow">
+                        <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-rose-800 flex items-center justify-center shadow">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       )}
                     </div>
-                    <div className={`px-2 py-2 ${selected ? "bg-amber-50" : "bg-white"}`}>
-                      <p className={`text-[11px] font-medium leading-snug line-clamp-2 text-center ${selected ? "text-amber-700" : "text-stone-700"}`}>
+                    <div className={`px-2 py-2 ${selected ? "bg-rose-50" : "bg-white"}`}>
+                      <p className={`text-[11px] font-medium leading-snug line-clamp-2 text-center ${selected ? "text-rose-900" : "text-stone-700"}`}>
                         {item.name}
                       </p>
                     </div>
@@ -1358,7 +1425,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
               <span
                 key={i}
                 className={`rounded-full transition-all duration-200 ${
-                  i === activeDot ? "w-4 h-2 bg-amber-500" : "w-2 h-2 bg-stone-200"
+                  i === activeDot ? "w-4 h-2 bg-rose-800" : "w-2 h-2 bg-stone-200"
                 }`}
               />
             ))}

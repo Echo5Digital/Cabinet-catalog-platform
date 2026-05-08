@@ -276,7 +276,7 @@ export default function DesignResultBoard({
         {/* Budget badge */}
         {budget_range && (
           <div className="absolute top-4 right-4">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500 text-white shadow">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-800 text-white shadow">
               {budget_range}
             </span>
           </div>
@@ -351,7 +351,7 @@ export default function DesignResultBoard({
           <ul className="space-y-1.5">
             {why_it_works.map((bullet, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-800 shrink-0" />
                 {bullet}
               </li>
             ))}
@@ -361,26 +361,26 @@ export default function DesignResultBoard({
 
       {/* ── Zone 3b: AI Color Suggestions ────────────────────────────────── */}
       {Array.isArray(color_suggestions) && color_suggestions.length > 0 && (
-        <div className="px-6 py-5 border-t border-amber-100 bg-amber-50">
+        <div className="px-6 py-5 border-t border-rose-100 bg-rose-50">
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-rose-800 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.75 3.75 0 01-5.303 0l-.347-.347z" />
             </svg>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-rose-800">
               AI Suggestions
             </p>
           </div>
           <div className="space-y-3">
             {color_suggestions.map((s, i) => (
-              <div key={i} className="flex items-start gap-3 bg-white rounded-xl px-4 py-3 border border-amber-100">
-                <div className="shrink-0 mt-2 w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <div key={i} className="flex items-start gap-3 bg-white rounded-xl px-4 py-3 border border-rose-100">
+                <div className="shrink-0 mt-2 w-1.5 h-1.5 rounded-full bg-rose-700" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-stone-700">
                     {SUGGESTION_FIELD_LABELS[s.field] || s.field}
                     <span className="font-normal text-stone-400 mx-1.5">·</span>
                     <span className="line-through text-stone-400">{s.current_value}</span>
                     <span className="mx-1.5 text-stone-400">→</span>
-                    <span className="text-amber-700 font-semibold">{s.suggested_value}</span>
+                    <span className="text-rose-800 font-semibold">{s.suggested_value}</span>
                   </p>
                   {s.reason && (
                     <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">{s.reason}</p>
@@ -493,7 +493,7 @@ export default function DesignResultBoard({
         Array.isArray(budget_logic.cost_saving_choices) && budget_logic.cost_saving_choices.length > 0 ||
         Array.isArray(budget_logic.premium_features) && budget_logic.premium_features.length > 0
       ) && (
-        <div className="px-6 py-5 border-t border-stone-100 bg-amber-50/40">
+        <div className="px-6 py-5 border-t border-stone-100 bg-stone-50/70">
           <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">
             Budget Analysis — {budget_logic.tier || ""}
           </p>
@@ -530,7 +530,7 @@ export default function DesignResultBoard({
                 <ul className="space-y-1">
                   {budget_logic.premium_features.map((t, i) => (
                     <li key={i} className="flex items-start gap-1.5 text-[11px] text-stone-600">
-                      <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-amber-500" />
+                      <span className="shrink-0 mt-1 w-1 h-1 rounded-full bg-rose-700" />
                       {t}
                     </li>
                   ))}
