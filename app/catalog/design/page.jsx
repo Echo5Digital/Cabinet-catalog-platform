@@ -197,13 +197,21 @@ export default async function KitchenDesignPage() {
       </div>
 
       {/* Form */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
-        <KitchenDesignForm
-          countertopColors={countertopColors}
-          floorColors={floorColors}
-          finishes={finishes}
-          structures={structures}
+      <div className="relative">
+        {/* Background image at 50% opacity — separate layer so content stays fully opaque */}
+        <div
+          className="absolute inset-0 bg-cover bg-left bg-no-repeat pointer-events-none"
+          style={{ backgroundImage: "url('/design-bg.webp')", opacity: 0.5 }}
+          aria-hidden="true"
         />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-12">
+          <KitchenDesignForm
+            countertopColors={countertopColors}
+            floorColors={floorColors}
+            finishes={finishes}
+            structures={structures}
+          />
+        </div>
       </div>
     </div>
   );

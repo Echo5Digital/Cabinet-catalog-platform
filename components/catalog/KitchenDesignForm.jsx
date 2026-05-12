@@ -665,11 +665,45 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </MagicCard>
         </section>
 
-        {/* ── Section 5: Details ── */}
+        {/* ── Section 5: Budget Range ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-5">
-          <MagicCard glowFrom="#4A0A15" glowTo="#1A0508" gradientSize={320} gradientOpacity={0.22} className="p-5 sm:p-7">
+          <MagicCard glowFrom="#8B1A2C" glowTo="#6E1020" gradientSize={360} gradientOpacity={0.14} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>5</span>
+            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
+          </div>
+          <div>
+            <label className={labelCls}>Kitchen Style</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+              {BUDGET_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => set("budget_style", s.id)}
+                  className={`flex flex-col text-left rounded-xl border p-4 transition ${
+                    form.budget_style === s.id
+                      ? "border-[#1C1917] bg-[#1C1917] text-white"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                  }`}
+                >
+                  <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
+                    {s.label}
+                  </span>
+                  <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
+                    {s.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+          </MagicCard>
+        </section>
+
+        {/* ── Section 6: Details ── */}
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-6">
+          <MagicCard glowFrom="#4A0A15" glowTo="#1A0508" gradientSize={320} gradientOpacity={0.22} className="p-5 sm:p-7">
+          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>6</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Additional Details</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -708,11 +742,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </MagicCard>
         </section>
 
-        {/* ── Section 6: Comments ── */}
-        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-6">
+        {/* ── Section 7: Comments ── */}
+        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-7">
           <MagicCard gradientColor="#6E102018" gradientSize={420} className="p-5 sm:p-7">
           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>6</span>
+            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>7</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Comments / Notes</h2>
           </div>
           <div>
@@ -724,40 +758,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               value={form.design_comments}
               onChange={(e) => set("design_comments", e.target.value)}
             />
-          </div>
-          </MagicCard>
-        </section>
-
-        {/* ── Section 7: Budget Range ── */}
-        <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-7">
-          <MagicCard glowFrom="#8B1A2C" glowTo="#6E1020" gradientSize={360} gradientOpacity={0.14} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
-            <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>7</span>
-            <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
-          </div>
-          <div>
-            <label className={labelCls}>Kitchen Style</label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
-              {BUDGET_STYLES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => set("budget_style", s.id)}
-                  className={`flex flex-col text-left rounded-xl border p-4 transition ${
-                    form.budget_style === s.id
-                      ? "border-[#1C1917] bg-[#1C1917] text-white"
-                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
-                  }`}
-                >
-                  <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
-                    {s.label}
-                  </span>
-                  <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
-                    {s.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
           </MagicCard>
         </section>

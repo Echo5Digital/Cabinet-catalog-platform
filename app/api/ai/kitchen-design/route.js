@@ -113,6 +113,25 @@ async function getImageBuffer(imageUrlOrBase64) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+/**
+ * Fetch any URL (or pass through an existing data URI) and return a base64 data URI.
+ * Returns null on any failure. Used to embed images before sending to OpenAI so that
+ * OpenAI's servers never need to download Supabase storage URLs directly (they timeout).
+ */
+async function fetchAsBase64(url) {
+  if (!url) return null;
+  if (url.startsWith("data:")) return url;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ct  = res.headers.get("content-type") || "image/png";
+    return `data:${ct};base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 // Normalise a string for fuzzy matching (strip spaces, hyphens, lowercase)
 function normalise(s) {
   return (s || "").toLowerCase().replace(/[-\s]/g, "");
@@ -316,51 +335,64 @@ export async function POST(request) {
       hasReferenceImages
     );
 
+    // Pre-fetch all reference images as base64 data URIs in parallel.
+    // OpenAI times out when its servers try to download Supabase storage URLs directly —
+    // embedding them as base64 avoids that entirely.
+    const [b64LayoutRef, b64Layout, b64Upper, b64Lower, b64Countertop, b64Flooring, b64Customer] = await Promise.all([
+      fetchAsBase64(refImages.layout_reference),
+      fetchAsBase64(refImages.layout),
+      fetchAsBase64(refImages.upper_color),
+      fetchAsBase64(refImages.lower_color),
+      fetchAsBase64(refImages.countertop),
+      fetchAsBase64(refImages.flooring),
+      fetchAsBase64(effectiveImageUrl),
+    ]);
+
     // Build vision content: text prompt + reference images + customer photo (if any)
     const visionParts = [{ type: "text", text: userPrompt }];
 
     // Admin-only AI layout reference image — sent FIRST so GPT analyzes it before other inputs.
     // This is a real kitchen photo matching the selected layout type, for spatial analysis only.
-    if (refImages.layout_reference) {
+    if (b64LayoutRef) {
       visionParts.push(
         { type: "text", text: `\n[AI LAYOUT REFERENCE — ${layout || "selected layout"}. Analyze spatial proportions, cabinet arrangement, and workflow zones ONLY. Do NOT copy or reproduce this image in the generated design.]` },
-        { type: "image_url", image_url: { url: refImages.layout_reference, detail: "high" } }
+        { type: "image_url", image_url: { url: b64LayoutRef, detail: "high" } }
       );
     }
-    if (refImages.layout) {
+    if (b64Layout) {
       visionParts.push(
         { type: "text", text: `\n[LAYOUT STRUCTURE DIAGRAM — ${layout || "selected layout"}:]` },
-        { type: "image_url", image_url: { url: refImages.layout, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Layout, detail: "low" } }
       );
     }
-    if (refImages.upper_color) {
+    if (b64Upper) {
       visionParts.push(
         { type: "text", text: `\n[UPPER CABINET COLOR SWATCH — ${upper_color}:]` },
-        { type: "image_url", image_url: { url: refImages.upper_color, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Upper, detail: "low" } }
       );
     }
-    if (refImages.lower_color) {
+    if (b64Lower) {
       visionParts.push(
         { type: "text", text: `\n[LOWER CABINET COLOR SWATCH — ${lower_color}:]` },
-        { type: "image_url", image_url: { url: refImages.lower_color, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Lower, detail: "low" } }
       );
     }
-    if (refImages.countertop) {
+    if (b64Countertop) {
       visionParts.push(
         { type: "text", text: `\n[COUNTERTOP COLOR SWATCH — ${countertop}:]` },
-        { type: "image_url", image_url: { url: refImages.countertop, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Countertop, detail: "low" } }
       );
     }
-    if (refImages.flooring) {
+    if (b64Flooring) {
       visionParts.push(
         { type: "text", text: `\n[FLOORING COLOR SWATCH — ${flooring}:]` },
-        { type: "image_url", image_url: { url: refImages.flooring, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Flooring, detail: "low" } }
       );
     }
-    if (effectiveImageUrl) {
+    if (b64Customer) {
       visionParts.push(
         { type: "text", text: "\n[CUSTOMER'S EXISTING KITCHEN PHOTO — redesign reference:]" },
-        { type: "image_url", image_url: { url: effectiveImageUrl, detail: "low" } }
+        { type: "image_url", image_url: { url: b64Customer, detail: "low" } }
       );
     }
 
