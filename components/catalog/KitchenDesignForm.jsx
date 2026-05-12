@@ -101,7 +101,7 @@ function findStructureImage(layoutName, structures) {
   return found?.image_url ?? null;
 }
 
-export default function KitchenDesignForm({ countertopColors, floorColors, finishes, structures = [] }) {
+export default function KitchenDesignForm({ countertopColors, floorColors, finishes, structures = [], onVerified }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -224,6 +224,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Verification failed.");
       setResultState("verified");
+      onVerified?.();
       setTimeout(() => {
         document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -254,6 +255,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setOtpError("");
     setOtpSendError("");
     setOtpSent(false);
+    // Yield to the browser so React can paint the "Generating…" state
+    // before the synchronous JSON.stringify + fetch work begins.
+    await new Promise((r) => setTimeout(r, 0));
     try {
       const effectiveImageUrl =
         form.image_status === "Yes"
@@ -372,7 +376,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
   return (
     <div ref={wizardTopRef}>
-      {/* ── Wizard Stepper ── */}
+      {/* ── Wizard Stepper + Form — hidden once design is verified ── */}
+      {resultState !== "verified" && (
+      <>
       <WizardStepper currentStep={currentStep} steps={WIZARD_STEPS} />
 
       <form onSubmit={handleSubmit}>
@@ -1216,6 +1222,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
       </div>{/* end consistent-height wrapper */}
       </form>
+      </> )}{/* end resultState !== "verified" guard */}
 
       {/* ── Result: Pending verification — blurred preview + OTP form ── */}
       {result && resultState === "pending" && (
