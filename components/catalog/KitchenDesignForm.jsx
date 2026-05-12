@@ -306,6 +306,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         `Style: ${form.cabinet_style || "—"} | Layout: ${form.layout || "—"} | Budget Style: ${form.budget_style || "—"}`,
         `Upper: ${form.upper_color || "—"} | Lower: ${form.lower_color || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
         `Project Type: ${form.project_type || "—"}`,
+        form.address ? `Address: ${form.address}` : "",
         form.design_comments ? `Comments: ${form.design_comments}` : "",
         result.image_url ? `Render URL: ${result.image_url}` : "",
       ].filter(Boolean).join("\n");
@@ -1382,6 +1383,16 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   Your design and product selections have been sent to our team.
                   {form.email && <> We&apos;ll reach out at <strong>{form.email}</strong> shortly.</>}
                 </p>
+                <a
+                  href="/catalog"
+                  className="mt-2 inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold text-white transition"
+                  style={{ background: "linear-gradient(135deg, #6E1020 0%, #7D1528 100%)" }}
+                >
+                  Browse Collection
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </a>
               </div>
             ) : (
               <>

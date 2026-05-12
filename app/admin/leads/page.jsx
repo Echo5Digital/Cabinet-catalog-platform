@@ -40,6 +40,9 @@ function parseDesignDescription(text) {
     } else if (line.startsWith("Project Type: ")) {
       inItems = false;
       f.projectType = line.replace("Project Type: ", "").trim();
+    } else if (line.startsWith("Address: ")) {
+      inItems = false;
+      f.address = line.replace("Address: ", "").trim();
     } else if (line.startsWith("Items Requested:")) {
       inItems = true;
     } else if (line.startsWith("Comments: ")) {
@@ -90,80 +93,88 @@ function DesignDetails({ description }) {
   ].filter((r) => r.value && r.value !== "—");
 
   return (
-    <div className="space-y-3">
-      {/* Render image + download */}
+    <div className="space-y-5">
+      {/* AI Generated Image */}
       {d.renderUrl && (
-        <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-          {imgError ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-2">
-              <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-              <p className="text-xs text-gray-400">Render URL has expired (DALL·E links expire after 1 hour).</p>
-              <a
-                href={d.renderUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-blue-500 hover:underline"
-              >
-                Try opening directly ↗
-              </a>
-            </div>
-          ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={d.renderUrl}
-              alt="AI Kitchen Render"
-              className="w-full object-cover"
-              style={{ maxHeight: 260 }}
-              onError={() => setImgError(true)}
-            />
-          )}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
-            <p className="text-xs text-gray-400 font-medium">AI Render (DALL·E 3)</p>
-            {!imgError && (
-              <button
-                onClick={() => downloadRender(d.renderUrl)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">AI Generated Image</p>
+          <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+            {imgError ? (
+              <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-2">
+                <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
-                Download
-              </button>
+                <p className="text-xs text-gray-400">Render URL has expired (DALL·E links expire after 1 hour).</p>
+                <a
+                  href={d.renderUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  Try opening directly ↗
+                </a>
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={d.renderUrl}
+                alt="AI Kitchen Render"
+                className="w-full object-cover"
+                style={{ maxHeight: 260 }}
+                onError={() => setImgError(true)}
+              />
             )}
+            <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
+              <p className="text-xs text-gray-400 font-medium">AI Render (DALL·E 3)</p>
+              {!imgError && (
+                <button
+                  onClick={() => downloadRender(d.renderUrl)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                  </svg>
+                  Download
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Structured detail rows */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
-        {detailRows.map(({ label, value }) => (
-          <div key={label} className="flex items-start px-4 py-2.5 gap-3">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">{label}</span>
-            <span className="text-sm text-gray-800 flex-1">{value}</span>
+      {/* Selected Details */}
+      {(detailRows.length > 0 || d.itemsList?.length > 0 || d.comments) && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Selected Details</p>
+          <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+            {detailRows.map(({ label, value }) => (
+              <div key={label} className="flex items-start px-4 py-2.5 gap-3">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">{label}</span>
+                <span className="text-sm text-gray-800 flex-1">{value}</span>
+              </div>
+            ))}
+            {d.itemsList?.length > 0 && (
+              <div className="flex items-start px-4 py-2.5 gap-3">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Items Needed</span>
+                <ul className="flex-1 space-y-0.5">
+                  {d.itemsList.map((item, i) => (
+                    <li key={i} className="text-sm text-gray-800 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {d.comments && (
+              <div className="flex items-start px-4 py-2.5 gap-3">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Comments</span>
+                <span className="text-sm text-gray-700 flex-1 italic">{d.comments}</span>
+              </div>
+            )}
           </div>
-        ))}
-        {d.itemsList?.length > 0 && (
-          <div className="flex items-start px-4 py-2.5 gap-3">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Items Needed</span>
-            <ul className="flex-1 space-y-0.5">
-              {d.itemsList.map((item, i) => (
-                <li key={i} className="text-sm text-gray-800 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {d.comments && (
-          <div className="flex items-start px-4 py-2.5 gap-3">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide w-28 shrink-0 pt-0.5">Comments</span>
-            <span className="text-sm text-gray-700 flex-1 italic">{d.comments}</span>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -174,6 +185,30 @@ const STATUS_COLORS = {
   quoted: "bg-purple-100 text-purple-700",
   closed: "bg-green-100 text-green-700",
   lost: "bg-gray-100 text-gray-400",
+};
+
+const STATUS_LEFT_BORDER = {
+  new: "border-l-blue-400",
+  contacted: "border-l-amber-400",
+  quoted: "border-l-purple-400",
+  closed: "border-l-green-400",
+  lost: "border-l-gray-300",
+};
+
+const STATUS_CARD_ACTIVE = {
+  new: "border-blue-400 bg-blue-50",
+  contacted: "border-amber-400 bg-amber-50",
+  quoted: "border-purple-400 bg-purple-50",
+  closed: "border-green-400 bg-green-50",
+  lost: "border-gray-400 bg-gray-100",
+};
+
+const STATUS_COUNT_COLOR = {
+  new: "text-blue-600",
+  contacted: "text-amber-600",
+  quoted: "text-purple-600",
+  closed: "text-green-600",
+  lost: "text-gray-500",
 };
 
 const STATUS_OPTIONS = ["new", "contacted", "quoted", "closed", "lost"];
@@ -235,26 +270,69 @@ function LeadDetail({ lead, onClose, onUpdate }) {
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Customer info */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-1">
-            <p className="font-semibold text-gray-900">{lead.name}</p>
-            <p className="text-sm text-gray-500">{lead.email}</p>
-            {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
-            {lead.company && <p className="text-sm text-gray-500">{lead.company}</p>}
-            {lead.source !== "design_ai" && lead.project_description && (
-              <p className="text-sm text-gray-600 pt-2 border-t border-gray-200 mt-2">
-                {lead.project_description}
-              </p>
-            )}
-            {lead.notes && (
-              <p className="text-sm text-gray-500 italic">{lead.notes}</p>
-            )}
-            <p className="text-xs text-gray-400 pt-1">
-              Submitted {new Date(lead.created_at).toLocaleDateString("en-US", {
-                year: "numeric", month: "long", day: "numeric",
-                hour: "2-digit", minute: "2-digit",
-              })}
-            </p>
-            <p className="text-xs text-gray-400 capitalize">Source: {lead.source?.replace("_", " ") || "—"}</p>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer</p>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              {/* Name + submitted date inline */}
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-semibold text-gray-900 leading-tight">{lead.name}</p>
+                <p className="text-xs text-gray-400 whitespace-nowrap shrink-0 pt-0.5">
+                  {new Date(lead.created_at).toLocaleDateString("en-US", {
+                    year: "numeric", month: "short", day: "numeric",
+                  })}{" "}
+                  <span className="text-gray-300">·</span>{" "}
+                  {new Date(lead.created_at).toLocaleTimeString("en-US", {
+                    hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
+              </div>
+
+              {/* Contact cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Email */}
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 min-w-0">
+                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                  <p className="text-xs text-gray-600 truncate">{lead.email}</p>
+                </div>
+
+                {/* Phone */}
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 min-w-0">
+                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                  </svg>
+                  <p className="text-xs text-gray-600 truncate">{lead.phone || <span className="text-gray-300 italic">—</span>}</p>
+                </div>
+
+                {/* Address */}
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 min-w-0">
+                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                  {lead.source === "design_ai" && lead.project_description ? (() => {
+                    const d = parseDesignDescription(lead.project_description);
+                    return <p className="text-xs text-gray-600 truncate">{d?.address || <span className="text-gray-300 italic">—</span>}</p>;
+                  })() : (
+                    <p className="text-xs text-gray-300 italic">—</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Non-AI source extras */}
+              {lead.source !== "design_ai" && lead.company && (
+                <p className="text-sm text-gray-500">{lead.company}</p>
+              )}
+              {lead.source !== "design_ai" && lead.project_description && (
+                <p className="text-sm text-gray-600 pt-2 border-t border-gray-200 mt-1">
+                  {lead.project_description}
+                </p>
+              )}
+              {lead.notes && (
+                <p className="text-xs text-gray-400 italic">{lead.notes}</p>
+              )}
+            </div>
           </div>
 
           {/* Design AI structured details */}
@@ -299,33 +377,34 @@ function LeadDetail({ lead, onClose, onUpdate }) {
             {items === null ? (
               <div className="space-y-1.5">
                 {[1, 2].map((i) => (
-                  <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
+                  <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />
                 ))}
               </div>
             ) : items.length === 0 ? (
               <p className="text-sm text-gray-400">No items listed.</p>
             ) : (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium">SKU</th>
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium">Product</th>
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium">Finish</th>
-                      <th className="text-right px-3 py-2 text-gray-500 font-medium">Qty</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-mono font-semibold text-gray-800">{item.product_sku}</td>
-                        <td className="px-3 py-2 text-gray-600">{item.product_name}</td>
-                        <td className="px-3 py-2 text-gray-500">{item.finish_name || "—"}</td>
-                        <td className="px-3 py-2 text-right text-gray-700 font-medium">{item.quantity}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
+                      {item.image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={item.image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{item.product_name}</p>
+                      <p className="text-xs text-gray-400 font-mono">{item.product_sku}</p>
+                      {item.finish_name && <p className="text-xs text-gray-400">{item.finish_name}</p>}
+                      {item.notes && <p className="text-xs text-gray-400 italic">{item.notes}</p>}
+                    </div>
+                    <p className="text-xs font-medium text-gray-600 shrink-0">×{item.quantity}</p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -357,34 +436,38 @@ function LeadDetail({ lead, onClose, onUpdate }) {
 
 function LeadCard({ lead, onClick }) {
   const statusClass = STATUS_COLORS[lead.status] || STATUS_COLORS.new;
+  const borderAccent = STATUS_LEFT_BORDER[lead.status] || "border-l-gray-200";
+  const projectType = lead.source === "design_ai" && lead.project_description
+    ? parseDesignDescription(lead.project_description)?.projectType
+    : null;
   return (
     <div
       onClick={onClick}
-      className="border border-gray-200 rounded-xl p-5 bg-white hover:border-blue-300 hover:shadow-sm transition cursor-pointer"
+      className={`border border-l-4 ${borderAccent} border-gray-200 rounded-xl px-5 py-3.5 bg-white hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <p className="font-semibold text-gray-800">{lead.name}</p>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusClass}`}>
-              {lead.status}
-            </span>
-          </div>
-          <p className="text-sm text-gray-500">{lead.email}</p>
-          {lead.source && (
-            <p className="text-xs text-gray-400 mt-0.5 capitalize">
-              via {lead.source.replace("_", " ")}
-            </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <p className="font-semibold text-gray-800 shrink-0">{lead.name}</p>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusClass}`}>
+            {lead.status}
+          </span>
+          <span className="text-gray-300 text-xs shrink-0">·</span>
+          <p className="text-sm text-gray-500 truncate">{lead.email}</p>
+          {projectType && (
+            <>
+              <span className="text-gray-300 text-xs shrink-0">·</span>
+              <p className="text-xs text-gray-400 shrink-0">{projectType}</p>
+            </>
           )}
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 whitespace-nowrap">
             {new Date(lead.created_at).toLocaleDateString("en-US", {
               month: "short", day: "numeric",
             })}
           </p>
           {lead.item_count > 0 && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-500 mt-0.5 whitespace-nowrap">
               {lead.item_count} product{lead.item_count !== 1 ? "s" : ""}
             </p>
           )}
@@ -444,13 +527,15 @@ export default function AdminLeadsPage() {
           <button
             key={s}
             onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
-            className={`border rounded-lg p-2.5 sm:p-3 text-center transition ${
+            className={`border rounded-xl p-2.5 sm:p-3 text-center transition-all ${
               statusFilter === s
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-200 bg-white hover:border-gray-300"
+                ? STATUS_CARD_ACTIVE[s] || "border-blue-400 bg-blue-50"
+                : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
             }`}
           >
-            <p className="text-base sm:text-lg font-bold text-gray-900">{stats[s] ?? 0}</p>
+            <p className={`text-base sm:text-lg font-bold ${statusFilter === s ? (STATUS_COUNT_COLOR[s] || "text-gray-900") : "text-gray-900"}`}>
+              {stats[s] ?? 0}
+            </p>
             <p className="text-xs text-gray-500 capitalize">{s}</p>
           </button>
         ))}

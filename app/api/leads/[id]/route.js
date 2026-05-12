@@ -24,11 +24,47 @@ export async function GET(request, { params }) {
 
     const { data: items } = await admin
       .from("lead_request_items")
-      .select("id, product_sku, product_name, finish_name, quantity, notes, sort_order, variant_id")
+      .select("id, product_sku, product_name, finish_name, quantity, notes, sort_order, variant_id, product_id")
       .eq("lead_request_id", params.id)
       .order("sort_order", { ascending: true });
 
-    return NextResponse.json({ lead: { ...lead, items: items ?? [] } });
+    // Fetch product images via product_assets join table
+    const productIds = (items || []).filter((i) => i.product_id).map((i) => i.product_id);
+    let productImageMap = {};
+    if (productIds.length > 0) {
+      // Prefer primary image
+      const { data: primaryRows } = await admin
+        .from("product_assets")
+        .select("product_id, asset:assets!asset_id(public_url)")
+        .in("product_id", productIds)
+        .eq("is_primary", true);
+      for (const row of primaryRows || []) {
+        if (row.asset?.public_url && !productImageMap[row.product_id]) {
+          productImageMap[row.product_id] = row.asset.public_url;
+        }
+      }
+      // Fall back to any image for products still missing
+      const uncovered = productIds.filter((id) => !productImageMap[id]);
+      if (uncovered.length > 0) {
+        const { data: fallbackRows } = await admin
+          .from("product_assets")
+          .select("product_id, asset:assets!asset_id(public_url)")
+          .in("product_id", uncovered)
+          .order("sort_order", { ascending: true })
+          .limit(uncovered.length * 3);
+        for (const row of fallbackRows || []) {
+          if (row.asset?.public_url && !productImageMap[row.product_id]) {
+            productImageMap[row.product_id] = row.asset.public_url;
+          }
+        }
+      }
+    }
+    const itemsWithImages = (items || []).map((item) => ({
+      ...item,
+      image_url: item.product_id ? (productImageMap[item.product_id] ?? null) : null,
+    }));
+
+    return NextResponse.json({ lead: { ...lead, items: itemsWithImages } });
   } catch {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
