@@ -324,7 +324,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
   const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
   const selectCls = `${inputCls} cursor-pointer`;
-  const labelCls = "block text-xs font-semibold text-stone-600 mb-1.5 uppercase tracking-wide";
+  const labelCls = "block text-xs font-semibold text-[#3D0810] mb-1.5 uppercase tracking-wide";
 
   return (
     <div>
@@ -332,8 +332,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 1: Your Info ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-1">
-          <MagicCard glowFrom="#7D1528" glowTo="#3D0810" gradientSize={300} gradientOpacity={0.20} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>1</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Your Information</h2>
           </div>
@@ -415,7 +415,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         {/* ── Section 2: Project ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-2">
           <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>2</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Project Details</h2>
           </div>
@@ -607,8 +607,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 3: Style ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-3">
-          <MagicCard glowFrom="#6E1020" glowTo="#B52A3E" gradientSize={380} gradientOpacity={0.12} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>3</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Design Style</h2>
           </div>
@@ -648,8 +648,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 4: Colors ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-4">
-          <MagicCard gradientColor="#C8304528" gradientSize={350} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>4</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Colors &amp; Materials</h2>
           </div>
@@ -667,8 +667,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 5: Budget Range ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-5">
-          <MagicCard glowFrom="#8B1A2C" glowTo="#6E1020" gradientSize={360} gradientOpacity={0.14} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>5</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
           </div>
@@ -701,8 +701,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 6: Details ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-6">
-          <MagicCard glowFrom="#4A0A15" glowTo="#1A0508" gradientSize={320} gradientOpacity={0.22} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>6</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Additional Details</h2>
           </div>
@@ -744,8 +744,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
         {/* ── Section 7: Comments ── */}
         <section className="form-section-card rounded-2xl overflow-hidden anim-stagger-7">
-          <MagicCard gradientColor="#6E102018" gradientSize={420} className="p-5 sm:p-7">
-          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-stone-100">
+          <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
+          <div className="form-section-header flex items-center gap-3">
             <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>7</span>
             <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Comments / Notes</h2>
           </div>
@@ -768,19 +768,20 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           <button
             type="button"
             onClick={() => setAdvancedOpen((v) => !v)}
-            className="w-full flex items-center gap-3 px-5 sm:px-7 py-5 text-left"
+            className="w-full flex items-center gap-3 px-5 sm:px-7 py-4 sm:py-[1.0625rem] text-left"
+            style={{ background: "transparent" }}
           >
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
               style={{ background: "#6E1020" }}
             >8</span>
             <h2
-              className="text-base font-semibold text-stone-800 tracking-tight flex-1"
+              className="text-base font-semibold text-[#4A0A15] tracking-tight flex-1"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >Advanced</h2>
-            <span className="text-xs text-stone-400 font-normal mr-2 hidden sm:inline">Optional</span>
+            <span className="text-xs text-[#7D1528]/60 font-normal mr-2 hidden sm:inline">Optional</span>
             <svg
-              className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
+              className={`w-4 h-4 text-[#7D1528]/60 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -789,7 +790,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
           {/* Collapsible content */}
           {advancedOpen && (
-            <MagicCard gradientColor="#9B1A2C1C" gradientSize={300}>
+            <MagicCard gradientColor="#7D152825" gradientSize={280}>
             <div className="px-5 sm:px-7 pb-6 border-t border-stone-100 pt-5 space-y-4">
               <p className="text-xs text-stone-400">
                 Providing room details helps the AI generate a more accurate layout. All fields are optional.

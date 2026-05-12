@@ -224,15 +224,32 @@ body {
 .anim-stagger-7 { animation: fade-in-up-sm 0.5s 0.47s ease both; }
 .anim-stagger-8 { animation: fade-in-up-sm 0.5s 0.54s ease both; }
 
-/* ── Form Section Card (overflow:visible — safe for <select> dropdowns) ── */
+/* ── Form Section Card — light blush gradient matching wine/burgundy theme ── */
 .form-section-card {
-  background: white;
+  background: linear-gradient(160deg, #FDF4F2 0%, #F8EAE5 50%, #F2DDD5 100%);
   border-radius: 1rem;
-  border: 1px solid rgba(214,211,209,0.7);
-  box-shadow: inset 3px 0 0 0 rgba(110,16,32,0.22), 0 1px 4px rgba(0,0,0,0.04);
+  border: 1px solid rgba(110,16,32,0.14);
+  box-shadow: 0 2px 16px rgba(74,10,21,0.08), 0 1px 3px rgba(0,0,0,0.04);
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .form-section-card:hover {
-  box-shadow: inset 3px 0 0 0 rgba(110,16,32,0.45), 0 5px 18px rgba(0,0,0,0.07);
-  border-color: rgba(110,16,32,0.15);
+  box-shadow: 0 4px 24px rgba(74,10,21,0.13), 0 2px 8px rgba(0,0,0,0.05);
+  border-color: rgba(110,16,32,0.25);
+}
+
+/* ── Section header — transparent, inherits light card gradient ── */
+.form-section-header {
+  background: transparent;
+  margin: -1.25rem -1.25rem 1.25rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(110,16,32,0.12);
+}
+@media (min-width: 640px) {
+  .form-section-header {
+    margin: -1.75rem -1.75rem 1.75rem;
+    padding: 1rem 1.75rem;
+  }
+}
+.form-section-header h2 {
+  color: #4A0A15 !important;
 }
