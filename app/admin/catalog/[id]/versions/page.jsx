@@ -170,7 +170,7 @@ function ComparePanel({ lineId, versions }) {
         <button
           onClick={runCompare}
           disabled={!v1 || !v2 || v1 === v2 || loading}
-          className="px-4 py-1.5 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-40"
+          className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-40"
         >
           {loading ? "Comparing…" : "Compare"}
         </button>
@@ -593,7 +593,7 @@ export default function CatalogVersionsPage({ params }) {
           onClick={handleDraftSnapshot}
           disabled={draftLoading || !!draft}
           title={draft ? "Discard the current draft before creating a new one" : ""}
-          className="px-4 py-2 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-40"
+          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-40"
         >
           {draftLoading ? "Snapshotting…" : draft ? "Draft exists" : "+ Draft Snapshot"}
         </button>

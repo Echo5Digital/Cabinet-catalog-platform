@@ -6,6 +6,8 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all"); // "all" | "quoted" | "not_quoted"
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -30,14 +32,14 @@ export default function CustomersPage() {
   });
 
   const counts = {
-    all:       customers.length,
-    quoted:    customers.filter((c) =>  c.has_quoted).length,
+    all:        customers.length,
+    quoted:     customers.filter((c) =>  c.has_quoted).length,
     not_quoted: customers.filter((c) => !c.has_quoted).length,
   };
 
   const FILTERS = [
-    { id: "all",       label: "All Customers" },
-    { id: "quoted",    label: "Quoted" },
+    { id: "all",        label: "All Customers" },
+    { id: "quoted",     label: "Quoted" },
     { id: "not_quoted", label: "Not Quoted" },
   ];
 
@@ -46,14 +48,64 @@ export default function CustomersPage() {
     return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
+  function downloadCSV() {
+    const headers = ["Name", "Email", "Phone", "Address", "Verified", "Status"];
+    const rows = filtered.map((c) => [
+      c.name,
+      c.email,
+      c.phone || "",
+      c.address || "",
+      formatDate(c.email_verified_at),
+      c.has_quoted ? "Quoted" : "Not Quoted",
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = `customers-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDelete(id) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/customers/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
+  }
+
   return (
     <div className="p-6 sm:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Customers who verified their email to view an AI kitchen design.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Customers who verified their email to view an AI kitchen design.
+          </p>
+        </div>
+        {!loading && filtered.length > 0 && (
+          <button
+            onClick={downloadCSV}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition shrink-0"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span className="hidden sm:inline">Download Excel</span>
+            <span className="sm:hidden">Export</span>
+          </button>
+        )}
       </div>
 
       {/* Filter tabs */}
@@ -127,6 +179,7 @@ export default function CustomersPage() {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Verified</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-5 py-3 w-14" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -148,6 +201,34 @@ export default function CustomersPage() {
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                           Not Quoted
                         </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-4 text-right">
+                      {confirmId === c.id ? (
+                        <span className="inline-flex items-center gap-2">
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="text-xs font-semibold text-red-600 hover:text-red-800 transition"
+                          >
+                            {deletingId === c.id ? "…" : "Confirm"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmId(null)}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition"
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmId(c.id)}
+                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition"
+                          title="Delete customer"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -180,6 +261,32 @@ export default function CustomersPage() {
                 {c.phone && <p className="text-xs text-gray-500">{c.phone}</p>}
                 {c.address && <p className="text-xs text-gray-400 truncate">{c.address}</p>}
                 <p className="text-[11px] text-gray-400">Verified {formatDate(c.email_verified_at)}</p>
+                {/* Delete row */}
+                <div className="flex justify-end pt-1.5 border-t border-gray-50 mt-1">
+                  {confirmId === c.id ? (
+                    <span className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        className="text-xs font-semibold text-red-600 py-1 px-2"
+                      >
+                        {deletingId === c.id ? "Deleting…" : "Confirm delete"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmId(null)}
+                        className="text-xs text-gray-400 py-1 px-2"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmId(c.id)}
+                      className="text-xs text-gray-400 hover:text-red-500 transition py-1 px-2"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

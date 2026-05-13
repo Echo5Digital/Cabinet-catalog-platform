@@ -111,7 +111,7 @@ function ColorRow({ color, onUpdated, onDeleted }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="text-xs px-3 py-1 rounded bg-stone-900 text-white hover:bg-stone-700 disabled:opacity-50"
+              className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -224,7 +224,7 @@ function AddColorForm({ onAdded, onClose }) {
             <button
               type="submit"
               disabled={saving}
-              className="text-sm px-5 py-2 rounded-lg bg-stone-900 text-white hover:bg-stone-700 disabled:opacity-50"
+              className="text-sm px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Add Color"}
             </button>
@@ -272,7 +272,7 @@ export default function ColorsPage() {
         </div>
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-700 transition"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
         >
           <span className="text-lg leading-none">+</span> Add Color
         </button>
@@ -303,7 +303,7 @@ export default function ColorsPage() {
             onClick={() => setActiveTab(tab.value)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               activeTab === tab.value
-                ? "bg-stone-900 text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-stone-100 text-stone-600 hover:bg-stone-200"
             }`}
           >

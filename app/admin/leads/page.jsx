@@ -434,7 +434,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
   );
 }
 
-function LeadCard({ lead, onClick }) {
+function LeadCard({ lead, onClick, onDownload, onSetConfirm, onDelete, confirmDeleteId, deletingId }) {
   const statusClass = STATUS_COLORS[lead.status] || STATUS_COLORS.new;
   const borderAccent = STATUS_LEFT_BORDER[lead.status] || "border-l-gray-200";
   const projectType = lead.source === "design_ai" && lead.project_description
@@ -473,8 +473,58 @@ function LeadCard({ lead, onClick }) {
           )}
         </div>
       </div>
+
+      {/* Action row */}
+      <div
+        className="flex items-center justify-end gap-1 mt-2.5 pt-2 border-t border-gray-50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* PDF download */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDownload(lead, e); }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+          title="Download PDF"
+        >
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="text-xs font-medium hidden sm:inline">PDF</span>
+        </button>
+
+        {/* Delete */}
+        {confirmDeleteId === lead.id ? (
+          <span className="inline-flex items-center gap-2 ml-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(lead.id); }}
+              className="text-xs font-semibold text-red-600 hover:text-red-800 px-2 py-1.5 transition"
+            >
+              {deletingId === lead.id ? "…" : "Confirm"}
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onSetConfirm(null); }}
+              className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 transition"
+            >
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSetConfirm(lead.id); }}
+            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition"
+            title="Delete lead"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
+      </div>
     </div>
   );
+}
+
+function escHtml(str) {
+  return String(str ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 export default function AdminLeadsPage() {
@@ -484,6 +534,8 @@ export default function AdminLeadsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [stats, setStats] = useState({});
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -508,6 +560,106 @@ export default function AdminLeadsPage() {
     setLeads((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)));
     if (selectedLead?.id === updated.id) {
       setSelectedLead((prev) => ({ ...prev, ...updated }));
+    }
+  }
+
+  async function handleDeleteLead(id) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setLeads((prev) => prev.filter((l) => l.id !== id));
+      setTotal((t) => t - 1);
+      if (selectedLead?.id === id) setSelectedLead(null);
+    } catch {
+      // silently ignore — row stays in list
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  }
+
+  async function handleDownloadPDF(lead, e) {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`);
+      if (!res.ok) return;
+      const { lead: full } = await res.json();
+      const d = full.source === "design_ai" ? parseDesignDescription(full.project_description) : null;
+
+      const designRows = d ? [
+        d.conceptName  && `<tr><td>Concept</td><td>${escHtml(d.conceptName)}</td></tr>`,
+        d.style        && `<tr><td>Style</td><td>${escHtml(d.style)}</td></tr>`,
+        d.layout       && `<tr><td>Layout</td><td>${escHtml(d.layout)}</td></tr>`,
+        d.budgetStyle  && `<tr><td>Budget Style</td><td>${escHtml(d.budgetStyle)}</td></tr>`,
+        d.upperColor   && `<tr><td>Upper Color</td><td>${escHtml(d.upperColor)}</td></tr>`,
+        d.lowerColor   && `<tr><td>Lower Color</td><td>${escHtml(d.lowerColor)}</td></tr>`,
+        d.countertop   && `<tr><td>Countertop</td><td>${escHtml(d.countertop)}</td></tr>`,
+        d.flooring     && `<tr><td>Flooring</td><td>${escHtml(d.flooring)}</td></tr>`,
+        d.projectType  && `<tr><td>Project Type</td><td>${escHtml(d.projectType)}</td></tr>`,
+        d.address      && `<tr><td>Address</td><td>${escHtml(d.address)}</td></tr>`,
+        d.comments     && `<tr><td>Comments</td><td>${escHtml(d.comments)}</td></tr>`,
+      ].filter(Boolean).join("") : "";
+
+      const itemRows = (full.items || []).map((item) =>
+        `<tr>
+          <td>${escHtml(item.product_sku)}</td>
+          <td>${escHtml(item.product_name)}</td>
+          <td>${escHtml(item.finish_name)}</td>
+          <td style="text-align:center">${escHtml(item.quantity)}</td>
+          <td>${escHtml(item.notes)}</td>
+        </tr>`
+      ).join("");
+
+      const renderImg = d?.renderUrl
+        ? `<div class="section"><h3>AI Render</h3><img src="${escHtml(d.renderUrl)}" style="max-width:100%;border-radius:8px" /></div>`
+        : "";
+
+      const submittedDate = new Date(full.created_at).toLocaleDateString("en-US", {
+        year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Quote — ${escHtml(full.name)}</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 0 24px; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; border-bottom: 1px solid #eee; padding-bottom: 16px; }
+  .badge { display:inline-block; background:#f0f0f0; border-radius:4px; padding:2px 8px; font-size:12px; text-transform:capitalize; }
+  .section { margin: 20px 0; }
+  .section h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#aaa; margin:0 0 8px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td, th { padding:6px 10px; border-bottom:1px solid #eee; text-align:left; vertical-align:top; }
+  th { font-size:11px; text-transform:uppercase; color:#aaa; font-family:sans-serif; }
+  td:first-child { color:#888; font-size:12px; white-space:nowrap; width:120px; font-family:sans-serif; }
+  @media print { body { margin:0; } }
+</style>
+</head>
+<body>
+<h1>${escHtml(full.name)}</h1>
+<p class="meta">
+  ${escHtml(full.email)}${full.phone ? " &middot; " + escHtml(full.phone) : ""}
+  &nbsp;&middot;&nbsp; <span class="badge">${escHtml(full.status)}</span>
+  &nbsp;&middot;&nbsp; ${submittedDate}
+</p>
+${designRows ? `<div class="section"><h3>Design Details</h3><table>${designRows}</table></div>` : full.project_description ? `<div class="section"><h3>Project Description</h3><p style="white-space:pre-wrap;font-size:14px">${escHtml(full.project_description)}</p></div>` : ""}
+${renderImg}
+${itemRows ? `<div class="section"><h3>Products</h3><table><thead><tr><th>SKU</th><th>Name</th><th>Finish</th><th>Qty</th><th>Notes</th></tr></thead><tbody>${itemRows}</tbody></table></div>` : ""}
+${full.notes ? `<div class="section"><h3>Notes</h3><p style="font-size:14px">${escHtml(full.notes)}</p></div>` : ""}
+</body>
+</html>`;
+
+      const win = window.open("", "_blank");
+      if (!win) return;
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 350);
+    } catch {
+      // silently ignore
     }
   }
 
@@ -572,7 +724,16 @@ export default function AdminLeadsPage() {
 
       <div className="space-y-3">
         {leads.map((lead) => (
-          <LeadCard key={lead.id} lead={lead} onClick={() => setSelectedLead(lead)} />
+          <LeadCard
+            key={lead.id}
+            lead={lead}
+            onClick={() => setSelectedLead(lead)}
+            onDownload={handleDownloadPDF}
+            onSetConfirm={setConfirmDeleteId}
+            onDelete={handleDeleteLead}
+            confirmDeleteId={confirmDeleteId}
+            deletingId={deletingId}
+          />
         ))}
       </div>
 

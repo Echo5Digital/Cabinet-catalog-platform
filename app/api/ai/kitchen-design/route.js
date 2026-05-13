@@ -256,12 +256,12 @@ export async function POST(request) {
     const admin = createAdminClient();
     const [linesRes, productsRes, colorsRes, finishesRes, refImages] = await Promise.all([
       admin.from("catalog_lines")
-        .select("name, slug")
+        .select("id, name, slug")
         .eq("tenant_id", TENANT_ID)
         .eq("status", "published")
         .order("sort_order"),
       admin.from("products")
-        .select("sku, name")
+        .select("sku, name, catalog_line_id")
         .eq("tenant_id", TENANT_ID)
         .eq("is_active", true)
         .limit(60),
@@ -277,7 +277,22 @@ export async function POST(request) {
     ]);
 
     const lines = (linesRes.data || []).map((l) => l.name);
-    const skus  = (productsRes.data || []).map((p) => `${p.sku} (${p.name})`);
+
+    // Filter products to only those matching the selected cabinet style
+    const styleLineIds = cabinet_style
+      ? (linesRes.data || [])
+          .filter((l) => {
+            const n = l.name.toLowerCase();
+            if (cabinet_style === "American") return n.includes("american");
+            if (cabinet_style === "Euro")     return n.includes("euro");
+            return false;
+          })
+          .map((l) => l.id)
+      : [];
+    const styleProducts = styleLineIds.length > 0
+      ? (productsRes.data || []).filter((p) => styleLineIds.includes(p.catalog_line_id))
+      : (productsRes.data || []);
+    const skus = styleProducts.map((p) => `${p.sku} (${p.name})`);
     const countertopColors = (colorsRes.data || [])
       .filter((c) => c.color_type === "countertop")
       .map((c) => c.name);
@@ -473,11 +488,15 @@ export async function POST(request) {
 
     let products = [];
     if (skuList.length > 0) {
-      const { data: matchedProducts } = await admin
+      let productQuery = admin
         .from("products")
         .select("id, sku, name, width_in, height_in, depth_in, categories(name)")
         .eq("tenant_id", TENANT_ID)
         .in("sku", skuList);
+      if (styleLineIds.length > 0) {
+        productQuery = productQuery.in("catalog_line_id", styleLineIds);
+      }
+      const { data: matchedProducts } = await productQuery;
 
       const matchedIds = (matchedProducts || []).map((p) => p.id);
 
