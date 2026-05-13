@@ -261,7 +261,7 @@ export async function POST(request) {
         .eq("status", "published")
         .order("sort_order"),
       admin.from("products")
-        .select("sku, name, catalog_line_id")
+        .select("sku, name, catalog_line_id, width_in, height_in, depth_in")
         .eq("tenant_id", TENANT_ID)
         .eq("is_active", true)
         .limit(60),
@@ -292,7 +292,14 @@ export async function POST(request) {
     const styleProducts = styleLineIds.length > 0
       ? (productsRes.data || []).filter((p) => styleLineIds.includes(p.catalog_line_id))
       : (productsRes.data || []);
-    const skus = styleProducts.map((p) => `${p.sku} (${p.name})`);
+    const skus = styleProducts.map((p) => {
+      const dims = [
+        p.width_in  ? `${p.width_in}"W`  : null,
+        p.height_in ? `${p.height_in}"H` : null,
+        p.depth_in  ? `${p.depth_in}"D`  : null,
+      ].filter(Boolean).join("×");
+      return dims ? `${p.sku} (${p.name}, ${dims})` : `${p.sku} (${p.name})`;
+    });
     const countertopColors = (colorsRes.data || [])
       .filter((c) => c.color_type === "countertop")
       .map((c) => c.name);
