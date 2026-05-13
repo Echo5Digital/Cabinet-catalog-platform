@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import DesignResultBoard from "@/components/catalog/DesignResultBoard";
 import { MagicCard } from "@/registry/magicui/magic-card";
+import { TypingAnimation } from "@/registry/magicui/typing-animation";
 
 const PROJECT_TYPES = [
   "New Kitchen",
@@ -258,6 +259,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     // Yield to the browser so React can paint the "Generating…" state
     // before the synchronous JSON.stringify + fetch work begins.
     await new Promise((r) => setTimeout(r, 0));
+    // Scroll to the flickering grid loading placeholder now it's mounted
+    setTimeout(() => {
+      document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
     try {
       const effectiveImageUrl =
         form.image_status === "Yes"
@@ -1166,22 +1171,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   }
                   className="w-full sm:w-auto px-10 py-4 rounded-full text-sm font-bold bg-white text-stone-900 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Generating your design…
-                    </>
-                  ) : (
-                    <>
-                      GENERATE MY DESIGN
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </>
-                  )}
+                  GENERATE MY DESIGN
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
                 </button>
 
                 {/* Validation hint */}
@@ -1224,6 +1217,81 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       </div>{/* end consistent-height wrapper */}
       </form>
       </> )}{/* end resultState !== "verified" guard */}
+
+      {/* ── Loading: Flickering grid placeholder ── */}
+      {loading && (
+        <div id="design-result" className="mt-4">
+          <div className="form-section-card rounded-2xl overflow-hidden">
+            <div
+              className="relative w-full"
+              style={{ height: "min(55vw, 320px)", background: "#0a0a0a" }}
+            >
+              {/* Animated conic mask — dots invisible by default, revealed by rotating window */}
+              <style>{`
+                @property --r-angle {
+                  syntax: '<angle>';
+                  inherits: false;
+                  initial-value: 0deg;
+                }
+                @keyframes radar-sweep {
+                  from { --r-angle: 0deg; }
+                  to   { --r-angle: 360deg; }
+                }
+                .radar-dot-layer {
+                  mask-image: conic-gradient(
+                    from var(--r-angle) at 50% 50%,
+                    transparent 0deg,
+                    transparent 282deg,
+                    rgba(0,0,0,0.12) 310deg,
+                    rgba(0,0,0,0.55) 338deg,
+                    black 355deg,
+                    black 360deg
+                  );
+                  -webkit-mask-image: conic-gradient(
+                    from var(--r-angle) at 50% 50%,
+                    transparent 0deg,
+                    transparent 282deg,
+                    rgba(0,0,0,0.12) 310deg,
+                    rgba(0,0,0,0.55) 338deg,
+                    black 355deg,
+                    black 360deg
+                  );
+                  animation: radar-sweep 3s linear infinite;
+                }
+              `}</style>
+              {/* Dots — fully invisible outside the rotating mask window */}
+              <div
+                className="radar-dot-layer"
+                style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: "radial-gradient(circle, #c41840 0%, rgba(160,20,50,0.65) 35%, transparent 50%)",
+                  backgroundSize: "14px 14px",
+                }}
+              />
+              {/* Center label */}
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div style={{
+                  background: "rgba(10, 5, 5, 0.78)",
+                  backdropFilter: "blur(6px)",
+                  WebkitBackdropFilter: "blur(6px)",
+                  borderRadius: "9999px",
+                  padding: "10px 28px",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}>
+                  <TypingAnimation
+                    showCursor={false}
+                    duration={75}
+                    pauseTime={1200}
+                    className="text-white text-sm font-semibold tracking-[0.18em] uppercase select-none"
+                  >
+                    Generating your design...
+                  </TypingAnimation>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Result: Pending verification — blurred preview + OTP form ── */}
       {result && resultState === "pending" && (
@@ -1621,6 +1689,11 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                           ...prev,
                           cabinet_style: item.style_category,
                         }));
+                      }
+                      // Auto-advance to next tab after a brief visual pause
+                      const currentIdx = TABS.findIndex((t) => t.id === activeTab);
+                      if (currentIdx < TABS.length - 1) {
+                        setTimeout(() => setActiveTab(TABS[currentIdx + 1].id), 320);
                       }
                     }}
                     className={`flex-shrink-0 flex flex-col rounded-xl overflow-hidden transition-all ${
