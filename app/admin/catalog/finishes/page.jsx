@@ -178,8 +178,7 @@ function FinishRow({ finish, onUpdate, onDelete }) {
   );
 }
 
-function AddFinishForm({ lines, onAdded }) {
-  const [open, setOpen] = useState(false);
+function AddFinishForm({ lines, onAdded, onClose }) {
   const [form, setForm] = useState({
     name: "", code: "", finish_family: "", catalog_line_id: "", description: "",
   });
@@ -208,23 +207,12 @@ function AddFinishForm({ lines, onAdded }) {
       if (!res.ok) throw new Error(data.error || "Failed to create");
       onAdded(data.finish);
       setForm({ name: "", code: "", finish_family: "", catalog_line_id: "", description: "" });
-      setOpen(false);
+      onClose();
     } catch (e) {
       setError(e.message);
     } finally {
       setSaving(false);
     }
-  }
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-400 hover:text-gray-600 hover:border-gray-400 transition"
-      >
-        + Add Finish
-      </button>
-    );
   }
 
   return (
@@ -298,7 +286,7 @@ function AddFinishForm({ lines, onAdded }) {
       </div>
 
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={() => setOpen(false)} className="px-3 py-1.5 text-xs text-gray-500">
+        <button type="button" onClick={onClose} className="px-3 py-1.5 text-xs text-gray-500">
           Cancel
         </button>
         <button
@@ -319,6 +307,7 @@ export default function FinishesPage() {
   const [loading, setLoading] = useState(true);
   const [lineFilter, setLineFilter] = useState("");
   const [familyFilter, setFamilyFilter] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
 
   const fetchFinishes = useCallback(async () => {
     const params = new URLSearchParams();
@@ -359,10 +348,22 @@ export default function FinishesPage() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold text-gray-900">Finishes</h1>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+        >
+          <span className="text-lg leading-none">+</span> Add Finish
+        </button>
       </div>
       <p className="text-sm text-gray-500 mb-4">
         Finish options available across your catalog lines. Each finish needs a swatch image.
       </p>
+
+      {showAdd && (
+        <div className="mb-5">
+          <AddFinishForm lines={lines} onAdded={handleAdded} onClose={() => setShowAdd(false)} />
+        </div>
+      )}
 
       {noSwatchCount > 0 && (
         <div className="mb-5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
@@ -428,11 +429,6 @@ export default function FinishesPage() {
         )}
       </div>
 
-      {!loading && (
-        <div className="mt-4">
-          <AddFinishForm lines={lines} onAdded={handleAdded} />
-        </div>
-      )}
     </div>
   );
 }

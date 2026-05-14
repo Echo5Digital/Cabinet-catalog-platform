@@ -31,7 +31,7 @@ function ColorRow({ color, onUpdated, onDeleted }) {
     const data = await res.json();
     setSaving(false);
     if (!res.ok) { setError(data.error); return; }
-    onUpdated({ ...color, name: data.color.name });
+    onUpdated({ ...color, name: data.color.name, description: form.description });
     setEditing(false);
   }
 
@@ -44,23 +44,33 @@ function ColorRow({ color, onUpdated, onDeleted }) {
     if (res.ok) onUpdated({ ...color, is_active: !color.is_active });
   }
 
-  async function handleDelete() {
-    if (!confirm(`Deactivate "${color.name}"?`)) return;
-    const res = await fetch(`/api/colors/${color.id}`, { method: "DELETE" });
-    if (res.ok) onDeleted(color.id);
-  }
-
   return (
     <tr className="border-b border-stone-100 hover:bg-stone-50">
       <td className="px-4 py-3">
         {editing ? (
-          <input
-            className="border border-stone-300 rounded px-2 py-1 text-sm w-full"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
+          <div className="space-y-1.5">
+            <input
+              className="border border-stone-300 rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Name"
+            />
+            <input
+              className="border border-stone-300 rounded px-2 py-1 text-xs w-full text-stone-600 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Description (optional)"
+            />
+          </div>
         ) : (
-          <span className="text-sm font-medium text-stone-900">{color.name}</span>
+          <div>
+            <span className="text-sm font-medium text-stone-900">{color.name}</span>
+            {color.description && (
+              <p className="text-xs text-stone-400 mt-0.5 max-w-[200px] truncate" title={color.description}>
+                {color.description}
+              </p>
+            )}
+          </div>
         )}
       </td>
       <td className="px-4 py-3">
@@ -120,12 +130,9 @@ function ColorRow({ color, onUpdated, onDeleted }) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end">
             <button onClick={() => setEditing(true)} className="text-xs text-stone-500 hover:text-stone-900">
               Edit
-            </button>
-            <button onClick={handleDelete} className="text-xs text-red-400 hover:text-red-600">
-              Deactivate
             </button>
           </div>
         )}

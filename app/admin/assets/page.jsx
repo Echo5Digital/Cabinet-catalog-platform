@@ -162,7 +162,8 @@ function AssetUploader({ onComplete }) {
 }
 
 // ─── Single asset row ─────────────────────────────────────────────────────────
-function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selected, onSelect }) {
+function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selected, onSelect,
+  confirmDeleteId, onSetConfirmDelete, onCancelDelete, onDeleteConfirmed, deletingId }) {
   const [correcting, setCorrecting] = useState(false);
   const [form, setForm] = useState({
     asset_type: asset.asset_type || "",
@@ -355,7 +356,7 @@ function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selec
             </div>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             {asset.status === "pending_review" && (
               <>
                 <button onClick={() => action("confirm")} disabled={isActioning}
@@ -394,6 +395,33 @@ function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selec
             {asset.status === "rejected" && (
               <span className="text-xs text-gray-400">Rejected</span>
             )}
+            {/* Delete — inline with other actions, all statuses */}
+            {confirmDeleteId === asset.id ? (
+              <span className="inline-flex items-center gap-2 ml-1">
+                <button
+                  onClick={() => onDeleteConfirmed(asset.id)}
+                  className="text-xs font-semibold text-red-600 hover:text-red-800 transition"
+                >
+                  {deletingId === asset.id ? "…" : "Confirm"}
+                </button>
+                <button
+                  onClick={onCancelDelete}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition"
+                >
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={() => onSetConfirmDelete(asset.id)}
+                className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition ml-1"
+                title="Delete asset"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
       </td>
@@ -418,6 +446,9 @@ export default function AdminAssetsPage() {
   const [selected, setSelected] = useState(new Set());
   const [bulkConfirming, setBulkConfirming] = useState(false);
   const [stats, setStats] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   // Metadata for correction dropdowns
   const [lines, setLines] = useState([]);
@@ -446,6 +477,7 @@ export default function AdminAssetsPage() {
   const fetchAssets = useCallback(async () => {
     setLoading(true);
     setSelected(new Set());
+    setConfirmDeleteId(null);
     try {
       const params = new URLSearchParams({ status: activeTab, limit: "100" });
       const res = await fetch(`/api/assets?${params}`);
@@ -504,6 +536,37 @@ export default function AdminAssetsPage() {
     fetchStats();
   }
 
+  async function handleDeleteAsset(id) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/assets/${id}`, { method: "DELETE" });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Delete failed"); }
+      setAssets((prev) => prev.filter((a) => a.id !== id));
+      setTotal((t) => t - 1);
+      fetchStats();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  }
+
+  const displayedAssets = searchQuery.trim()
+    ? assets.filter((a) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          a.original_filename?.toLowerCase().includes(q) ||
+          a.parsed_sku?.toLowerCase().includes(q) ||
+          a.parsed_finish_code?.toLowerCase().includes(q) ||
+          a.parsed_color_code?.toLowerCase().includes(q) ||
+          a.parsed_structure_code?.toLowerCase().includes(q) ||
+          a.parsed_line_slug?.toLowerCase().includes(q) ||
+          a.asset_type?.toLowerCase().includes(q)
+        );
+      })
+    : assets;
+
   const matchedCount = assets.filter((a) => a.confidence === "matched").length;
 
   return (
@@ -555,6 +618,28 @@ export default function AdminAssetsPage() {
         </nav>
       </div>
 
+      {/* Search bar */}
+      <div className="mb-4 relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by filename, SKU, finish, color, structure, line…"
+          className="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm leading-none"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       {/* Bulk confirm bar (only on pending_review tab) */}
       {activeTab === "pending_review" && matchedCount > 0 && (
         <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
@@ -583,7 +668,11 @@ export default function AdminAssetsPage() {
 
       {/* Count */}
       <p className="text-sm text-gray-400 mb-2">
-        {loading ? "Loading…" : `${total} asset${total !== 1 ? "s" : ""}`}
+        {loading
+          ? "Loading…"
+          : searchQuery
+          ? `${displayedAssets.length} of ${total} asset${total !== 1 ? "s" : ""}`
+          : `${total} asset${total !== 1 ? "s" : ""}`}
       </p>
 
       {/* Table */}
@@ -593,9 +682,11 @@ export default function AdminAssetsPage() {
             <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
           ))}
         </div>
-      ) : assets.length === 0 ? (
+      ) : displayedAssets.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-gray-400 text-sm">No assets in this status.</p>
+          <p className="text-gray-400 text-sm">
+            {searchQuery ? "No assets match your search." : "No assets in this status."}
+          </p>
         </div>
       ) : (
         <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -623,7 +714,7 @@ export default function AdminAssetsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {assets.map((asset) => (
+                {displayedAssets.map((asset) => (
                   <AssetRow
                     key={asset.id}
                     asset={asset}
@@ -634,6 +725,11 @@ export default function AdminAssetsPage() {
                     onRefresh={() => { fetchAssets(); fetchStats(); }}
                     selected={selected.has(asset.id)}
                     onSelect={handleSelect}
+                    confirmDeleteId={confirmDeleteId}
+                    onSetConfirmDelete={setConfirmDeleteId}
+                    onCancelDelete={() => setConfirmDeleteId(null)}
+                    onDeleteConfirmed={handleDeleteAsset}
+                    deletingId={deletingId}
                   />
                 ))}
               </tbody>

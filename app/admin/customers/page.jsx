@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -8,6 +8,18 @@ export default function CustomersPage() {
   const [filter, setFilter] = useState("all"); // "all" | "quoted" | "not_quoted"
   const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target)) {
+        setShowDownloadMenu(false);
+      }
+    }
+    if (showDownloadMenu) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDownloadMenu]);
 
   useEffect(() => {
     async function load() {
@@ -48,9 +60,13 @@ export default function CustomersPage() {
     return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
-  function downloadCSV() {
+  function downloadCSV(subset) {
+    const data =
+      subset === "quoted"     ? customers.filter((c) =>  c.has_quoted) :
+      subset === "not_quoted" ? customers.filter((c) => !c.has_quoted) :
+      customers;
     const headers = ["Name", "Email", "Phone", "Address", "Verified", "Status"];
-    const rows = filtered.map((c) => [
+    const rows = data.map((c) => [
       c.name,
       c.email,
       c.phone || "",
@@ -65,9 +81,10 @@ export default function CustomersPage() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href = url;
-    a.download = `customers-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `customers-${subset}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    setShowDownloadMenu(false);
   }
 
   async function handleDelete(id) {
@@ -94,17 +111,41 @@ export default function CustomersPage() {
             Customers who verified their email to view an AI kitchen design.
           </p>
         </div>
-        {!loading && filtered.length > 0 && (
-          <button
-            onClick={downloadCSV}
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition shrink-0"
-          >
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span className="hidden sm:inline">Download Excel</span>
-            <span className="sm:hidden">Export</span>
-          </button>
+        {!loading && customers.length > 0 && (
+          <div className="relative shrink-0" ref={downloadMenuRef}>
+            <button
+              onClick={() => setShowDownloadMenu((v) => !v)}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span className="hidden sm:inline">Download</span>
+              <span className="sm:hidden">Export</span>
+              <svg className="w-3.5 h-3.5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showDownloadMenu && (
+              <div className="absolute right-0 mt-1.5 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
+                {[
+                  { key: "all",        label: "All Customers",  count: counts.all },
+                  { key: "quoted",     label: "Quoted Only",    count: counts.quoted },
+                  { key: "not_quoted", label: "Not Quoted",     count: counts.not_quoted },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => downloadCSV(opt.key)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+                  >
+                    <span>{opt.label}</span>
+                    <span className="text-xs text-gray-400 font-medium tabular-nums">{opt.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

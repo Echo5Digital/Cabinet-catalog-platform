@@ -278,15 +278,12 @@ export async function POST(request) {
 
     const lines = (linesRes.data || []).map((l) => l.name);
 
-    // Filter products to only those matching the selected cabinet style
-    const styleLineIds = cabinet_style
+    // Filter products to only those matching the selected cabinet style.
+    // Uses the style value itself for matching so all styles (American, Euro, Shaker, Modern, Traditional, etc.) work.
+    const styleKey = (cabinet_style || "").toLowerCase();
+    const styleLineIds = styleKey
       ? (linesRes.data || [])
-          .filter((l) => {
-            const n = l.name.toLowerCase();
-            if (cabinet_style === "American") return n.includes("american");
-            if (cabinet_style === "Euro")     return n.includes("euro");
-            return false;
-          })
+          .filter((l) => l.name.toLowerCase().includes(styleKey))
           .map((l) => l.id)
       : [];
     const styleProducts = styleLineIds.length > 0

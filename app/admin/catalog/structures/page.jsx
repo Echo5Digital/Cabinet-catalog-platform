@@ -39,12 +39,6 @@ function StructureRow({ structure, onUpdated, onDeleted }) {
     if (res.ok) onUpdated({ ...structure, is_active: !structure.is_active });
   }
 
-  async function handleDelete() {
-    if (!confirm(`Deactivate "${structure.name}"?`)) return;
-    const res = await fetch(`/api/structures/${structure.id}`, { method: "DELETE" });
-    if (res.ok) onDeleted(structure.id);
-  }
-
   return (
     <tr className="border-b border-stone-100 hover:bg-stone-50">
       <td className="px-4 py-3">
@@ -123,12 +117,9 @@ function StructureRow({ structure, onUpdated, onDeleted }) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end">
             <button onClick={() => setEditing(true)} className="text-xs text-stone-500 hover:text-stone-900">
               Edit
-            </button>
-            <button onClick={handleDelete} className="text-xs text-red-400 hover:text-red-600">
-              Deactivate
             </button>
           </div>
         )}
