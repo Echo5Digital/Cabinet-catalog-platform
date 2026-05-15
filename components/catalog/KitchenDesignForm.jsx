@@ -327,6 +327,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           project_description: projectDescription,
           notes: form.design_comments || undefined,
           products: result.products || [],
+          before_photo: originalPhotoUrl || undefined,
         }),
       });
       const data = await res.json();
@@ -367,7 +368,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
   // Shared nav button classes
   const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
-  const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white transition disabled:opacity-40 disabled:cursor-not-allowed";
+  const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] !text-white transition disabled:bg-[#6E1020]/50 disabled:cursor-not-allowed";
 
   const WIZARD_STEPS = [
     { label: "Your Info",  icon: <StepIconPerson /> },

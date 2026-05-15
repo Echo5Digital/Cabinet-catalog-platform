@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
+const BEFORE_PHOTO_BUCKET = "before-photos";
+const BEFORE_PHOTO_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
 /**
  * POST /api/public/design-quote
  *
@@ -12,7 +15,31 @@ import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
  * Body:
  *   name*, email*, phone, address, project_description, notes
  *   products: [{ sku, name, type, dimensions }]  — from AI result, best-effort
+ *   before_photo: URL string or base64 data URL of the original kitchen photo
  */
+
+/** Upload a base64 data URL to Supabase storage, return the public URL. */
+async function uploadBeforePhoto(admin, tenantId, dataUrl) {
+  try {
+    // Parse "data:<mime>;base64,<data>"
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return null;
+    const [, mimeType, b64] = match;
+    const buffer = Buffer.from(b64, "base64");
+    if (buffer.byteLength > BEFORE_PHOTO_MAX_BYTES) return null;
+    const ext = mimeType.split("/")[1]?.split("+")[0] || "jpg";
+    const path = `${tenantId}/${Date.now()}.${ext}`;
+    const { error } = await admin.storage
+      .from(BEFORE_PHOTO_BUCKET)
+      .upload(path, buffer, { contentType: mimeType, upsert: false });
+    if (error) return null;
+    const { data: urlData } = admin.storage.from(BEFORE_PHOTO_BUCKET).getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request) {
   try {
     const tenantId = await getTenantIdFromRequest(request);
@@ -25,6 +52,7 @@ export async function POST(request) {
       project_description,
       notes,
       products = [],
+      before_photo,
     } = body;
 
     if (!name || !email) {
@@ -35,6 +63,16 @@ export async function POST(request) {
     }
 
     const admin = createAdminClient();
+
+    // ── Resolve before photo URL ───────────────────────────────────────────────
+    let before_image_url = null;
+    if (before_photo) {
+      if (before_photo.startsWith("http://") || before_photo.startsWith("https://")) {
+        before_image_url = before_photo;
+      } else if (before_photo.startsWith("data:")) {
+        before_image_url = await uploadBeforePhoto(admin, tenantId, before_photo);
+      }
+    }
 
     // ── Insert lead_request ────────────────────────────────────────────────────
     const { data: lead, error: leadError } = await admin
@@ -48,6 +86,7 @@ export async function POST(request) {
         project_description: project_description?.trim() ?? null,
         notes: notes?.trim() ?? null,
         status: "new",
+        before_image_url,
       })
       .select("id")
       .single();

@@ -19,7 +19,7 @@ export async function GET(request) {
       .from("lead_requests")
       .select(
         `id, name, email, phone, company, status, source, project_description, notes,
-         internal_notes, created_at, followed_up_at,
+         internal_notes, before_image_url, created_at, followed_up_at,
          assigned_to:tenant_users!assigned_to(id, email, full_name)`,
         { count: "exact" }
       )

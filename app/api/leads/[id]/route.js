@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       .from("lead_requests")
       .select(`
         id, name, email, phone, company, status, source,
-        project_description, notes, internal_notes, followed_up_at, created_at,
+        project_description, notes, internal_notes, before_image_url, followed_up_at, created_at,
         assigned_to:tenant_users!assigned_to(id, email, full_name)
       `)
       .eq("id", params.id)

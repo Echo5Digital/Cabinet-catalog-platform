@@ -75,10 +75,13 @@ async function downloadRender(url) {
 }
 
 // ── Rich design detail view (design_ai source only) ───────────────────────────
-function DesignDetails({ description }) {
+function DesignDetails({ description, before_image_url }) {
   const d = parseDesignDescription(description);
   const [imgError, setImgError] = useState(false);
+  const [compareView, setCompareView] = useState(false);
   if (!d) return null;
+
+  const showCompare = !!(before_image_url && d.renderUrl);
 
   const detailRows = [
     { label: "Concept", value: d.conceptName },
@@ -94,39 +97,109 @@ function DesignDetails({ description }) {
 
   return (
     <div className="space-y-5">
-      {/* AI Generated Image */}
-      {d.renderUrl && (
+      {/* AI Generated Image + optional Before/After compare */}
+      {(d.renderUrl || before_image_url) && (
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">AI Generated Image</p>
-          <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-            {imgError ? (
-              <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-2">
-                <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                </svg>
-                <p className="text-xs text-gray-400">Render URL has expired (DALL·E links expire after 1 hour).</p>
-                <a
-                  href={d.renderUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-blue-500 hover:underline"
+          {/* View toggle — only shown when both images are available */}
+          {showCompare && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1">View:</p>
+              {[
+                { id: false, label: "AI Generated" },
+                { id: true,  label: "Compare Before / After" },
+              ].map((tab) => (
+                <button
+                  key={String(tab.id)}
+                  type="button"
+                  onClick={() => setCompareView(tab.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition border ${
+                    compareView === tab.id
+                      ? "bg-[#6E1020] text-white border-[#6E1020]"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-[#6E1020] hover:text-[#6E1020]"
+                  }`}
                 >
-                  Try opening directly ↗
-                </a>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!showCompare && (
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              {d.renderUrl ? "AI Generated Image" : "Before Photo"}
+            </p>
+          )}
+
+          <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+            {/* Compare mode: side-by-side */}
+            {showCompare && compareView ? (
+              <div className="flex" style={{ minHeight: 220 }}>
+                {/* Before */}
+                <div className="relative flex-1 overflow-hidden border-r border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={before_image_url}
+                    alt="Original kitchen"
+                    className="w-full h-full object-cover"
+                    style={{ maxHeight: 260 }}
+                  />
+                  <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-semibold">
+                    Before
+                  </span>
+                </div>
+                {/* After */}
+                <div className="relative flex-1 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={d.renderUrl}
+                    alt="AI Kitchen Render"
+                    className="w-full h-full object-cover"
+                    style={{ maxHeight: 260 }}
+                    onError={() => setImgError(true)}
+                  />
+                  <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-gray-900/70 text-white text-[10px] font-semibold">
+                    AI Generated
+                  </span>
+                </div>
               </div>
+            ) : d.renderUrl ? (
+              /* Single AI render */
+              imgError ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center gap-2">
+                  <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                  </svg>
+                  <p className="text-xs text-gray-400">Render URL has expired (DALL·E links expire after 1 hour).</p>
+                  <a href={d.renderUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline">
+                    Try opening directly ↗
+                  </a>
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={d.renderUrl}
+                  alt="AI Kitchen Render"
+                  className="w-full object-cover"
+                  style={{ maxHeight: 260 }}
+                  onError={() => setImgError(true)}
+                />
+              )
             ) : (
+              /* Only before photo, no render yet */
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={d.renderUrl}
-                alt="AI Kitchen Render"
+                src={before_image_url}
+                alt="Original kitchen"
                 className="w-full object-cover"
                 style={{ maxHeight: 260 }}
-                onError={() => setImgError(true)}
               />
             )}
+
             <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
-              <p className="text-xs text-gray-400 font-medium">AI Render (DALL·E 3)</p>
-              {!imgError && (
+              <p className="text-xs text-gray-400 font-medium">
+                {showCompare && compareView ? "Before / After Comparison" : d.renderUrl ? "AI Render (DALL·E 3)" : "Before Photo"}
+              </p>
+              {d.renderUrl && !imgError && !compareView && (
                 <button
                   onClick={() => downloadRender(d.renderUrl)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
@@ -337,7 +410,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
 
           {/* Design AI structured details */}
           {lead.source === "design_ai" && lead.project_description && (
-            <DesignDetails description={lead.project_description} />
+            <DesignDetails description={lead.project_description} before_image_url={lead.before_image_url} />
           )}
 
           {/* Status pipeline */}

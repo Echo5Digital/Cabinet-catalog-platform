@@ -187,8 +187,8 @@ export default function DesignResultBoard({
               onClick={() => setViewMode(tab.id)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition border ${
                 viewMode === tab.id
-                  ? "bg-stone-900 text-white border-stone-900"
-                  : "bg-white text-stone-600 border-stone-300 hover:border-stone-500"
+                  ? "bg-[#6E1020] text-white border-[#6E1020]"
+                  : "bg-white text-stone-600 border-stone-300 hover:border-[#6E1020] hover:text-[#6E1020]"
               }`}
             >
               {tab.label}
