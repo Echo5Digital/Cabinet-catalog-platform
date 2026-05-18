@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 
-// TODO: Replace with session-based tenant resolution
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || "";
-
 export default function QuoteRequestForm({ productId, productName, productSku, finishes }) {
   const [form, setForm] = useState({
     name: "",
@@ -32,7 +29,6 @@ export default function QuoteRequestForm({ productId, productName, productSku, f
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenantId: TENANT_ID,
           name: form.name,
           email: form.email,
           phone: form.phone || undefined,

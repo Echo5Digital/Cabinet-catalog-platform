@@ -3,11 +3,10 @@ import OpenAI, { toFile } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildKitchenDesignPrompt } from "@/lib/ai/kitchen-design-prompt";
 import { getAIConfig } from "@/lib/ai/config";
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 
 /** Persist an OpenAI error message to ai_settings for the admin to see. */
-async function recordAIError(errorMessage) {
+async function recordAIError(tenantId, errorMessage) {
   try {
     const adminDb = createAdminClient();
     await adminDb
@@ -16,7 +15,7 @@ async function recordAIError(errorMessage) {
         last_error:    errorMessage,
         last_error_at: new Date().toISOString(),
       })
-      .eq("tenant_id", TENANT_ID);
+      .eq("tenant_id", tenantId);
   } catch {
     // Never block the response — this is informational only
   }
@@ -230,6 +229,7 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
 
 export async function POST(request) {
   try {
+    const TENANT_ID = await getTenantIdFromRequest(request);
     const body = await request.json();
     const {
       name, address, email, phone,
@@ -336,7 +336,7 @@ export async function POST(request) {
     const hasReferenceImages = Object.values(refImages).some(Boolean);
 
     // ── Stage 2: Build prompt and call GPT (JSON mode) ────────────────────────
-    const { systemPrompt, userPrompt } = buildKitchenDesignPrompt(
+    let { systemPrompt, userPrompt } = buildKitchenDesignPrompt(
       {
         name, address, email, phone,
         project_type, layout, cabinet_style, budget_style,
@@ -783,7 +783,6 @@ export async function POST(request) {
           n:       1,
           size:    "1792x1024",
           quality: "hd",
-          style:   "vivid",
         });
         // Log revised_prompt to diagnose if DALL-E's rewriter strips geometry instructions
         const revisedPrompt = imageResponse.data?.[0]?.revised_prompt;
@@ -806,7 +805,7 @@ export async function POST(request) {
 
     } catch (dalleErr) {
       console.warn("[kitchen-design] Image generation failed (non-fatal):", dalleErr.message);
-      await recordAIError(dalleErr.message);
+      await recordAIError(TENANT_ID, dalleErr.message);
     }
 
     // ── Stage 6: Return structured response ───────────────────────────────────
@@ -831,7 +830,7 @@ export async function POST(request) {
   } catch (err) {
     console.error("[kitchen-design] error:", err);
     if (err instanceof OpenAI.APIError) {
-      await recordAIError(err.message);
+      await recordAIError(TENANT_ID, err.message);
     }
     return NextResponse.json(
       { error: err.message || "Failed to generate design concepts." },

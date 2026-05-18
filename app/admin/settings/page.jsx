@@ -367,7 +367,7 @@ export default function SettingsPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Contact Email">
               <input
                 type="email"
@@ -418,15 +418,15 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Primary Color" hint="Used for header, navigation, and backgrounds">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <ColorSwatch color={form.primary_color} />
                 <input
                   type="color"
                   value={form.primary_color}
                   onChange={(e) => handleChange("primary_color", e.target.value)}
-                  className="h-9 w-20 rounded border border-gray-300 cursor-pointer p-0.5"
+                  className="h-9 w-14 shrink-0 rounded border border-gray-300 cursor-pointer p-0.5"
                 />
                 <input
                   type="text"
@@ -434,20 +434,20 @@ export default function SettingsPage() {
                   onChange={(e) => handleChange("primary_color", e.target.value)}
                   maxLength={7}
                   pattern="#[0-9a-fA-F]{6}"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-0 flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="#1a1a1a"
                 />
               </div>
             </Field>
 
             <Field label="Accent Color" hint="Used for buttons and interactive elements">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <ColorSwatch color={form.accent_color} />
                 <input
                   type="color"
                   value={form.accent_color}
                   onChange={(e) => handleChange("accent_color", e.target.value)}
-                  className="h-9 w-20 rounded border border-gray-300 cursor-pointer p-0.5"
+                  className="h-9 w-14 shrink-0 rounded border border-gray-300 cursor-pointer p-0.5"
                 />
                 <input
                   type="text"
@@ -455,7 +455,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleChange("accent_color", e.target.value)}
                   maxLength={7}
                   pattern="#[0-9a-fA-F]{6}"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-0 flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="#3b82f6"
                 />
               </div>

@@ -67,7 +67,7 @@ export async function POST(request) {
       finishes: { added: finishesAdded, removed: finishesRemoved },
     };
 
-    const explanation = await explainVersionDiff(diff);
+    const explanation = await explainVersionDiff(diff, ctx.tenantId);
 
     return NextResponse.json({ explanation, diff });
   } catch (err) {

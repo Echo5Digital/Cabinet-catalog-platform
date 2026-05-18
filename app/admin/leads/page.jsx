@@ -747,7 +747,7 @@ ${full.notes ? `<div class="section"><h3>Notes</h3><p style="font-size:14px">${e
       </div>
 
       {/* Pipeline summary */}
-      <div className="grid grid-cols-3 xs:grid-cols-5 sm:grid-cols-5 gap-2 mb-5">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-5">
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
@@ -767,7 +767,7 @@ ${full.notes ? `<div class="section"><h3>Notes</h3><p style="font-size:14px">${e
       </div>
 
       {/* Filter row */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}

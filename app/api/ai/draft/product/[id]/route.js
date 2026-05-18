@@ -58,7 +58,7 @@ export async function POST(request, { params }) {
       available_finishes: finishes,
     };
 
-    const description = await draftProductDescription(productData);
+    const description = await draftProductDescription(productData, ctx.tenantId);
 
     // Optionally save back to DB
     if (save && description) {

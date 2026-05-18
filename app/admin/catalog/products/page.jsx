@@ -394,6 +394,7 @@ function CSVImportModal({ open, onClose, lines, categories, onImported }) {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [total, setTotal] = useState(0);
   const [lines, setLines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -407,12 +408,14 @@ export default function ProductsPage() {
 
   const fetchProducts = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set("limit", "5000");
     if (lineFilter) params.set("catalog_line_id", lineFilter);
     if (catFilter) params.set("category_id", catFilter);
     if (search) params.set("search", search);
     const res = await fetch(`/api/products?${params}`);
     const data = await res.json();
     setProducts(data.products || []);
+    setTotal(data.total ?? data.products?.length ?? 0);
     setLoading(false);
   }, [lineFilter, catFilter, search]);
 
@@ -450,7 +453,7 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {products.length} product{products.length !== 1 ? "s" : ""}
+            {total} product{total !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex gap-2">

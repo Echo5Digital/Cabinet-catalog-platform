@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveTenantId } from "@/lib/utils/tenant-context";
 import DesignPageShell from "@/components/catalog/DesignPageShell";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +8,6 @@ export const metadata = {
   title: "Kitchen Design AI — Cabinet Catalog",
   description: "Get personalized kitchen design concepts based on your style and preferences.",
 };
-
-const TENANT_ID = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
 
 // Derive style_category from catalog line name
 function getStyleCategory(lineName) {
@@ -21,6 +20,7 @@ function getStyleCategory(lineName) {
 
 async function getCatalogData() {
   try {
+    const TENANT_ID = await resolveTenantId();
     if (!TENANT_ID) return { countertopColors: [], floorColors: [], finishes: [], structures: [] };
     const admin = createAdminClient();
 

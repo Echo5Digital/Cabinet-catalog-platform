@@ -42,7 +42,7 @@ export async function POST(request, { params }) {
 
     const leadData = { ...lead, items: items ?? [] };
 
-    const summary = await summarizeLead(leadData);
+    const summary = await summarizeLead(leadData, ctx.tenantId);
 
     return NextResponse.json({ summary });
   } catch (err) {
