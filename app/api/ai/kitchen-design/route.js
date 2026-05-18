@@ -569,6 +569,7 @@ export async function POST(request) {
     //   A2) New build + admin layout reference image → gpt-image-1 edit (reference photo)
     //   B)  New build, no reference image            → DALL-E 3 text-to-image
     let dalleImageUrl = null;
+    let dalleError    = null;
     try {
 
       // ── Helper: upload an image Buffer to Supabase Storage ───────────────────
@@ -778,33 +779,22 @@ export async function POST(request) {
         const finalDallePrompt = sections.join("\n\n");
 
         const imageResponse = await client.images.generate({
-          model:   "dall-e-3",
+          model:   "gpt-image-1",
           prompt:  finalDallePrompt,
           n:       1,
-          size:    "1792x1024",
-          quality: "hd",
+          size:    "1536x1024",
+          quality: "high",
         });
-        // Log revised_prompt to diagnose if DALL-E's rewriter strips geometry instructions
-        const revisedPrompt = imageResponse.data?.[0]?.revised_prompt;
-        if (revisedPrompt) {
-          console.log("[kitchen-design] DALL-E revised_prompt:", revisedPrompt);
-        }
-        const temporaryUrl = imageResponse.data?.[0]?.url || null;
-
-        if (temporaryUrl) {
-          try {
-            const imgRes    = await fetch(temporaryUrl);
-            const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-            dalleImageUrl   = await persistImage(imgBuffer) ?? temporaryUrl;
-          } catch (uploadErr) {
-            console.warn("[kitchen-design] Storage fetch/upload error, using temp URL:", uploadErr.message);
-            dalleImageUrl = temporaryUrl;
-          }
+        const b64 = imageResponse.data?.[0]?.b64_json;
+        if (b64) {
+          const imgBuffer = Buffer.from(b64, "base64");
+          dalleImageUrl   = await persistImage(imgBuffer) ?? `data:image/png;base64,${b64}`;
         }
       }
 
     } catch (dalleErr) {
       console.warn("[kitchen-design] Image generation failed (non-fatal):", dalleErr.message);
+      dalleError = dalleErr.message;
       await recordAIError(TENANT_ID, dalleErr.message);
     }
 
@@ -812,6 +802,7 @@ export async function POST(request) {
     return NextResponse.json({
       concept,
       image_url:              dalleImageUrl,
+      render_error:           dalleError,
       products,
       sales_summary,
       next_steps:             Array.isArray(next_steps) ? next_steps : [],

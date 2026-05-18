@@ -1320,6 +1320,20 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 </div>
               </div>
             )}
+            {!result.image_url && (
+              <div className="px-5 pt-5 pb-3 flex items-start gap-3 border-b border-amber-100 bg-amber-50">
+                <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <span className="font-semibold">Visual render unavailable.</span>{" "}
+                  {result.render_error
+                    ? result.render_error
+                    : "The AI render could not be generated at this time."}{" "}
+                  Your design concept and product recommendations are still ready — verify your email below to view them.
+                </p>
+              </div>
+            )}
             {/* Blurred content placeholders */}
             <div className="p-5 sm:p-7 space-y-3" style={{ filter: "blur(6px)", userSelect: "none", pointerEvents: "none" }}>
               <div className="h-5 bg-stone-200 rounded w-2/3" />
