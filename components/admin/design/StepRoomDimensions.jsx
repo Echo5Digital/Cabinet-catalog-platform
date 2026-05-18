@@ -54,7 +54,7 @@ export default function StepRoomDimensions({ formData, onChange, onNext, onBack 
             The AI will use these measurements to generate a proportional floor plan and kitchen render.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
             {dims.map(({ label, key, placeholder }) => {
               const invalid = touched[key] && !isValidDim(formData[key]);
               return (

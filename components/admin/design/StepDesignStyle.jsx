@@ -50,14 +50,13 @@ function ColorCarousel({ items, selected, onSelect, loading }) {
             key={item.id ?? item.name}
             type="button"
             onClick={() => onSelect(item)}
-            className={`shrink-0 flex flex-col rounded-xl overflow-hidden border-2 transition-all ${
+            className={`shrink-0 flex flex-col rounded-xl overflow-hidden border-2 transition-all w-24 ${
               isSelected
                 ? "border-[#6E1020] shadow-sm"
                 : "border-stone-200 hover:border-stone-300 hover:shadow-sm"
             }`}
-            style={{ width: 96 }}
           >
-            <div className="relative bg-stone-100 w-full" style={{ height: 96 }}>
+            <div className="relative bg-stone-100 w-full h-24">
               {item.image_url ? (
                 <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
               ) : (
@@ -193,7 +192,7 @@ export default function StepDesignStyle({ formData, onChange, onNext, onBack }) 
             {/* Cabinet Style */}
             <div>
               <label className={labelCls}>Cabinet Style</label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-1">
                 {CABINET_STYLES.map((s) => (
                   <button
                     key={s}

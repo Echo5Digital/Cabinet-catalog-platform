@@ -156,7 +156,7 @@ export default function SavedDesignTable() {
       {!loading && !error && quotes.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Desktop */}
-          <div className="hidden sm:block overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -173,7 +173,7 @@ export default function SavedDesignTable() {
                     <td className="px-5 py-4 font-medium text-gray-900 whitespace-nowrap">{q.customer_name}</td>
                     <td className="px-5 py-4 text-gray-600">{q.customer_email}</td>
                     <td className="px-5 py-4 text-gray-500 whitespace-nowrap tabular-nums">
-                      {q.room_width}×{q.room_depth}×{q.room_height} ft
+                      {q.room_width ?? "—"}×{q.room_depth ?? "—"}×{q.room_height ?? "—"} ft
                     </td>
                     <td className="px-5 py-4"><StatusBadge status={q.status} /></td>
                     <td className="px-5 py-4 text-gray-500 whitespace-nowrap">{formatDate(q.created_at)}</td>
@@ -245,7 +245,7 @@ export default function SavedDesignTable() {
           </div>
 
           {/* Mobile cards */}
-          <div className="sm:hidden divide-y divide-gray-100">
+          <div className="md:hidden divide-y divide-gray-100">
             {quotes.map((q) => (
               <div key={q.id} className="px-4 py-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -256,7 +256,7 @@ export default function SavedDesignTable() {
                   <StatusBadge status={q.status} />
                 </div>
                 <p className="text-xs text-gray-500 tabular-nums">
-                  {q.room_width}×{q.room_depth}×{q.room_height} ft  ·  Created {formatDate(q.created_at)}
+                  {q.room_width ?? "—"}×{q.room_depth ?? "—"}×{q.room_height ?? "—"} ft  ·  Created {formatDate(q.created_at)}
                 </p>
                 <div className="flex justify-end gap-2 pt-1.5 border-t border-gray-50 mt-1">
                   <button
@@ -302,7 +302,7 @@ export default function SavedDesignTable() {
       {/* Toast notification */}
       {notify && (
         <div
-          className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-xs ${
+          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-[calc(100vw-2rem)] sm:max-w-xs ${
             notify.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
           }`}
         >

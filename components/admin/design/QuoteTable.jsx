@@ -43,7 +43,7 @@ export default function QuoteTable({ items, onChange }) {
                 <tr key={i} className="hover:bg-stone-50/60 transition-colors">
                   <td className="px-2 py-2">
                     <input type="text" value={row.sku} onChange={(e) => update(i, "sku", e.target.value)}
-                      placeholder="SKU" className={`${cellInput} w-20`} />
+                      placeholder="SKU" className={`${cellInput} w-full`} />
                   </td>
                   <td className="px-2 py-2">
                     <input type="text" value={row.product} onChange={(e) => update(i, "product", e.target.value)}
@@ -51,16 +51,16 @@ export default function QuoteTable({ items, onChange }) {
                   </td>
                   <td className="px-2 py-2">
                     <input type="text" value={row.finish} onChange={(e) => update(i, "finish", e.target.value)}
-                      placeholder="Finish" className={`${cellInput} w-24`} />
+                      placeholder="Finish" className={`${cellInput} w-full`} />
                   </td>
                   <td className="px-2 py-2">
                     <input type="number" min="1" value={row.qty} onChange={(e) => update(i, "qty", e.target.value)}
-                      className={`${cellInput} w-14 text-right`} />
+                      className={`${cellInput} w-full text-right`} />
                   </td>
                   <td className="px-2 py-2">
                     <input type="number" min="0" step="0.01" value={row.unit_price}
                       onChange={(e) => update(i, "unit_price", e.target.value)}
-                      className={`${cellInput} w-24 text-right`} />
+                      className={`${cellInput} w-full text-right`} />
                   </td>
                   <td className="px-3 py-2 text-sm font-semibold text-stone-700 whitespace-nowrap tabular-nums">
                     ${lineTotal.toFixed(2)}

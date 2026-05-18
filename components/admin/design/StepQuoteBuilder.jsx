@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import QuoteTable from "./QuoteTable";
 
@@ -92,6 +92,37 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
     }
   }
 
+  const downloadSVG = useCallback(() => {
+    if (!formData.svgFloorPlan) return;
+    const blob = new Blob([formData.svgFloorPlan], { type: "image/svg+xml" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `floor-plan-${(formData.customerName || "design").replace(/\s+/g, "-")}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [formData.svgFloorPlan, formData.customerName]);
+
+  const downloadImage = useCallback(async () => {
+    if (!formData.designImageUrl) return;
+    try {
+      const res    = await fetch(formData.designImageUrl);
+      const blob   = await res.blob();
+      const url    = URL.createObjectURL(blob);
+      const a      = document.createElement("a");
+      a.href       = url;
+      a.download   = `kitchen-render-${(formData.customerName || "design").replace(/\s+/g, "-")}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(formData.designImageUrl, "_blank");
+    }
+  }, [formData.designImageUrl, formData.customerName]);
+
   async function handlePreviewPDF() {
     setSaving(true);
     try {
@@ -113,6 +144,86 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
 
   return (
     <>
+      {/* ── Design Assets — floor plan + render for download / email ────────── */}
+      {(formData.svgFloorPlan || formData.designImageUrl) && (
+        <section className="form-section-card rounded-2xl overflow-hidden mb-5">
+          <div className="p-5 sm:p-7">
+            <div className="form-section-header flex items-center gap-3 mb-1">
+              <span
+                className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
+                style={{ background: "#6E1020" }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </span>
+              <h2
+                className="text-base font-semibold text-stone-800 tracking-tight"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                Design Assets
+              </h2>
+            </div>
+            <p className="text-xs text-stone-400 mb-5 ml-9">
+              Attached to the customer email. Download individually if needed.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Floor Plan */}
+              {formData.svgFloorPlan && (
+                <div className="rounded-xl border border-stone-200 overflow-hidden bg-white">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 bg-stone-50">
+                    <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Floor Plan</span>
+                    <button
+                      type="button"
+                      onClick={downloadSVG}
+                      className="flex items-center gap-1 text-xs font-medium text-[#6E1020] hover:text-[#7D1528] transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download SVG
+                    </button>
+                  </div>
+                  <div
+                    className="p-3 overflow-hidden [&_svg]:max-w-full [&_svg]:h-auto"
+                    dangerouslySetInnerHTML={{
+                      __html: formData.svgFloorPlan.startsWith("<svg") ? formData.svgFloorPlan : "",
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Kitchen Render */}
+              {formData.designImageUrl && (
+                <div className="rounded-xl border border-stone-200 overflow-hidden bg-white">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 bg-stone-50">
+                    <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Kitchen Render</span>
+                    <button
+                      type="button"
+                      onClick={downloadImage}
+                      className="flex items-center gap-1 text-xs font-medium text-[#6E1020] hover:text-[#7D1528] transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={formData.designImageUrl}
+                    alt="AI kitchen render"
+                    className="w-full h-auto"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Build Quote ──────────────────────────────────────────────────────── */}
       <section className="form-section-card rounded-2xl overflow-hidden">
         <div className="p-5 sm:p-7">
           <div className="form-section-header flex items-center gap-3">
@@ -120,7 +231,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
               style={{ background: "#6E1020" }}
             >
-              4
+              6
             </span>
             <h2
               className="text-base font-semibold text-stone-800 tracking-tight"

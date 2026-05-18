@@ -1,71 +1,31 @@
 "use client";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function ZoomPanel({ children, label, onRegenerate, loading }) {
-  const [scale, setScale] = useState(1.0);
-  const scrollRef  = useRef(null);
-  const fittedRef  = useRef(false);
-  const clamp = (v) => Math.min(3.0, Math.max(0.5, v));
+  const [open, setOpen] = useState(false);
 
-  const handleWheel = useCallback((e) => {
-    e.preventDefault();
-    setScale((s) => clamp(s - e.deltaY * 0.001));
-  }, []);
-
-  // Reset fit flag when a regeneration starts so we re-fit when new content arrives
   useEffect(() => {
-    if (loading) {
-      fittedRef.current = false;
-      setScale(1.0);
-    }
-  }, [loading]);
-
-  // Auto-fit: after content renders, shrink scale so SVG fits the panel width on small screens
-  useEffect(() => {
-    if (loading || fittedRef.current || !scrollRef.current) return;
-    const id = requestAnimationFrame(() => {
-      if (!scrollRef.current) return;
-      const cW    = scrollRef.current.clientWidth;
-      const inner = scrollRef.current.firstElementChild;
-      if (!inner || cW <= 0) return;
-      const iW = inner.scrollWidth;
-      if (iW > cW) {
-        setScale(Math.max(0.5, parseFloat((cW / iW).toFixed(3))));
-      }
-      fittedRef.current = true;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [loading, children]);
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   return (
-    <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-      {/* Panel header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-stone-100 bg-stone-50 shrink-0">
-        <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">{label}</span>
-        <div className="flex items-center gap-2">
-          {/* Zoom controls */}
-          <div className="flex items-center gap-0 bg-white border border-stone-200 rounded-full overflow-hidden shadow-sm">
-            <button
-              onClick={() => setScale((s) => clamp(s - 0.25))}
-              disabled={scale <= 0.5}
-              className="px-3 py-2 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition text-sm font-medium min-h-[36px]"
-              title="Zoom out"
-            >
-              −
-            </button>
-            <span className="px-2 text-xs text-stone-400 tabular-nums select-none min-w-[40px] text-center border-x border-stone-100">
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              onClick={() => setScale((s) => clamp(s + 0.25))}
-              disabled={scale >= 3.0}
-              className="px-3 py-2 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition text-sm font-medium min-h-[36px]"
-              title="Zoom in"
-            >
-              +
-            </button>
+    <>
+      <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+        {/* Panel header */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-stone-100 bg-stone-50 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">{label}</span>
+            {!loading && (
+              <span className="text-[10px] text-stone-400 hidden sm:inline">· click to expand</span>
+            )}
           </div>
-
           {onRegenerate && (
             <button
               onClick={onRegenerate}
@@ -86,31 +46,75 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
             </button>
           )}
         </div>
+
+        {/* Preview — click to open lightbox */}
+        <button
+          type="button"
+          onClick={() => { if (!loading) setOpen(true); }}
+          disabled={loading}
+          className="relative w-full text-left overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E1020]/30 group"
+          style={{ minHeight: 240 }}
+        >
+          {loading ? (
+            <div className="w-full h-60 bg-stone-100 animate-pulse" />
+          ) : (
+            <>
+              <div className="w-full overflow-hidden [&_svg]:max-w-full [&_svg]:h-auto [&_img]:max-w-full [&_img]:h-auto">
+                {children}
+              </div>
+              {/* Expand hint */}
+              <div className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition-colors pointer-events-none flex items-end justify-end p-2.5">
+                <span className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-stone-500 px-2 py-1 rounded-full shadow-sm border border-stone-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  Expand
+                </span>
+              </div>
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Scrollable zoom area */}
-      <div
-        ref={scrollRef}
-        className="overflow-auto flex-1 min-h-0"
-        style={{ minHeight: 260 }}
-        onWheel={handleWheel}
-      >
-        {loading ? (
-          <div className="w-full h-64 bg-stone-100 animate-pulse" />
-        ) : (
-          <div
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-              transition: "transform 0.15s ease",
-              display: "inline-block",
-              minWidth: "100%",
-            }}
+      {/* Lightbox */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl leading-none flex items-center justify-center transition z-10"
+            aria-label="Close"
           >
-            {children}
+            ×
+          </button>
+
+          {/* Content card */}
+          <div
+            className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[95vw] max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Lightbox header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 bg-stone-50 shrink-0">
+              <span className="text-sm font-semibold text-[#3D0810]">{label}</span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xs text-stone-400 hover:text-stone-600 transition px-2 py-1"
+              >
+                Close
+              </button>
+            </div>
+            {/* Scrollable content at full size */}
+            <div className="overflow-auto p-4 [&_svg]:max-w-full [&_img]:max-w-full">
+              {children}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

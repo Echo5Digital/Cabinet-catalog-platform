@@ -141,7 +141,7 @@ function normalise(s) {
  * Returns an object with keys: layout, upper_color, lower_color, countertop, flooring.
  * Any key may be null if no confirmed asset was found.
  */
-async function fetchReferenceImages(admin, { layout, upper_color, lower_color, countertop, flooring }) {
+async function fetchReferenceImages(admin, tenantId, { layout, upper_color, lower_color, countertop, flooring }) {
   try {
     const finishNames = [upper_color, lower_color].filter(Boolean);
     const colorNames  = [countertop, flooring].filter(Boolean);
@@ -149,20 +149,20 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
     // Round 1: resolve names → IDs + structure images in parallel
     const [finishesData, colorsData, structuresData, structureImgsData, structureRefImgsData] = await Promise.all([
       finishNames.length > 0
-        ? admin.from("finishes").select("id, name").eq("tenant_id", TENANT_ID).in("name", finishNames).then((r) => r.data || [])
+        ? admin.from("finishes").select("id, name").eq("tenant_id", tenantId).in("name", finishNames).then((r) => r.data || [])
         : Promise.resolve([]),
       colorNames.length > 0
-        ? admin.from("colors").select("id, name").eq("tenant_id", TENANT_ID).in("name", colorNames).then((r) => r.data || [])
+        ? admin.from("colors").select("id, name").eq("tenant_id", tenantId).in("name", colorNames).then((r) => r.data || [])
         : Promise.resolve([]),
       layout
-        ? admin.from("structures").select("id, name").eq("tenant_id", TENANT_ID).eq("is_active", true).then((r) => r.data || [])
+        ? admin.from("structures").select("id, name").eq("tenant_id", tenantId).eq("is_active", true).then((r) => r.data || [])
         : Promise.resolve([]),
       layout
-        ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "structure_image").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
+        ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", tenantId).eq("asset_type", "structure_image").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
         : Promise.resolve([]),
       // Admin-only AI reference images — never shown publicly, used only for GPT layout analysis
       layout
-        ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "structure_reference").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
+        ? admin.from("assets").select("structure_id, public_url").eq("tenant_id", tenantId).eq("asset_type", "structure_reference").eq("status", "confirmed").not("structure_id", "is", null).then((r) => r.data || [])
         : Promise.resolve([]),
     ]);
 
@@ -172,10 +172,10 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
     // Round 2: fetch swatch assets
     const [finishSwatches, colorSwatches] = await Promise.all([
       finishIds.length > 0
-        ? admin.from("assets").select("finish_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "finish_swatch").eq("status", "confirmed").in("finish_id", finishIds).then((r) => r.data || [])
+        ? admin.from("assets").select("finish_id, public_url").eq("tenant_id", tenantId).eq("asset_type", "finish_swatch").eq("status", "confirmed").in("finish_id", finishIds).then((r) => r.data || [])
         : Promise.resolve([]),
       colorIds.length > 0
-        ? admin.from("assets").select("color_id, public_url").eq("tenant_id", TENANT_ID).eq("asset_type", "color_swatch").eq("status", "confirmed").in("color_id", colorIds).then((r) => r.data || [])
+        ? admin.from("assets").select("color_id, public_url").eq("tenant_id", tenantId).eq("asset_type", "color_swatch").eq("status", "confirmed").in("color_id", colorIds).then((r) => r.data || [])
         : Promise.resolve([]),
     ]);
 
@@ -228,8 +228,9 @@ async function fetchReferenceImages(admin, { layout, upper_color, lower_color, c
 }
 
 export async function POST(request) {
+  let TENANT_ID;
   try {
-    const TENANT_ID = await getTenantIdFromRequest(request);
+    TENANT_ID = await getTenantIdFromRequest(request);
     const body = await request.json();
     const {
       name, address, email, phone,
@@ -273,7 +274,7 @@ export async function POST(request) {
         .select("name, code, description, finish_family")
         .eq("tenant_id", TENANT_ID)
         .eq("is_active", true),
-      fetchReferenceImages(admin, { layout, upper_color, lower_color, countertop, flooring }),
+      fetchReferenceImages(admin, TENANT_ID, { layout, upper_color, lower_color, countertop, flooring }),
     ]);
 
     const lines = (linesRes.data || []).map((l) => l.name);

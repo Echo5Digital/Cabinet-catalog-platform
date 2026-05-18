@@ -11,7 +11,7 @@ export async function GET() {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("design_quotes")
-      .select("id, customer_name, customer_email, room_width, room_depth, room_height, status, created_at, sent_at, pdf_url")
+      .select("id, customer_name, customer_email, room_width, room_depth, room_height, style_notes, svg_floor_plan, design_image_url, quote_items, quote_notes, tax_rate, design_params, status, created_at, sent_at, pdf_url")
       .eq("tenant_id", ctx.tenantId)
       .order("created_at", { ascending: false });
 

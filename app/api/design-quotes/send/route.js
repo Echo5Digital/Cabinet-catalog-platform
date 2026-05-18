@@ -322,12 +322,23 @@ export async function POST(request) {
     // Send email
     try {
       await sendDesignQuoteEmail({
-        to:           quote.customer_email,
-        customerName: quote.customer_name,
-        tenantName:   tenant?.name || "Cabinet Co.",
-        tenantEmail:  tenant?.contact_email || null,
+        to:            quote.customer_email,
+        customerName:  quote.customer_name,
+        tenantName:    tenant?.name || "Cabinet Co.",
+        tenantEmail:   tenant?.contact_email || null,
         pdfUrl,
         pdfBuffer,
+        // Full quote data for rich email body
+        quoteItems:    quote.quote_items     || [],
+        taxRate:       quote.tax_rate        ?? 0,
+        quoteNotes:    quote.quote_notes     || "",
+        roomWidth:     quote.room_width,
+        roomDepth:     quote.room_depth,
+        roomHeight:    quote.room_height,
+        styleNotes:    quote.style_notes     || "",
+        designImageUrl: quote.design_image_url || "",
+        svgFloorPlan:  quote.svg_floor_plan   || "",
+        designParams:  quote.design_params    || {},
       });
     } catch (emailErr) {
       console.error("Email send failed:", emailErr);

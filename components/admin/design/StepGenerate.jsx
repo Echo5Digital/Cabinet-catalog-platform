@@ -24,6 +24,7 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
           height:        formData.roomHeight,
           styleNotes:    formData.styleNotes,
           cabinet_style: formData.cabinetStyle || "",
+          layout:        formData.layout || "",
         }),
       });
       const data = await res.json();
@@ -35,7 +36,7 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
     } finally {
       setFloorLoading(false);
     }
-  }, [formData.roomWidth, formData.roomDepth, formData.roomHeight, formData.styleNotes, formData.cabinetStyle, onChange]);
+  }, [formData.roomWidth, formData.roomDepth, formData.roomHeight, formData.styleNotes, formData.cabinetStyle, formData.layout, onChange]);
 
   const fetchRender = useCallback(async () => {
     setRenderLoading(true);
