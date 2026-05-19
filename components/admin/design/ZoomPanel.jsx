@@ -21,7 +21,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
         {/* Panel header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-stone-100 bg-stone-50 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">{label}</span>
+            <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">{label}</span>
             {!loading && (
               <span className="text-[10px] text-stone-400 hidden sm:inline">· click to expand</span>
             )}
@@ -30,7 +30,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
             <button
               onClick={onRegenerate}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border border-stone-200 bg-white text-[#6E1020] hover:border-[#6E1020]/40 hover:bg-[#FDF4F2] disabled:opacity-50 transition min-h-[36px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border border-stone-200 bg-white text-[#4F46E5] hover:border-[#4F46E5]/40 hover:bg-[#EEF2FF] disabled:opacity-50 transition min-h-[36px]"
             >
               {loading ? (
                 <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
           type="button"
           onClick={() => { if (!loading) setOpen(true); }}
           disabled={loading}
-          className="relative w-full text-left overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6E1020]/30 group"
+          className="relative w-full text-left overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5]/30 group"
           style={{ minHeight: 240 }}
         >
           {loading ? (
@@ -99,7 +99,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
           >
             {/* Lightbox header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 bg-stone-50 shrink-0">
-              <span className="text-sm font-semibold text-[#3D0810]">{label}</span>
+              <span className="text-sm font-semibold text-[#111827]">{label}</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

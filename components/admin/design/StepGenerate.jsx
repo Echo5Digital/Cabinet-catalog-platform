@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import ZoomPanel from "./ZoomPanel";
 
 const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
-const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
+const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function StepGenerate({ formData, onChange, onNext, onBack }) {
   const [floorLoading,  setFloorLoading]  = useState(false);
@@ -95,12 +95,12 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
 
   return (
     <>
-      <section className="form-section-card rounded-2xl overflow-hidden">
+      <section className="form-section-card-admin rounded-2xl overflow-hidden">
         <div className="p-5 sm:p-7">
-          <div className="form-section-header flex items-center gap-3">
+          <div className="form-section-header-admin flex items-center gap-3">
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "#6E1020" }}
+              style={{ background: "#4F46E5" }}
             >
               5
             </span>
@@ -133,7 +133,7 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
 
             {Array.isArray(formData.floorPlanProducts) && formData.floorPlanProducts.length > 0 && (
               <p className="mt-2 text-xs text-stone-500 px-1 col-span-full xl:col-span-1">
-                <span className="font-semibold text-[#6E1020]">{formData.floorPlanProducts.length}</span>{" "}
+                <span className="font-semibold text-[#4F46E5]">{formData.floorPlanProducts.length}</span>{" "}
                 product{formData.floorPlanProducts.length !== 1 ? "s" : ""} suggested — review in the Quote step.
               </p>
             )}

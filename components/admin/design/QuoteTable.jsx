@@ -1,7 +1,7 @@
 "use client";
 
-const cellInput = "border border-stone-200 rounded-lg px-2 py-1.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
-const labelCls  = "block text-[10px] font-semibold text-[#3D0810] mb-0.5 uppercase tracking-wide";
+const cellInput = "border border-stone-200 rounded-lg px-2 py-1.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition";
+const labelCls  = "block text-[10px] font-semibold text-[#111827] mb-0.5 uppercase tracking-wide";
 
 const EMPTY_ROW = () => ({ sku: "", product: "", finish: "", qty: 1, unit_price: 0 });
 
@@ -22,7 +22,7 @@ export default function QuoteTable({ items, onChange }) {
               {["SKU", "Product", "Finish", "Qty", "Unit Price", "Total", ""].map((h) => (
                 <th
                   key={h}
-                  className="text-left px-3 py-2.5 text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide whitespace-nowrap"
+                  className="text-left px-3 py-2.5 text-[10px] font-semibold text-[#111827] uppercase tracking-wide whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -92,7 +92,7 @@ export default function QuoteTable({ items, onChange }) {
           return (
             <div key={i} className="rounded-xl border border-stone-200 bg-white shadow-sm p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Row {i + 1}</span>
+                <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">Row {i + 1}</span>
                 <button
                   onClick={() => removeRow(i)}
                   className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition py-2 px-3 min-h-[36px] rounded-lg hover:bg-red-50"
@@ -131,7 +131,7 @@ export default function QuoteTable({ items, onChange }) {
                 </div>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-stone-100">
-                <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Line Total</span>
+                <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">Line Total</span>
                 <span className="text-sm font-bold text-stone-800 tabular-nums">${lineTotal.toFixed(2)}</span>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function QuoteTable({ items, onChange }) {
       {/* Add row */}
       <button
         onClick={addRow}
-        className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#6E1020] hover:text-[#7D1528] transition"
+        className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#4F46E5] hover:text-[#4338CA] transition"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

@@ -70,11 +70,11 @@ const LAYOUT_CONFIGS = [
   },
 ];
 
-const selectCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition cursor-pointer";
-const inputCls  = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
-const labelCls  = "block text-xs font-semibold text-[#3D0810] mb-1.5 uppercase tracking-wide";
+const selectCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition cursor-pointer";
+const inputCls  = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition";
+const labelCls  = "block text-xs font-semibold text-[#111827] mb-1.5 uppercase tracking-wide";
 const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
-const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
+const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function StepProjectDetails({ formData, onChange, onNext, onBack }) {
   const photoRequired = PHOTO_REQUIRED_TYPES.includes(formData.projectType);
@@ -97,12 +97,12 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
 
   return (
     <>
-      <section className="form-section-card rounded-2xl overflow-hidden">
+      <section className="form-section-card-admin rounded-2xl overflow-hidden">
         <div className="p-5 sm:p-7">
-          <div className="form-section-header flex items-center gap-3">
+          <div className="form-section-header-admin flex items-center gap-3">
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "#6E1020" }}
+              style={{ background: "#4F46E5" }}
             >
               3
             </span>
@@ -143,7 +143,7 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
 
                 {photoRequired ? (
                   <div className="space-y-3">
-                    <p className="text-xs text-rose-900 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2.5">
+                    <p className="text-xs text-indigo-900 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2.5">
                       A photo of the existing kitchen is required for <strong>{formData.projectType}</strong>. The AI will use it as a reference.
                     </p>
                     <input
@@ -200,7 +200,7 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
                       onClick={() => onChange("layout", cfg.name)}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition min-h-[72px] ${
                         selected
-                          ? "border-[#6E1020] bg-[#FDF4F2] text-[#6E1020]"
+                          ? "border-[#4F46E5] bg-[#EEF2FF] text-[#4F46E5]"
                           : "border-stone-200 bg-white text-stone-400 hover:border-stone-300 hover:text-stone-600"
                       }`}
                     >

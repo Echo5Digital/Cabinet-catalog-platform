@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 
-const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
-const labelCls = "block text-xs font-semibold text-[#3D0810] mb-1.5 uppercase tracking-wide";
+const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition";
+const labelCls = "block text-xs font-semibold text-[#111827] mb-1.5 uppercase tracking-wide";
 const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
-const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
+const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
 
 function isValidDim(v) {
   const n = parseFloat(v);
@@ -33,12 +33,12 @@ export default function StepRoomDimensions({ formData, onChange, onNext, onBack 
 
   return (
     <>
-      <section className="form-section-card rounded-2xl overflow-hidden">
+      <section className="form-section-card-admin rounded-2xl overflow-hidden">
         <div className="p-5 sm:p-7">
-          <div className="form-section-header flex items-center gap-3">
+          <div className="form-section-header-admin flex items-center gap-3">
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "#6E1020" }}
+              style={{ background: "#4F46E5" }}
             >
               2
             </span>

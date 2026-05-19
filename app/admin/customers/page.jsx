@@ -6,6 +6,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all"); // "all" | "quoted" | "not_quoted"
+  const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
@@ -38,8 +39,9 @@ export default function CustomersPage() {
   }, []);
 
   const filtered = customers.filter((c) => {
-    if (filter === "quoted")     return c.has_quoted;
-    if (filter === "not_quoted") return !c.has_quoted;
+    if (filter === "quoted" && !c.has_quoted) return false;
+    if (filter === "not_quoted" && c.has_quoted) return false;
+    if (searchQuery.trim() && !c.name?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
@@ -149,24 +151,41 @@ export default function CustomersPage() {
         )}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 mb-5 bg-gray-100 rounded-lg p-1 w-fit">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              filter === f.id
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {f.label}
-            <span className={`ml-1.5 text-xs font-bold tabular-nums ${filter === f.id ? "text-gray-600" : "text-gray-400"}`}>
-              {counts[f.id]}
-            </span>
-          </button>
-        ))}
+      {/* Filters and Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        {/* Filter tabs */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                filter === f.id
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {f.label}
+              <span className={`ml-1.5 text-xs font-bold tabular-nums ${filter === f.id ? "text-gray-600" : "text-gray-400"}`}>
+                {counts[f.id]}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative w-full sm:w-64">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+          />
+          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       {/* Error */}

@@ -253,3 +253,32 @@ body {
 .form-section-header h2 {
   color: #4A0A15 !important;
 }
+
+/* ── Form Section Card — Indigo/Admin Theme ── */
+.form-section-card-admin {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid rgba(79, 70, 229, 0.14);
+  box-shadow: 0 2px 16px rgba(79, 70, 229, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.form-section-card-admin:hover {
+  box-shadow: 0 4px 24px rgba(79, 70, 229, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(79, 70, 229, 0.25);
+}
+
+.form-section-header-admin {
+  background: transparent;
+  margin: -1.25rem -1.25rem 1.25rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.12);
+}
+@media (min-width: 640px) {
+  .form-section-header-admin {
+    margin: -1.75rem -1.75rem 1.75rem;
+    padding: 1rem 1.75rem;
+  }
+}
+.form-section-header-admin h2 {
+  color: #111827 !important;
+}

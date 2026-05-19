@@ -3,8 +3,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import QuoteTable from "./QuoteTable";
 
-const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
-const labelCls = "block text-xs font-semibold text-[#3D0810] mb-1.5 uppercase tracking-wide";
+const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition";
+const labelCls = "block text-xs font-semibold text-[#111827] mb-1.5 uppercase tracking-wide";
 const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
 
 export default function StepQuoteBuilder({ formData, onChange, onBack, editId, setNotify }) {
@@ -146,12 +146,12 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
     <>
       {/* ── Design Assets — floor plan + render for download / email ────────── */}
       {(formData.svgFloorPlan || formData.designImageUrl) && (
-        <section className="form-section-card rounded-2xl overflow-hidden mb-5">
+        <section className="form-section-card-admin rounded-2xl overflow-hidden mb-5">
           <div className="p-5 sm:p-7">
-            <div className="form-section-header flex items-center gap-3 mb-1">
+            <div className="form-section-header-admin flex items-center gap-3 mb-1">
               <span
                 className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-                style={{ background: "#6E1020" }}
+                style={{ background: "#4F46E5" }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -173,11 +173,11 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
               {formData.svgFloorPlan && (
                 <div className="rounded-xl border border-stone-200 overflow-hidden bg-white">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 bg-stone-50">
-                    <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Floor Plan</span>
+                    <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">Floor Plan</span>
                     <button
                       type="button"
                       onClick={downloadSVG}
-                      className="flex items-center gap-1 text-xs font-medium text-[#6E1020] hover:text-[#7D1528] transition"
+                      className="flex items-center gap-1 text-xs font-medium text-[#4F46E5] hover:text-[#4338CA] transition"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -198,11 +198,11 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
               {formData.designImageUrl && (
                 <div className="rounded-xl border border-stone-200 overflow-hidden bg-white">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 bg-stone-50">
-                    <span className="text-[10px] font-semibold text-[#3D0810] uppercase tracking-wide">Kitchen Render</span>
+                    <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">Kitchen Render</span>
                     <button
                       type="button"
                       onClick={downloadImage}
-                      className="flex items-center gap-1 text-xs font-medium text-[#6E1020] hover:text-[#7D1528] transition"
+                      className="flex items-center gap-1 text-xs font-medium text-[#4F46E5] hover:text-[#4338CA] transition"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -224,12 +224,12 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
       )}
 
       {/* ── Build Quote ──────────────────────────────────────────────────────── */}
-      <section className="form-section-card rounded-2xl overflow-hidden">
+      <section className="form-section-card-admin rounded-2xl overflow-hidden">
         <div className="p-5 sm:p-7">
-          <div className="form-section-header flex items-center gap-3">
+          <div className="form-section-header-admin flex items-center gap-3">
             <span
               className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "#6E1020" }}
+              style={{ background: "#4F46E5" }}
             >
               6
             </span>
@@ -255,7 +255,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
             <div className="mt-5 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 bg-white">
                 <div>
-                  <p className="text-xs font-semibold text-[#3D0810] uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-[#111827] uppercase tracking-wide">
                     AI-Suggested Products
                   </p>
                   <p className="text-xs text-stone-400 mt-0.5">
@@ -279,7 +279,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                       onChange("quoteItems", [...(formData.quoteItems || []), ...toAdd]);
                     }
                   }}
-                  className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white transition"
+                  className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white transition"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -291,7 +291,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                 {formData.floorPlanProducts.map((p, i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-2.5 text-sm">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="shrink-0 font-mono text-xs font-semibold text-[#3D0810] bg-rose-50 border border-rose-100 px-2 py-0.5 rounded">
+                      <span className="shrink-0 font-mono text-xs font-semibold text-[#111827] bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
                         {p.sku}
                       </span>
                       <span className="text-stone-700 truncate">{p.product_name}</span>
@@ -324,7 +324,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                 step="0.1"
                 value={formData.taxRate}
                 onChange={(e) => onChange("taxRate", e.target.value)}
-                className="w-20 border border-stone-200 rounded-lg px-2 py-1.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm text-right transition"
+                className="w-20 border border-stone-200 rounded-lg px-2 py-1.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm text-right transition"
               />
             </div>
 
@@ -340,8 +340,8 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                 </div>
               )}
               <div className="flex justify-between gap-8 pt-2 border-t border-stone-200">
-                <span className="text-xs uppercase tracking-wide font-bold text-[#3D0810]">Total</span>
-                <span className="tabular-nums font-bold text-[#3D0810] text-base">${total.toFixed(2)}</span>
+                <span className="text-xs uppercase tracking-wide font-bold text-[#111827]">Total</span>
+                <span className="tabular-nums font-bold text-[#111827] text-base">${total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -391,7 +391,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
           <button
             onClick={handleSendToCustomer}
             disabled={saving || sending}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] text-white disabled:opacity-50 transition"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white disabled:opacity-50 transition"
           >
             {sending ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

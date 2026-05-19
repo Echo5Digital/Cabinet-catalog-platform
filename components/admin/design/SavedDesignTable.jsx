@@ -34,6 +34,12 @@ export default function SavedDesignTable() {
   const [deletingId, setDeletingId] = useState(null);
   const [sendingId,  setSendingId]  = useState(null);
   const [notify,     setNotify]     = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredQuotes = quotes.filter((q) => {
+    if (searchQuery.trim() && !q.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
 
   useEffect(() => {
     if (!notify) return;
@@ -115,6 +121,22 @@ export default function SavedDesignTable() {
         </Link>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative w-full sm:w-72">
+          <input
+            type="text"
+            placeholder="Search by customer name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          />
+          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
       {/* Error */}
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -134,7 +156,7 @@ export default function SavedDesignTable() {
       )}
 
       {/* Empty */}
-      {!loading && !error && quotes.length === 0 && (
+      {!loading && !error && filteredQuotes.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
             <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -153,7 +175,7 @@ export default function SavedDesignTable() {
       )}
 
       {/* Table */}
-      {!loading && !error && quotes.length > 0 && (
+      {!loading && !error && filteredQuotes.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Desktop */}
           <div className="hidden md:block overflow-x-auto">
@@ -168,7 +190,7 @@ export default function SavedDesignTable() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {quotes.map((q) => (
+                {filteredQuotes.map((q) => (
                   <tr key={q.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-4 font-medium text-gray-900 whitespace-nowrap">{q.customer_name}</td>
                     <td className="px-5 py-4 text-gray-600">{q.customer_email}</td>
@@ -246,7 +268,7 @@ export default function SavedDesignTable() {
 
           {/* Mobile cards */}
           <div className="md:hidden divide-y divide-gray-100">
-            {quotes.map((q) => (
+            {filteredQuotes.map((q) => (
               <div key={q.id} className="px-4 py-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
