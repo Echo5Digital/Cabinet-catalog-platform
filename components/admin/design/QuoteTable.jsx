@@ -33,7 +33,7 @@ export default function QuoteTable({ items, onChange }) {
             {items.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-3 py-8 text-center text-stone-400 text-sm italic">
-                  No items yet — click "Add Row" below to start building the quote.
+                  No items yet — click &quot;Add Row&quot; below to start building the quote.
                 </td>
               </tr>
             )}
@@ -84,7 +84,7 @@ export default function QuoteTable({ items, onChange }) {
       <div className="md:hidden space-y-3">
         {items.length === 0 && (
           <p className="text-center text-stone-400 text-sm italic py-6">
-            No items yet — tap "Add Row" below to start.
+            No items yet — tap &quot;Add Row&quot; below to start.
           </p>
         )}
         {items.map((row, i) => {
