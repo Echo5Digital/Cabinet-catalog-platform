@@ -92,9 +92,9 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
             ×
           </button>
 
-          {/* Content card */}
+          {/* Content card — w-full fills the flex container so SVGs expand the same as images */}
           <div
-            className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-[95vw] max-h-[90vh] flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-5xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Lightbox header */}
@@ -109,7 +109,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
               </button>
             </div>
             {/* Scrollable content at full size */}
-            <div className="overflow-auto p-4 [&_svg]:max-w-full [&_img]:max-w-full">
+            <div className="overflow-auto p-4 [&_svg]:w-full [&_svg]:h-auto [&_img]:max-w-full [&_img]:mx-auto">
               {children}
             </div>
           </div>

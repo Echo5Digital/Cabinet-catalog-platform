@@ -66,14 +66,28 @@ export async function middleware(request) {
     }
   );
 
-  // Refresh session if expired
-  const { data: { user } } = await supabase.auth.getUser();
+  // Refresh session if expired — also capture error to handle stale tokens
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  // If the refresh token is invalid/expired, clear all stale sb-* cookies so
+  // the browser stops sending them and the error does not repeat on every request.
+  if (authError && authError.status === 400) {
+    request.cookies
+      .getAll()
+      .filter((c) => c.name.startsWith("sb-"))
+      .forEach((c) => supabaseResponse.cookies.delete(c.name));
+  }
 
   // Protect /admin routes — redirect to login if not authenticated
   if (request.nextUrl.pathname.startsWith("/admin") && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    // Carry over cookie deletions onto the redirect response
+    supabaseResponse.cookies
+      .getAll()
+      .forEach((c) => redirectResponse.cookies.set(c.name, c.value, c));
+    return redirectResponse;
   }
 
   return supabaseResponse;

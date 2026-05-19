@@ -61,8 +61,11 @@ button[class*="border-gray-"] {
   color: #374151; /* gray-700 — always a readable dark color */
 }
 
-/* Don't override buttons that DO have explicit text or bg colors */
-button[class*="text-white"],
+/* Don't override buttons that DO have explicit text or bg colors.
+   NOTE: Use button.text-white (class match) NOT button[class*="text-white"]
+   (substring match) — the substring form also matches hover:text-white,
+   which silently makes sidebar toggle buttons invisible. */
+button.text-white,
 button[class*="bg-blue-"],
 button[class*="bg-green-"],
 button[class*="bg-red-"],
@@ -255,4 +258,13 @@ span.text-gray-300.text-2xl {
 td .font-mono.text-gray-700,
 td .font-mono.text-gray-800 {
   color: #1f2937 !important; /* gray-800 */
+}
+
+/* ── 19. SIDEBAR NAV: Backstop for group-header toggle buttons ────────────────
+   Sidebar bg is #0F1117. Toggle buttons need near-white text.
+   Specificity (0,0,2) — lower than any Tailwind class (0,1,0), so Tailwind
+   text-white / text-slate-100 / hover:text-white all override this when active.
+────────────────────────────────────────────────────────────────────────────── */
+aside nav button {
+  color: #f1f5f9; /* slate-100 — always visible on near-black sidebar */
 }
