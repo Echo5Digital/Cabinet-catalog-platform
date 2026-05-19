@@ -20,7 +20,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
   const tax     = subtotal * (taxRate / 100);
   const total   = subtotal + tax;
 
-  async function saveQuote() {
+  async function saveQuote(status = undefined) {
     const payload = {
       customer_name:    formData.customerName,
       customer_email:   formData.customerEmail,
@@ -33,6 +33,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
       quote_items:      formData.quoteItems,
       quote_notes:      formData.quoteNotes,
       tax_rate:         formData.taxRate,
+      ...(status !== undefined ? { status } : {}),
       design_params: {
         projectType:       formData.projectType,
         layout:            formData.layout,
@@ -123,18 +124,12 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
     }
   }, [formData.designImageUrl, formData.customerName]);
 
-  async function handlePreviewPDF() {
+  async function handleSaveDraft() {
     setSaving(true);
     try {
-      const quoteId = await saveQuote();
-      const res = await fetch("/api/design-quotes/send", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ designQuoteId: quoteId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate PDF");
-      if (data.pdfUrl) window.open(data.pdfUrl, "_blank");
+      await saveQuote("draft");
+      setNotify({ type: "success", message: "Design saved as draft. Open it from Saved Designs to send." });
+      router.push("/admin/design/saved");
     } catch (e) {
       setNotify({ type: "error", message: e.message });
     } finally {
@@ -371,7 +366,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
 
         <div className="flex flex-col sm:flex-row gap-2.5">
           <button
-            onClick={handlePreviewPDF}
+            onClick={handleSaveDraft}
             disabled={saving || sending}
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-stone-300 bg-white text-stone-700 text-sm font-medium hover:border-stone-400 disabled:opacity-50 transition"
           >
@@ -382,10 +377,10 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             )}
-            Preview PDF
+            Save Draft
           </button>
 
           <button
