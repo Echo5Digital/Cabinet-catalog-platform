@@ -616,12 +616,13 @@ export async function POST(request) {
           const lowerDesc = lower_color_desc ? ` ${lower_color_desc}.` : "";
           editPrompt = [
             `Photorealistic residential kitchen photograph.`,
-            `TASK: Change ONLY the kitchen cabinets. Do not change anything else in this image.`,
+            `TASK: Change ONLY the kitchen cabinets and hood. Do not change anything else in this image.`,
             upper_color ? `UPPER CABINETS: Replace wall-mounted upper cabinets with ${upper_color} finish.${upperDesc}` : "",
             lower_color ? `LOWER CABINETS: Replace floor-mounted base cabinets with ${lower_color} finish.${lowerDesc}` : "",
             cabinet_style ? `CABINET STYLE: ${cabinet_style} door style.` : "",
-            hardware ? `HARDWARE: ${hardware}.` : "",
-            `KEEP EXACTLY AS-IS: countertop, flooring, appliances, backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
+            hardware ? `MANDATORY HARDWARE: ${hardware} — must be visible on all cabinet doors and drawers. Do not substitute.` : "",
+            hood_style ? `MANDATORY HOOD: ${hood_style} range hood — must be clearly visible above the cooking range. Do not substitute or omit.` : "",
+            `KEEP EXACTLY AS-IS: countertop, flooring, appliances (refrigerator, range, dishwasher), backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
             dalle_prompt ? `VISUAL STYLE: ${dalle_prompt}` : "",
           ].filter(Boolean).join("\n\n");
 
@@ -669,8 +670,12 @@ export async function POST(request) {
             const d = flooring_desc ? ` ${flooring_desc}.` : "";
             sections.push(`FLOORING: Replace flooring with ${flooring}.${d}`);
           }
-          if (cabinet_style) sections.push(`CABINET STYLE: ${cabinet_style}`);
-          if (dalle_prompt)  sections.push(`VISUAL STYLE:\n${dalle_prompt}`);
+          if (cabinet_style)   sections.push(`CABINET STYLE: ${cabinet_style}`);
+          if (hardware)        sections.push(`HARDWARE: ${hardware} — must be visible on cabinet doors and drawers.`);
+          if (hood_style)      sections.push(`MANDATORY HOOD: ${hood_style} range hood — must be clearly and prominently visible above the cooking range. Do not substitute or omit this hood style.`);
+          if (appliance_color) sections.push(`MANDATORY APPLIANCES: All visible appliances (refrigerator, range, dishwasher) MUST be ${appliance_color} finish. Do not substitute.`);
+          if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified. These override default styling choices:\n${design_comments}`);
+          if (dalle_prompt)    sections.push(`VISUAL STYLE:\n${dalle_prompt}`);
           const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
           sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
           editPrompt = sections.join("\n\n");
@@ -712,8 +717,11 @@ export async function POST(request) {
           const d = flooring_desc ? ` ${flooring_desc}.` : "";
           sections.push(`FLOORING: ${flooring}.${d}`);
         }
-        if (cabinet_style) sections.push(`CABINET STYLE: ${cabinet_style} door style.`);
-        if (hardware)       sections.push(`HARDWARE: ${hardware}.`);
+        if (cabinet_style)   sections.push(`CABINET STYLE: ${cabinet_style} door style.`);
+        if (hardware)        sections.push(`HARDWARE: ${hardware} — must be visible on cabinet doors and drawers.`);
+        if (hood_style)      sections.push(`MANDATORY HOOD: ${hood_style} range hood — must be clearly and prominently visible above the cooking range. Do not substitute or omit this hood style.`);
+        if (appliance_color) sections.push(`MANDATORY APPLIANCES: All visible appliances (refrigerator, range, dishwasher) MUST be ${appliance_color} finish. Do not substitute.`);
+        if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified. These override default styling choices:\n${design_comments}`);
         sections.push(dalle_prompt
           ? `VISUAL STYLE:\n${dalle_prompt}`
           : `VISUAL STYLE:\nClean minimal materials, soft natural lighting, balanced exposure.`
@@ -769,7 +777,11 @@ export async function POST(request) {
           const desc = flooring_desc ? ` ${flooring_desc}.` : "";
           sections.push(`FLOORING:\n${flooring}.${desc}`);
         }
-        if (cabinet_style) sections.push(`CABINET STYLE:\n${cabinet_style}`);
+        if (cabinet_style)   sections.push(`CABINET STYLE:\n${cabinet_style}`);
+        if (hardware)        sections.push(`HARDWARE:\n${hardware} — must be visible on cabinet doors and drawers.`);
+        if (hood_style)      sections.push(`MANDATORY HOOD:\n${hood_style} range hood — must be clearly and prominently visible above the cooking range. Do not substitute or omit this hood style.`);
+        if (appliance_color) sections.push(`MANDATORY APPLIANCES:\nAll visible appliances (refrigerator, range, dishwasher) MUST be ${appliance_color} finish. Do not substitute.`);
+        if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified. These override default styling choices:\n${design_comments}`);
         sections.push(dalle_prompt
           ? `VISUAL STYLE:\n${dalle_prompt}`
           : `VISUAL STYLE:\nClean minimal materials, soft natural lighting, balanced exposure.`
