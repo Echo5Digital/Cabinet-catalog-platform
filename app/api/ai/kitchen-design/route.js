@@ -608,6 +608,27 @@ export async function POST(request) {
       if (isRedesignType && effectiveImageUrl) {
         console.log(`[kitchen-design] Using gpt-image-1 edit for project type: ${project_type}`);
 
+        /*
+         * PHOTO_LOCKED — injected as the second block in every remodel edit prompt.
+         *
+         * Covers four categories that gpt-image-1 will otherwise silently alter:
+         *  1. Structural elements (windows, doors, walls, ceiling)
+         *  2. Surface finishes  (wall paint, backsplash, ceiling colour)
+         *  3. Fixtures          (lighting, appliances, sink, faucet)
+         *  4. Perspective       (camera angle, room proportions)
+         *
+         * A dedicated, prominently-headed block placed BEFORE the change instructions
+         * carries far more weight than items buried in a comma list.
+         */
+        const PHOTO_LOCKED = [
+          `PHOTO-LOCKED — COPY FROM SOURCE EXACTLY. The following elements are FROZEN and must be pixel-for-pixel identical to the customer's uploaded photo:`,
+          `STRUCTURE: Every window (exact position, size, shape, frame, glass, and any view through it). Every door and door opening (exact position, width, height, trim, and frame). All walls (exact arrangement, angles, junctions). Ceiling (exact height, any soffits, bulkheads, or beams). Any skylights, columns, archways, or other fixed built-in architectural features.`,
+          `SURFACES: Wall paint — exact colour and finish. Backsplash — exact material, colour, tile pattern, and grout lines. Ceiling — exact colour and material.`,
+          `FIXTURES & FITTINGS: All light fixtures — exact style, position, and colour temperature (do not brighten, dim, or recolour the light). All appliances — exact finish colour, model appearance, and position (refrigerator, range/cooktop, dishwasher, microwave). Sink — exact style and position. Faucet — exact style.`,
+          `PERSPECTIVE: Identical camera angle, field of view, and room proportions to the source photo. Do not widen, zoom, or shift the viewpoint.`,
+          `DO NOT add, remove, move, recolour, or restyle any of the above. If it is not listed in the CHANGE section below, it must be identical to the source photo.`,
+        ].join("\n");
+
         let editPrompt;
 
         if (project_type === "Replace Cabinets Only") {
@@ -615,33 +636,41 @@ export async function POST(request) {
           const upperDesc = upper_color_desc ? ` ${upper_color_desc}.` : "";
           const lowerDesc = lower_color_desc ? ` ${lower_color_desc}.` : "";
           editPrompt = [
-            `Photorealistic residential kitchen photograph.`,
-            `TASK: Change ONLY the kitchen cabinets and hood. Do not change anything else in this image.`,
-            upper_color ? `UPPER CABINETS: Replace wall-mounted upper cabinets with ${upper_color} finish.${upperDesc}` : "",
-            lower_color ? `LOWER CABINETS: Replace floor-mounted base cabinets with ${lower_color} finish.${lowerDesc}` : "",
-            cabinet_style ? `CABINET STYLE: ${cabinet_style} door style.` : "",
-            hardware ? `MANDATORY HARDWARE: ${hardware} — must be visible on all cabinet doors and drawers. Do not substitute.` : "",
-            hood_style ? `MANDATORY HOOD: ${hood_style} range hood — must be clearly visible above the cooking range. Do not substitute or omit.` : "",
-            `KEEP EXACTLY AS-IS: countertop, flooring, appliances (refrigerator, range, dishwasher), backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
-            dalle_prompt ? `VISUAL STYLE: ${dalle_prompt}` : "",
+            `Photorealistic residential kitchen photograph. Cabinet replacement only — ONLY the cabinets and hood change. Every other element is copied from the source photo without modification.`,
+            PHOTO_LOCKED,
+            `CHANGE LIST — the ONLY elements permitted to differ from the source photo:`,
+            upper_color ? `• UPPER CABINETS: Replace wall-mounted upper cabinets with ${upper_color} finish.${upperDesc}` : "",
+            lower_color ? `• LOWER CABINETS: Replace floor-mounted base cabinets with ${lower_color} finish.${lowerDesc}` : "",
+            cabinet_style ? `• CABINET STYLE: ${cabinet_style} door style on all cabinets.` : "",
+            hardware ? `• HARDWARE: ${hardware} pulls/knobs — visible on all cabinet doors and drawers. Do not substitute.` : "",
+            hood_style ? `• HOOD: ${hood_style} range hood above the cooking range. Do not substitute or omit.` : "",
           ].filter(Boolean).join("\n\n");
 
         } else if (project_type === "Countertop Only") {
           // Only the countertop changes — everything else preserved exactly.
           const ctDesc = countertop_desc ? ` ${countertop_desc}.` : "";
           editPrompt = [
-            `Photorealistic residential kitchen photograph.`,
-            `TASK: Change ONLY the kitchen countertop. Do not change anything else in this image.`,
-            countertop ? `COUNTERTOP: Replace the countertop with ${countertop}.${ctDesc}` : "",
-            `KEEP EXACTLY AS-IS: all cabinets, cabinet colors, cabinet doors, flooring, appliances, backsplash, walls, windows, ceiling, lighting. Do not alter these in any way.`,
-            dalle_prompt ? `VISUAL STYLE: ${dalle_prompt}` : "",
+            `Photorealistic residential kitchen photograph. Countertop replacement only — ONLY the countertop surface changes. Every other element is copied from the source photo without modification.`,
+            PHOTO_LOCKED,
+            `CHANGE LIST — the ONLY element permitted to differ from the source photo:`,
+            countertop ? `• COUNTERTOP: Replace the countertop surface with ${countertop}.${ctDesc} Apply the new material only to the countertop horizontal surface and edge profile — nothing else.` : "",
           ].filter(Boolean).join("\n\n");
 
         } else {
-          // Remodel Existing Kitchen — full redesign within the same room geometry.
+          // Remodel Existing Kitchen — cabinets + countertop + flooring change only.
           const lv = layout ? LAYOUT_VISUAL[layout] : null;
           const sections = [
-            `Photorealistic residential kitchen redesign photograph. Preserve exact room geometry: same walls, windows, ceiling height, door positions.`,
+            `Photorealistic residential kitchen redesign photograph. Full kitchen remodel using the customer's existing room — ONLY cabinets, countertop, and flooring change. Everything else is copied from the source photo without modification.`,
+            PHOTO_LOCKED,
+            // Explicit list of what IS allowed to change (scoped tightly)
+            [
+              `CHANGE LIST — the ONLY elements permitted to differ from the source photo:`,
+              `• Cabinets (upper and lower): new finish colour, door style, and hardware`,
+              `• Countertop: new material and edge profile`,
+              `• Flooring: new material and colour`,
+              appliance_color ? `• Appliances: finish colour changed to ${appliance_color} (customer selected)` : "",
+              hood_style      ? `• Hood: style changed to ${hood_style} (customer selected)` : "",
+            ].filter(Boolean).join("\n"),
           ];
           if (lv) {
             sections.push(`LAYOUT: ${lv.structure}`);
@@ -660,7 +689,7 @@ export async function POST(request) {
             sections.push(`LOWER CABINETS: Replace lower cabinets with ${lower_color} finish.${d}`);
           }
           if (upper_color && lower_color) {
-            sections.push(`COLOR SEPARATION: Upper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colors — do not blend them.`);
+            sections.push(`COLOR SEPARATION: Upper cabinets are ${upper_color}. Lower cabinets are ${lower_color}. Two distinct colours — do not blend them.`);
           }
           if (countertop) {
             const d = countertop_desc ? ` ${countertop_desc}.` : "";
@@ -670,14 +699,14 @@ export async function POST(request) {
             const d = flooring_desc ? ` ${flooring_desc}.` : "";
             sections.push(`FLOORING: Replace flooring with ${flooring}.${d}`);
           }
-          if (cabinet_style)   sections.push(`CABINET STYLE: ${cabinet_style}`);
-          if (hardware)        sections.push(`HARDWARE: ${hardware} — must be visible on cabinet doors and drawers.`);
-          if (hood_style)      sections.push(`MANDATORY HOOD: ${hood_style} range hood — must be clearly and prominently visible above the cooking range. Do not substitute or omit this hood style.`);
+          if (cabinet_style) sections.push(`CABINET STYLE: ${cabinet_style} door style on all cabinets.`);
+          if (hardware)      sections.push(`HARDWARE: ${hardware} — must be visible on cabinet doors and drawers.`);
+          if (hood_style)    sections.push(`MANDATORY HOOD: ${hood_style} range hood — clearly visible above the cooking range. Do not substitute or omit.`);
           if (appliance_color) sections.push(`MANDATORY APPLIANCES: All visible appliances (refrigerator, range, dishwasher) MUST be ${appliance_color} finish. Do not substitute.`);
-          if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified. These override default styling choices:\n${design_comments}`);
-          if (dalle_prompt)    sections.push(`VISUAL STYLE:\n${dalle_prompt}`);
+          if (design_comments) sections.push(`SPECIAL REQUIREMENTS (apply to changed items only — cabinets, countertop, flooring):\n${design_comments}`);
+          if (dalle_prompt)    sections.push(`VISUAL STYLE (applies ONLY to the replaced cabinets, countertop, and flooring — not to walls, lighting, backsplash, or any other element):\n${dalle_prompt}`);
           const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
-          sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
+          sections.push(`BUDGET REALISM (applies ONLY to the replaced cabinets, countertop, and flooring — not to walls, lighting, appliances, or any other element):\n${budgetTierDesc}`);
           editPrompt = sections.join("\n\n");
         }
 
