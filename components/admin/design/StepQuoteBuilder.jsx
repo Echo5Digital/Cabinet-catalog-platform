@@ -263,7 +263,7 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                     const mapped = (formData.floorPlanProducts || []).map((p) => ({
                       sku:        p.sku         || "",
                       product:    p.product_name || p.sku || "",
-                      finish:     "",
+                      finish:     p.placement === "upper" ? (formData.upperColor || "") : (formData.lowerColor || ""),
                       qty:        p.qty || 1,
                       unit_price: 0,
                     }));

@@ -47,15 +47,32 @@ function wallLengthIn(id, wFt, dFt) {
 }
 
 function selectProductsForWall(lenIn, products, wallId, placement) {
-  const sorted = [...products].sort((a, b) => (b.width_in || 0) - (a.width_in || 0));
-  let rem = lenIn;
+  const valid = products.filter((p) => (parseFloat(p.width_in) || 0) >= 9);
+  if (!valid.length || lenIn <= 0) return [];
+
+  const sorted = [...valid].sort((a, b) => (b.width_in || 0) - (a.width_in || 0));
   const out = [];
-  for (const p of sorted) {
-    const w = parseFloat(p.width_in) || 0;
-    if (w > 0 && w <= rem) {
-      out.push({ sku: p.sku, product_name: p.name, qty: 1, wall: wallId, placement, width_in: w });
-      rem -= w;
-      if (rem < 12) break;
+  let rem = lenIn;
+
+  // Primary: pick the largest cabinet that fits; fill the run with multiples of that SKU
+  const primary = sorted.find((p) => (parseFloat(p.width_in) || 0) <= rem);
+  if (!primary) return [];
+  const pw = parseFloat(primary.width_in);
+  const qty = Math.floor(rem / pw);
+  out.push({ sku: primary.sku, product_name: primary.name, qty, wall: wallId, placement, width_in: pw });
+  rem -= pw * qty;
+
+  // Filler: if ≥ 9" remains, add one smaller SKU (qty=1) to close the gap
+  if (rem >= 9) {
+    const filler = sorted.find((p) => {
+      const w = parseFloat(p.width_in) || 0;
+      return w > 0 && w <= rem && p.sku !== primary.sku;
+    });
+    if (filler) {
+      const fw = parseFloat(filler.width_in);
+      const fq = Math.floor(rem / fw);
+      if (fq >= 1)
+        out.push({ sku: filler.sku, product_name: filler.name, qty: fq, wall: wallId, placement, width_in: fw });
     }
   }
   return out;
@@ -176,8 +193,10 @@ function buildFloorPlanSection(wFt, dFt, s, wallIds, hasIsland, wallProds) {
     const divStep = Math.max(28, 36 * s);
 
     if (prods.base.length > 0) {
+      // Expand each product by its qty so every cabinet door gets its own line + label
+      const expanded = prods.base.flatMap((p) => Array(Math.max(1, p.qty || 1)).fill(p));
       let cur = 0;
-      for (const p of prods.base) {
+      for (const p of expanded) {
         const pw = (p.width_in || 0) * s;
         cur += pw;
         if (horiz && cur < bwS - 2) {
@@ -227,14 +246,12 @@ function buildFloorPlanSection(wFt, dFt, s, wallIds, hasIsland, wallProds) {
     svg += `<text x="${bx2.toFixed(1)}" y="${by2.toFixed(1)}" font-family="Arial,sans-serif" font-size="8.5" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-weight="800">${label}</text>`;
   }
 
-  // Wall A — top band (centered horizontally)
-  drawWallBadge((ox + oR) / 2, oy + WT / 2, "A");
-  // Wall B — right band (centered vertically)
-  drawWallBadge(oR - WT / 2, (oy + oB) / 2, "B");
-  // Wall C — bottom band (centered horizontally)
-  drawWallBadge((ox + oR) / 2, oB - WT / 2, "C");
-  // Wall D — left band (centered vertically)
-  drawWallBadge(ox + WT / 2, (oy + oB) / 2, "D");
+  // Only label walls that are active in the selected layout
+  const hasW = (id) => wallIds.some((w) => w === id || (id === "C" && w === "C-partial"));
+  if (hasW("A")) drawWallBadge((ox + oR) / 2, oy + WT / 2, "A");
+  if (hasW("B")) drawWallBadge(oR - WT / 2, (oy + oB) / 2, "B");
+  if (hasW("C")) drawWallBadge((ox + oR) / 2, oB - WT / 2, "C");
+  if (hasW("D")) drawWallBadge(ox + WT / 2, (oy + oB) / 2, "D");
 
   // ── Dimension annotations with arrow heads ─────────────────────────────
   const TK = 6; // tick offset
@@ -350,8 +367,9 @@ function buildElevationSection(wallIds, wFt, dFt, hFt, sx, wallProds) {
 
       // Base door lines / SKU labels
       if (prods.base.length > 0) {
+        const expandedB = prods.base.flatMap((p) => Array(Math.max(1, p.qty || 1)).fill(p));
         let cur = 0;
-        for (const p of prods.base) {
+        for (const p of expandedB) {
           const pw = (p.width_in || 0) * sx;
           const divX = cabX + cur + pw;
           if (divX < cabEnd - 1)
@@ -369,8 +387,9 @@ function buildElevationSection(wallIds, wFt, dFt, hFt, sx, wallProds) {
 
       // Upper door lines / SKU labels
       if (prods.upper.length > 0) {
+        const expandedU = prods.upper.flatMap((p) => Array(Math.max(1, p.qty || 1)).fill(p));
         let cur = 0;
-        for (const p of prods.upper) {
+        for (const p of expandedU) {
           const pw = (p.width_in || 0) * sx;
           const divX = cabX + cur + pw;
           if (divX < cabEnd - 1)
@@ -515,14 +534,51 @@ export async function POST(request) {
         .limit(100),
     ]);
 
-    const styleKey     = (cabinet_style || "").toLowerCase();
-    const styleLineIds = styleKey
-      ? (linesRes.data || []).filter((l) => l.name.toLowerCase().includes(styleKey)).map((l) => l.id)
-      : [];
-    const styleProds =
-      styleLineIds.length > 0
-        ? (productsRes.data || []).filter((p) => styleLineIds.includes(p.catalog_line_id))
-        : productsRes.data || [];
+    const styleKey = (cabinet_style || "").toLowerCase();
+    const allLines = linesRes.data   || [];
+    const allProds = productsRes.data || [];
+
+    let styleProds;
+    if (!styleKey) {
+      styleProds = allProds;
+    } else {
+      // Stage 1: full phrase substring match on catalog line name
+      let lineIds = allLines
+        .filter((l) => l.name.toLowerCase().includes(styleKey))
+        .map((l) => l.id);
+
+      // Stage 2: word-level match — e.g. "american" from "american shaker"
+      if (lineIds.length === 0) {
+        const words = styleKey.split(/\s+/).filter((w) => w.length >= 3);
+        lineIds = allLines
+          .filter((l) => words.some((w) => l.name.toLowerCase().includes(w)))
+          .map((l) => l.id);
+      }
+
+      if (lineIds.length > 0) {
+        styleProds = allProds.filter((p) => lineIds.includes(p.catalog_line_id));
+      } else {
+        // Stage 3: no catalog line matched — apply style-family exclusion so
+        // American selections never surface Euro products and vice versa.
+        const isAmerican = /american|traditional|inset|framed/.test(styleKey);
+        const isEuro     = /euro|european|frameless|slab/.test(styleKey);
+        let excludeIds   = new Set();
+        if (isAmerican)
+          excludeIds = new Set(
+            allLines
+              .filter((l) => /euro|european|frameless/.test(l.name.toLowerCase()))
+              .map((l) => l.id)
+          );
+        else if (isEuro)
+          excludeIds = new Set(
+            allLines
+              .filter((l) => /american|traditional|inset/.test(l.name.toLowerCase()))
+              .map((l) => l.id)
+          );
+        const filtered = allProds.filter((p) => !excludeIds.has(p.catalog_line_id));
+        styleProds = filtered.length > 0 ? filtered : allProds;
+      }
+    }
 
     // ── Layout → active walls ──────────────────────────────────────────
     const layoutNorm = normalize(layout || "lshaped");

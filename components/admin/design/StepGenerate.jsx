@@ -2,14 +2,21 @@
 import { useEffect, useState, useCallback } from "react";
 import ZoomPanel from "./ZoomPanel";
 
+const PHOTO_REQUIRED_TYPES = ["Remodel Existing Kitchen", "Replace Cabinets Only", "Countertop Only"];
+
 const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
 const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white !text-white transition disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function StepGenerate({ formData, onChange, onNext, onBack }) {
+  const isRemodel = PHOTO_REQUIRED_TYPES.includes(formData.projectType);
+
   const [floorLoading,  setFloorLoading]  = useState(false);
   const [renderLoading, setRenderLoading] = useState(false);
   const [floorError,    setFloorError]    = useState("");
   const [renderError,   setRenderError]   = useState("");
+
+  // Before/after view toggle (remodel types only)
+  const [viewMode, setViewMode] = useState("generated"); // "generated" | "compare"
 
   const fetchFloorPlan = useCallback(async () => {
     setFloorLoading(true);
@@ -68,12 +75,10 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
         }),
       });
       const data = await res.json();
-      // Hard errors (non-2xx): surface the error message and stop
       if (!res.ok) throw new Error(data.error || "Failed to generate kitchen render");
       if (data.image_url) {
         onChange("designImageUrl", data.image_url);
       } else {
-        // Image generation failed (non-fatal for the admin — floor plan is still usable)
         setRenderError(data.render_error || data.error || "Kitchen render generation failed. You can retry or continue to the quote step.");
       }
     } catch (e) {
@@ -84,13 +89,14 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
   }, [formData.customerName, formData.customerEmail, formData.projectType, formData.layout, formData.cabinetStyle, formData.upperColor, formData.lowerColor, formData.countertop, formData.flooring, formData.budgetStyle, formData.hoodStyle, formData.hardware, formData.applianceColor, formData.designComments, formData.styleNotes, formData.roomWidth, formData.roomDepth, formData.roomHeight, formData.imageStatus, formData.imageUrl, onChange]);
 
   useEffect(() => {
-    if (!formData.svgFloorPlan) fetchFloorPlan();
+    // Remodel types: skip floor plan — only generate the render
+    if (!isRemodel && !formData.svgFloorPlan) fetchFloorPlan();
     if (!formData.designImageUrl) fetchRender();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Floor plan is required; render is optional (can fail/be skipped and still proceed)
-  const floorReady = !!formData.svgFloorPlan;
+  // For remodel types the floor plan is not required — render alone is enough
+  const floorReady = isRemodel ? true : !!formData.svgFloorPlan;
   const anyLoading = floorLoading || renderLoading;
 
   return (
@@ -113,43 +119,127 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
           </div>
 
           <p className="text-sm text-stone-500 mb-6">
-            Your floor plan and kitchen render have been generated from the room dimensions.
-            Use zoom controls to inspect, or regenerate either panel.
+            {isRemodel
+              ? "Your AI-remodeled render has been generated from the uploaded photo. Use the comparison view to see before & after."
+              : "Your floor plan and kitchen render have been generated from the room dimensions. Use zoom controls to inspect, or regenerate either panel."}
           </p>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-            <ZoomPanel label="Floor Plan" onRegenerate={fetchFloorPlan} loading={floorLoading}>
-              {floorError ? (
-                <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{floorError}</div>
-              ) : formData.svgFloorPlan ? (
-                <div
-                  className="p-4"
-                  dangerouslySetInnerHTML={{
-                    __html: formData.svgFloorPlan.startsWith("<svg") ? formData.svgFloorPlan : "",
-                  }}
-                />
-              ) : null}
-            </ZoomPanel>
+          {isRemodel ? (
+            /* ── Remodel: Before / After comparison panel ──────────────────── */
+            <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-sm">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-stone-100 bg-stone-50 shrink-0">
+                <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">Kitchen Render</span>
+                <div className="flex items-center gap-2">
+                  {/* View mode toggle — only shown when both images available */}
+                  {formData.imageUrl && formData.designImageUrl && (
+                    <div className="flex gap-1">
+                      {[
+                        { id: "generated", label: "AI Generated" },
+                        { id: "compare",   label: "Before / After" },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setViewMode(tab.id)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition ${
+                            viewMode === tab.id
+                              ? "bg-[#4F46E5] text-white border-[#4F46E5]"
+                              : "bg-white text-stone-600 border-stone-200 hover:border-[#4F46E5] hover:text-[#4F46E5]"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    onClick={fetchRender}
+                    disabled={renderLoading}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border border-stone-200 bg-white text-[#4F46E5] hover:border-[#4F46E5]/40 hover:bg-[#EEF2FF] disabled:opacity-50 transition min-h-[36px]"
+                  >
+                    {renderLoading ? (
+                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                    Regenerate
+                  </button>
+                </div>
+              </div>
 
-            {Array.isArray(formData.floorPlanProducts) && formData.floorPlanProducts.length > 0 && (
-              <p className="mt-2 text-xs text-stone-500 px-1 col-span-full xl:col-span-1">
-                <span className="font-semibold text-[#4F46E5]">{formData.floorPlanProducts.length}</span>{" "}
-                product{formData.floorPlanProducts.length !== 1 ? "s" : ""} suggested — review in the Quote step.
-              </p>
-            )}
+              {/* Image area */}
+              <div className="relative w-full bg-stone-900" style={{ minHeight: 360 }}>
+                {renderLoading ? (
+                  <div className="w-full h-[360px] bg-stone-100 animate-pulse" />
+                ) : renderError ? (
+                  <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg m-4">{renderError}</div>
+                ) : viewMode === "compare" && formData.imageUrl && formData.designImageUrl ? (
+                  /* Side-by-side compare */
+                  <div className="absolute inset-0 flex" style={{ minHeight: 360 }}>
+                    <div className="relative flex-1 overflow-hidden border-r border-white/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={formData.imageUrl} alt="Original kitchen" className="w-full h-full object-cover" style={{ minHeight: 360 }} />
+                      <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm">Before</span>
+                    </div>
+                    <div className="relative flex-1 overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={formData.designImageUrl} alt="AI remodel" className="w-full h-full object-cover" style={{ minHeight: 360 }} />
+                      <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-stone-900/70 text-white text-[10px] font-semibold backdrop-blur-sm">AI Generated</span>
+                    </div>
+                  </div>
+                ) : formData.designImageUrl ? (
+                  /* Single AI render */
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={formData.designImageUrl} alt="AI kitchen render" className="w-full h-auto" style={{ minHeight: 360, objectFit: "cover" }} />
+                ) : (
+                  <div className="w-full h-[360px] bg-stone-100 flex items-center justify-center">
+                    <p className="text-sm text-stone-400">Generating render…</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* ── New Kitchen: Floor Plan + Render side by side ─────────────── */
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <ZoomPanel label="Floor Plan" onRegenerate={fetchFloorPlan} loading={floorLoading}>
+                {floorError ? (
+                  <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{floorError}</div>
+                ) : formData.svgFloorPlan ? (
+                  <div
+                    className="p-4"
+                    dangerouslySetInnerHTML={{
+                      __html: formData.svgFloorPlan.startsWith("<svg") ? formData.svgFloorPlan : "",
+                    }}
+                  />
+                ) : null}
+              </ZoomPanel>
 
-            <ZoomPanel label="Kitchen Render" onRegenerate={fetchRender} loading={renderLoading}>
-              {renderError ? (
-                <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{renderError}</div>
-              ) : formData.designImageUrl ? (
-                <img
-                  src={formData.designImageUrl}
-                  alt="AI kitchen render"
-                  className="w-full h-auto rounded"
-                />
-              ) : null}
-            </ZoomPanel>
-          </div>
+              {Array.isArray(formData.floorPlanProducts) && formData.floorPlanProducts.length > 0 && (
+                <p className="mt-2 text-xs text-stone-500 px-1 col-span-full xl:col-span-1">
+                  <span className="font-semibold text-[#4F46E5]">{formData.floorPlanProducts.length}</span>{" "}
+                  product{formData.floorPlanProducts.length !== 1 ? "s" : ""} suggested — review in the Quote step.
+                </p>
+              )}
+
+              <ZoomPanel label="Kitchen Render" onRegenerate={fetchRender} loading={renderLoading}>
+                {renderError ? (
+                  <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{renderError}</div>
+                ) : formData.designImageUrl ? (
+                  <img
+                    src={formData.designImageUrl}
+                    alt="AI kitchen render"
+                    className="w-full h-auto rounded"
+                  />
+                ) : null}
+              </ZoomPanel>
+            </div>
+          )}
         </div>
       </section>
 

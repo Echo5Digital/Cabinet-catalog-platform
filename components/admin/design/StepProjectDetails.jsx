@@ -1,4 +1,5 @@
 "use client";
+import { useState, useRef } from "react";
 
 const PROJECT_TYPES = [
   "New Kitchen",
@@ -80,12 +81,39 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
   const photoRequired = PHOTO_REQUIRED_TYPES.includes(formData.projectType);
   const hasPhoto = !!formData.imageUrl?.trim();
 
+  // Upload-from-device state
+  const [uploadMode,  setUploadMode]  = useState("upload"); // "upload" | "url"
+  const [uploading,   setUploading]   = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef(null);
+
   function handleProjectTypeChange(val) {
     onChange("projectType", val);
     if (PHOTO_REQUIRED_TYPES.includes(val)) {
       onChange("imageStatus", "Yes");
     } else {
       onChange("imageStatus", "No");
+    }
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res  = await fetch("/api/admin/upload-photo", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Upload failed");
+      onChange("imageUrl", data.url);
+    } catch (err) {
+      setUploadError(err.message || "Upload failed. Try pasting a URL instead.");
+    } finally {
+      setUploading(false);
+      // Reset input so the same file can be re-selected if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -146,13 +174,104 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
                     <p className="text-xs text-indigo-900 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2.5">
                       A photo of the existing kitchen is required for <strong>{formData.projectType}</strong>. The AI will use it as a reference.
                     </p>
-                    <input
-                      type="url"
-                      className={inputCls}
-                      placeholder="https://... (paste image URL)"
-                      value={formData.imageUrl}
-                      onChange={(e) => onChange("imageUrl", e.target.value)}
-                    />
+
+                    {/* Upload mode toggle */}
+                    <div className="flex gap-1.5">
+                      {[
+                        { id: "upload", label: "Upload from Device" },
+                        { id: "url",    label: "Paste URL" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => { setUploadMode(opt.id); setUploadError(""); }}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition ${
+                            uploadMode === opt.id
+                              ? "bg-[#1C1917] text-white border-[#1C1917]"
+                              : "bg-white text-stone-900 border-stone-300 hover:border-stone-500"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {uploadMode === "upload" ? (
+                      <div className="space-y-2">
+                        {/* Hidden file input */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+
+                        {/* Upload button / drop zone */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="w-full flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 hover:border-[#4F46E5] hover:bg-[#EEF2FF] disabled:opacity-60 transition text-stone-500 hover:text-[#4F46E5] cursor-pointer"
+                        >
+                          {uploading ? (
+                            <>
+                              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                              <span className="text-xs font-medium">Uploading…</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                              </svg>
+                              <span className="text-xs font-medium">Click to upload kitchen photo</span>
+                              <span className="text-[10px] text-stone-400">JPG, PNG, WEBP</span>
+                            </>
+                          )}
+                        </button>
+
+                        {uploadError && (
+                          <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{uploadError}</p>
+                        )}
+
+                        {/* Preview thumbnail once uploaded */}
+                        {hasPhoto && !uploading && (
+                          <div className="flex items-center gap-3 p-2.5 rounded-lg border border-stone-200 bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={formData.imageUrl}
+                              alt="Kitchen preview"
+                              className="w-16 h-12 rounded object-cover border border-stone-200 shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-stone-700 truncate">Photo uploaded</p>
+                              <p className="text-[10px] text-stone-400 truncate">{formData.imageUrl}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => { onChange("imageUrl", ""); setUploadError(""); }}
+                              className="shrink-0 text-stone-400 hover:text-red-500 transition"
+                              aria-label="Remove photo"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type="url"
+                        className={inputCls}
+                        placeholder="https://… (paste image URL)"
+                        value={formData.imageUrl}
+                        onChange={(e) => onChange("imageUrl", e.target.value)}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -177,7 +296,7 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
                       <input
                         type="url"
                         className={inputCls}
-                        placeholder="https://... (paste image URL)"
+                        placeholder="https://… (paste image URL)"
                         value={formData.imageUrl}
                         onChange={(e) => onChange("imageUrl", e.target.value)}
                       />

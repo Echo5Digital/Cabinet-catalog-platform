@@ -167,6 +167,19 @@ export default function DesignResultBoard({
   // AR viewer iframe ref — postMessage bridge to Three.js scene
   const iframeRef = useRef(null);
 
+  // ── Lightbox 2D image zoom state ─────────────────────────────────────
+  const [lbScale,    setLbScale]    = useState(1);
+  const [lbPanX,     setLbPanX]     = useState(0);
+  const [lbPanY,     setLbPanY]     = useState(0);
+  const [lbDragging, setLbDragging] = useState(false);
+  const lbImgWrapRef  = useRef(null);
+  const lbScaleRef    = useRef(1);           /* mirrors lbScale for event handlers */
+  const lbPanRef      = useRef({ x: 0, y: 0 });
+  const lbIsDragging  = useRef(false);
+  const lbLastMouse   = useRef({ x: 0, y: 0 });
+  const lbPinchDist0  = useRef(0);
+  const lbPinchScale0 = useRef(1);
+
   const upperImageUrl   = finishImageMap[upper_color]    || null;
   const lowerImageUrl   = finishImageMap[lower_color]    || null;
   const counterImageUrl = countertopImageMap[countertop] || null;
@@ -177,6 +190,17 @@ export default function DesignResultBoard({
     setThreeDImage(null);
     setThreeDLoading(false);
     setThreeDError("");
+    // Reset lightbox zoom
+    lbScaleRef.current = 1; lbPanRef.current = { x: 0, y: 0 };
+    setLbScale(1); setLbPanX(0); setLbPanY(0); setLbDragging(false);
+  }
+
+  /* ── Lightbox 2D image zoom helpers ──────────────────────────────────── */
+  const lbClampS = (s) => Math.min(5, Math.max(0.5, parseFloat(s.toFixed(2))));
+
+  function lbResetView() {
+    lbScaleRef.current = 1; lbPanRef.current = { x: 0, y: 0 };
+    setLbScale(1); setLbPanX(0); setLbPanY(0);
   }
 
   // ── Send AI image to WebGL iframe via VIEWER_READY handshake ──────────
@@ -226,6 +250,93 @@ export default function DesignResultBoard({
       setThreeDLoading(false);
     }
   }
+
+  /* ── Lightbox 2D zoom: non-passive wheel (cursor-centred) ─────────────── */
+  useEffect(() => {
+    const el = lbImgWrapRef.current;
+    if (!el || !lightboxOpen || !!threeDImage) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const rect   = el.getBoundingClientRect();
+      const cx     = e.clientX - rect.left;
+      const cy     = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      const nextS  = lbClampS(lbScaleRef.current * factor);
+      const ratio  = nextS / lbScaleRef.current;
+      const nextPX = cx - (cx - lbPanRef.current.x) * ratio;
+      const nextPY = cy - (cy - lbPanRef.current.y) * ratio;
+      lbScaleRef.current = nextS;
+      lbPanRef.current   = { x: nextPX, y: nextPY };
+      setLbScale(nextS); setLbPanX(nextPX); setLbPanY(nextPY);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [lightboxOpen, threeDImage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Lightbox 2D zoom: non-passive touch (drag + pinch) ──────────────── */
+  useEffect(() => {
+    const el = lbImgWrapRef.current;
+    if (!el || !lightboxOpen || !!threeDImage) return;
+    const onTouchMove = (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && lbIsDragging.current) {
+        const dx = e.touches[0].clientX - lbLastMouse.current.x;
+        const dy = e.touches[0].clientY - lbLastMouse.current.y;
+        lbLastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        lbPanRef.current.x += dx; lbPanRef.current.y += dy;
+        setLbPanX(lbPanRef.current.x); setLbPanY(lbPanRef.current.y);
+      } else if (e.touches.length === 2 && lbPinchDist0.current > 0) {
+        const d    = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const next = lbClampS(lbPinchScale0.current * (d / lbPinchDist0.current));
+        lbScaleRef.current = next; setLbScale(next);
+      }
+    };
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        lbIsDragging.current = true;
+        lbLastMouse.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        lbIsDragging.current  = false;
+        lbPinchDist0.current  = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        lbPinchScale0.current = lbScaleRef.current;
+      }
+    };
+    const onTouchEnd = () => { lbIsDragging.current = false; lbPinchDist0.current = 0; };
+    el.addEventListener("touchmove",  onTouchMove,  { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: true  });
+    el.addEventListener("touchend",   onTouchEnd,   { passive: true  });
+    return () => {
+      el.removeEventListener("touchmove",  onTouchMove);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend",   onTouchEnd);
+    };
+  }, [lightboxOpen, threeDImage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Lightbox 2D zoom: window-level mouse drag ────────────────────────── */
+  useEffect(() => {
+    if (!lbDragging) return;
+    const onMove = (e) => {
+      if (!lbIsDragging.current) return;
+      const dx = e.clientX - lbLastMouse.current.x;
+      const dy = e.clientY - lbLastMouse.current.y;
+      lbLastMouse.current = { x: e.clientX, y: e.clientY };
+      lbPanRef.current.x += dx; lbPanRef.current.y += dy;
+      setLbPanX(lbPanRef.current.x); setLbPanY(lbPanRef.current.y);
+    };
+    const onUp = () => { lbIsDragging.current = false; setLbDragging(false); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup",   onUp);
+    };
+  }, [lbDragging]);
 
   return (
     <>
@@ -743,16 +854,52 @@ export default function DesignResultBoard({
               />
             </div>
           ) : (
-            /* 2D image + loading overlay while 3D is rendering */
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={image_url}
-                alt={conceptName}
-                className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain select-none"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-              />
+            /* 2D image — zoom + pan enabled */
+            <div
+              ref={lbImgWrapRef}
+              className="relative overflow-hidden rounded-xl shadow-2xl"
+              style={{
+                maxWidth: "92vw",
+                maxHeight: "80vh",
+                cursor: lbDragging ? "grabbing" : lbScale > 1 ? "grab" : "default",
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                lbIsDragging.current = true;
+                setLbDragging(true);
+                lbLastMouse.current = { x: e.clientX, y: e.clientY };
+              }}
+              onDoubleClick={lbResetView}
+            >
+              {/* Transform wrapper — scale + pan applied here */}
+              <div
+                style={{
+                  transform: `translate(${lbPanX}px, ${lbPanY}px) scale(${lbScale})`,
+                  transformOrigin: "0 0",
+                  willChange: "transform",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image_url}
+                  alt={conceptName}
+                  className="block max-w-full max-h-[80vh] object-contain select-none"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </div>
+
+              {/* Zoom level badge — tap/click to reset */}
+              {lbScale !== 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); lbResetView(); }}
+                  className="absolute top-2 left-2 z-20 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm hover:bg-black/75 transition select-none"
+                >
+                  {Math.round(lbScale * 100)}% ↺
+                </button>
+              )}
+
               {threeDLoading && (
                 <div className="absolute inset-0 rounded-xl z-10 flex flex-col items-center justify-center gap-4 overflow-hidden">
                   <div className="absolute inset-0 bg-black/70 backdrop-blur-[3px] rounded-xl" />
@@ -776,6 +923,12 @@ export default function DesignResultBoard({
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Subtle zoom hint — only in 2D mode, hidden on mobile */}
+            {!threeDImage && !threeDLoading && (
+              <span className="hidden sm:block text-white/30 text-[10px] select-none">
+                Scroll to zoom · Drag to pan
+              </span>
+            )}
             {threeDImage ? (
               <button
                 onClick={() => { setThreeDImage(null); setThreeDError(""); }}

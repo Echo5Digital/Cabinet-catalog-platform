@@ -305,7 +305,11 @@ async function buildPDF({ quote, tenant }) {
     }
   }
 
-  // ── PAGE 2 — Floor Plan & Cabinet Elevations ───────────────────────────────
+  // ── Detect remodel project type ────────────────────────────────────────────
+  const PHOTO_REQUIRED_TYPES = ["Remodel Existing Kitchen", "Replace Cabinets Only", "Countertop Only"];
+  const isRemodel = PHOTO_REQUIRED_TYPES.includes(dp.projectType);
+
+  // ── PAGE 2 — Floor Plan & Cabinet Elevations  OR  Before & After ───────────
   {
     const page = pdfDoc.addPage([PW, PH]);
     page.drawRectangle({ x: 0, y: 0, width: PW, height: PH, color: hex("#ffffff") });
@@ -313,10 +317,85 @@ async function buildPDF({ quote, tenant }) {
 
     let y = PH - MG;
 
-    page.drawText("FLOOR PLAN & CABINET ELEVATIONS", { x: MG, y, size: 13, font: bold, color: BURGUNDY_C });
-    y -= 14;
-    page.drawLine({ start: { x: MG, y }, end: { x: PW - MG, y }, thickness: 0.75, color: RULE_C });
-    y -= 20;
+    if (isRemodel) {
+      // ── Remodel: Before & After comparison page ──────────────────────────
+      page.drawText("BEFORE & AFTER COMPARISON", { x: MG, y, size: 13, font: bold, color: BURGUNDY_C });
+      y -= 14;
+      page.drawLine({ start: { x: MG, y }, end: { x: PW - MG, y }, thickness: 0.75, color: RULE_C });
+      y -= 16;
+
+      const imgH  = y - 48;          // available height for images
+      const imgW  = Math.round(CW / 2) - 8;  // each image half-width with gap
+      const leftX = MG;
+      const rightX = MG + imgW + 16;
+      const imgY  = y - imgH;
+
+      // "BEFORE" label
+      const beforeLbl = "BEFORE";
+      page.drawText(beforeLbl, { x: leftX, y, size: 8, font: bold, color: LIGHT_C });
+      // "AFTER (AI GENERATED)" label
+      const afterLbl = "AFTER  \u2014  AI GENERATED";
+      page.drawText(afterLbl, { x: rightX, y, size: 8, font: bold, color: BURGUNDY_C });
+      y -= 14;
+      const finalImgH = y - 48;
+      const finalImgY = y - finalImgH;
+
+      // BEFORE — original customer photo
+      const origUrl = dp.imageUrl || "";
+      let beforeDrawn = false;
+      if (origUrl && (origUrl.startsWith("https://") || origUrl.startsWith("http://"))) {
+        try {
+          const br = await fetch(origUrl);
+          if (br.ok) {
+            const bb = await br.arrayBuffer();
+            const isPng = origUrl.toLowerCase().includes(".png");
+            const embB  = isPng ? await pdfDoc.embedPng(bb) : await pdfDoc.embedJpg(bb);
+            page.drawImage(embB, { x: leftX, y: finalImgY, width: imgW, height: finalImgH });
+            beforeDrawn = true;
+          }
+        } catch { /* skip */ }
+      }
+      if (!beforeDrawn) {
+        page.drawRectangle({ x: leftX, y: finalImgY, width: imgW, height: finalImgH, color: hex("#F0EDE8") });
+        const ph  = "ORIGINAL PHOTO";
+        const phW = regular.widthOfTextAtSize(ph, 8);
+        page.drawText(ph, { x: leftX + Math.round((imgW - phW) / 2), y: finalImgY + Math.round(finalImgH / 2) - 4, size: 8, font: regular, color: LIGHT_C });
+      }
+
+      // AFTER — AI render (re-fetch; same URL already used on page 1)
+      let afterDrawn = false;
+      if (quote.design_image_url) {
+        try {
+          const ar = await fetch(quote.design_image_url);
+          if (ar.ok) {
+            const ab   = await ar.arrayBuffer();
+            const isPng = quote.design_image_url.toLowerCase().includes(".png");
+            const embA  = isPng ? await pdfDoc.embedPng(ab) : await pdfDoc.embedJpg(ab);
+            page.drawImage(embA, { x: rightX, y: finalImgY, width: imgW, height: finalImgH });
+            afterDrawn = true;
+          }
+        } catch { /* skip */ }
+      }
+      if (!afterDrawn) {
+        page.drawRectangle({ x: rightX, y: finalImgY, width: imgW, height: finalImgH, color: hex("#F0EDE8") });
+        const ph  = "AI RENDER";
+        const phW = regular.widthOfTextAtSize(ph, 8);
+        page.drawText(ph, { x: rightX + Math.round((imgW - phW) / 2), y: finalImgY + Math.round(finalImgH / 2) - 4, size: 8, font: regular, color: LIGHT_C });
+      }
+
+      // Divider between images
+      page.drawLine({
+        start: { x: MG + imgW + 8, y: finalImgY },
+        end:   { x: MG + imgW + 8, y: y },
+        thickness: 0.75, color: RULE_C,
+      });
+
+    } else {
+      // ── New Kitchen: Floor Plan & Cabinet Elevations ──────────────────────
+      page.drawText("FLOOR PLAN & CABINET ELEVATIONS", { x: MG, y, size: 13, font: bold, color: BURGUNDY_C });
+      y -= 14;
+      page.drawLine({ start: { x: MG, y }, end: { x: PW - MG, y }, thickness: 0.75, color: RULE_C });
+      y -= 20;
 
     // Column boundaries
     const leftX   = MG;
@@ -457,6 +536,8 @@ async function buildPDF({ quote, tenant }) {
         drawWallElevation(page, wallId, wallLenFt, hFt, elX, elBotY, elW, elH);
       }
     }
+
+    } // end else (non-remodel floor plan block)
 
     // Footer
     page.drawRectangle({ x: 0, y: 0, width: PW, height: 22, color: BURGUNDY_C });

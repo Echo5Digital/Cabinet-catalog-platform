@@ -2,19 +2,48 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 export default function ZoomPanel({ children, label, onRegenerate, loading }) {
-  const [open,  setOpen]  = useState(false);
-  const [scale, setScale] = useState(1);
-  const contentRef = useRef(null);
+  const [open,     setOpen]     = useState(false);
+  const [scale,    setScale]    = useState(1);
+  const [panX,     setPanX]     = useState(0);
+  const [panY,     setPanY]     = useState(0);
+  const [dragging, setDragging] = useState(false);
 
-  // Keyboard shortcuts + body scroll lock when lightbox is open
+  const contentRef   = useRef(null);
+  const scaleRef     = useRef(1);           /* mirrors scale for use inside event handlers */
+  const panRef       = useRef({ x: 0, y: 0 });
+  const isDragging   = useRef(false);
+  const lastMouse    = useRef({ x: 0, y: 0 });
+  const pinchDist0   = useRef(0);
+  const pinchScale0  = useRef(1);
+
+  const clampS = (s) => Math.min(4, Math.max(0.5, parseFloat(s.toFixed(2))));
+
+  function resetView() {
+    scaleRef.current    = 1;
+    panRef.current      = { x: 0, y: 0 };
+    setScale(1);
+    setPanX(0);
+    setPanY(0);
+  }
+
+  /* ── Body scroll lock + keyboard shortcuts ──────────────────────────── */
   useEffect(() => {
     if (!open) return;
-    setScale(1); // reset zoom on open
+    resetView();
     const onKey = (e) => {
-      if (e.key === "Escape")          setOpen(false);
-      if (e.key === "+" || e.key === "=") setScale((p) => Math.min(4, +(p + 0.25).toFixed(2)));
-      if (e.key === "-")               setScale((p) => Math.max(0.5, +(p - 0.25).toFixed(2)));
-      if (e.key === "0")               setScale(1);
+      if (e.key === "Escape") { setOpen(false); return; }
+      if (e.key === "+" || e.key === "=") {
+        const next = clampS(scaleRef.current + 0.25);
+        scaleRef.current = next;
+        setScale(next);
+      }
+      if (e.key === "-") {
+        const next = clampS(scaleRef.current - 0.25);
+        scaleRef.current = next;
+        if (next <= 1) { panRef.current = { x: 0, y: 0 }; setPanX(0); setPanY(0); }
+        setScale(next);
+      }
+      if (e.key === "0") resetView();
     };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -22,14 +51,26 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Non-passive wheel listener on the scrollable content area (so we can preventDefault)
+  /* ── Scroll wheel: cursor-centred zoom ─────────────────────────────── */
   const handleWheel = useCallback((e) => {
     e.preventDefault();
-    setScale((prev) =>
-      Math.min(4, Math.max(0.5, +(prev + (e.deltaY < 0 ? 0.15 : -0.15)).toFixed(2)))
-    );
+    const el = contentRef.current;
+    if (!el) return;
+    const rect   = el.getBoundingClientRect();
+    const cx     = e.clientX - rect.left;
+    const cy     = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const nextS  = clampS(scaleRef.current * factor);
+    const ratio  = nextS / scaleRef.current;
+    const nextPX = cx - (cx - panRef.current.x) * ratio;
+    const nextPY = cy - (cy - panRef.current.y) * ratio;
+    scaleRef.current   = nextS;
+    panRef.current     = { x: nextPX, y: nextPY };
+    setScale(nextS);
+    setPanX(nextPX);
+    setPanY(nextPY);
   }, []);
 
   useEffect(() => {
@@ -38,6 +79,89 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
   }, [open, handleWheel]);
+
+  /* ── Mouse drag — window-level so cursor leaving the div doesn't drop ─ */
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    isDragging.current = true;
+    setDragging(true);
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      panRef.current.x += dx;
+      panRef.current.y += dy;
+      setPanX(panRef.current.x);
+      setPanY(panRef.current.y);
+    };
+    const onUp = () => { isDragging.current = false; setDragging(false); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup",   onUp);
+    };
+  }, [dragging]);
+
+  /* ── Touch: single-finger drag + two-finger pinch ──────────────────── */
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 1) {
+      isDragging.current = true;
+      lastMouse.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      isDragging.current = false;
+      pinchDist0.current  = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchScale0.current = scaleRef.current;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging.current) {
+      const dx = e.touches[0].clientX - lastMouse.current.x;
+      const dy = e.touches[0].clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panRef.current.x += dx;
+      panRef.current.y += dy;
+      setPanX(panRef.current.x);
+      setPanY(panRef.current.y);
+    } else if (e.touches.length === 2 && pinchDist0.current > 0) {
+      const d    = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const next = clampS(pinchScale0.current * (d / pinchDist0.current));
+      scaleRef.current = next;
+      setScale(next);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false;
+    pinchDist0.current = 0;
+  }, []);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el || !open) return;
+    el.addEventListener("touchmove",  handleTouchMove,  { passive: false });
+    el.addEventListener("touchstart", handleTouchStart, { passive: true  });
+    el.addEventListener("touchend",   handleTouchEnd,   { passive: true  });
+    return () => {
+      el.removeEventListener("touchmove",  handleTouchMove);
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchend",   handleTouchEnd);
+    };
+  }, [open, handleTouchMove, handleTouchStart, handleTouchEnd]);
 
   return (
     <>
@@ -49,7 +173,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-semibold text-[#111827] uppercase tracking-wide">{label}</span>
             {!loading && (
-              <span className="text-[10px] text-stone-400 hidden sm:inline">· click to expand & zoom</span>
+              <span className="text-[10px] text-stone-400 hidden sm:inline">· click to expand &amp; zoom</span>
             )}
           </div>
           {onRegenerate && (
@@ -73,7 +197,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
           )}
         </div>
 
-        {/* Preview — click opens lightbox */}
+        {/* Preview thumbnail — click opens lightbox */}
         <button
           type="button"
           onClick={() => { if (!loading) setOpen(true); }}
@@ -88,7 +212,7 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
               <div className="w-full overflow-hidden [&_svg]:max-w-full [&_svg]:h-auto [&_img]:max-w-full [&_img]:h-auto">
                 {children}
               </div>
-              {/* Expand hint */}
+              {/* Expand hint badge */}
               <div className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition-colors pointer-events-none flex items-end justify-end p-3">
                 <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-[10px] font-semibold text-stone-600 px-2.5 py-1.5 rounded-full shadow border border-stone-200 opacity-0 group-hover:opacity-100 transition-opacity">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -108,7 +232,6 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3"
           onClick={() => setOpen(false)}
         >
-          {/* Main card */}
           <div
             className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-6xl max-h-[95vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
@@ -122,13 +245,18 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
                 <div className="flex items-center bg-white border border-stone-200 rounded-full px-1 py-0.5 gap-0.5">
                   <button
                     type="button"
-                    onClick={() => setScale((p) => Math.max(0.5, +(p - 0.25).toFixed(2)))}
+                    onClick={() => {
+                      const next = clampS(scaleRef.current - 0.25);
+                      scaleRef.current = next;
+                      if (next <= 1) { panRef.current = { x: 0, y: 0 }; setPanX(0); setPanY(0); }
+                      setScale(next);
+                    }}
                     className="w-7 h-7 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition font-bold text-base leading-none"
                     aria-label="Zoom out"
                   >−</button>
                   <button
                     type="button"
-                    onClick={() => setScale(1)}
+                    onClick={resetView}
                     className="min-w-[40px] text-xs font-semibold text-stone-600 hover:text-stone-800 text-center select-none transition"
                     aria-label="Reset zoom"
                     title="Reset to 100%"
@@ -137,7 +265,11 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setScale((p) => Math.min(4, +(p + 0.25).toFixed(2)))}
+                    onClick={() => {
+                      const next = clampS(scaleRef.current + 0.25);
+                      scaleRef.current = next;
+                      setScale(next);
+                    }}
                     className="w-7 h-7 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition font-bold text-base leading-none"
                     aria-label="Zoom in"
                   >+</button>
@@ -158,22 +290,27 @@ export default function ZoomPanel({ children, label, onRegenerate, loading }) {
               </div>
             </div>
 
-            {/* Scroll hint bar */}
+            {/* Hint bar */}
             <div className="px-5 py-1 bg-stone-50/80 border-b border-stone-100 text-[10px] text-stone-400 shrink-0 select-none">
-              Scroll to zoom · <kbd className="font-mono bg-stone-100 px-1 rounded">+</kbd> / <kbd className="font-mono bg-stone-100 px-1 rounded">−</kbd> keys · Click <strong className="text-stone-500">100%</strong> to reset · <kbd className="font-mono bg-stone-100 px-1 rounded">Esc</kbd> to close
+              Scroll to zoom · Drag to pan · Double-click to reset ·{" "}
+              <kbd className="font-mono bg-stone-100 px-1 rounded">+</kbd>{" "}
+              <kbd className="font-mono bg-stone-100 px-1 rounded">−</kbd> keys ·{" "}
+              <kbd className="font-mono bg-stone-100 px-1 rounded">Esc</kbd> to close
             </div>
 
-            {/* Zoomable scrollable content */}
+            {/* Zoomable content area */}
             <div
               ref={contentRef}
-              className="overflow-auto flex-1"
-              style={{ cursor: scale > 1 ? "zoom-in" : "default" }}
+              className="overflow-hidden flex-1 relative select-none"
+              style={{ cursor: dragging ? "grabbing" : scale > 1 ? "grab" : "default" }}
+              onMouseDown={handleMouseDown}
+              onDoubleClick={resetView}
             >
               <div
                 style={{
-                  width: scale !== 1 ? `${Math.round(scale * 100)}%` : "100%",
-                  minWidth: "100%",
-                  transition: "width 0.12s ease",
+                  transform: `translate(${panX}px, ${panY}px) scale(${scale})`,
+                  transformOrigin: "0 0",
+                  willChange: "transform",
                 }}
                 className="[&_svg]:w-full [&_svg]:h-auto [&_img]:w-full [&_img]:h-auto p-4"
               >
