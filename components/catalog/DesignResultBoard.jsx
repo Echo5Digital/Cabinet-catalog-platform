@@ -213,7 +213,10 @@ export default function DesignResultBoard({
     const src = threeDImage;
 
     function send() {
-      iframeRef.current?.contentWindow?.postMessage({ type: "LOAD_IMAGE", src }, "*");
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "LOAD_IMAGE", src, layout: layout || "" },
+        "*"
+      );
     }
 
     // Strategy A: respond to VIEWER_READY signal from the iframe
@@ -230,25 +233,12 @@ export default function DesignResultBoard({
       window.removeEventListener("message", onMessage);
       clearTimeout(t);
     };
-  }, [threeDImage]);
+  }, [threeDImage, layout]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handle3D() {
-    setThreeDLoading(true);
-    setThreeDError("");
-    try {
-      const res = await fetch("/api/public/design/3d-view", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_url }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.image) throw new Error(data.error || "Failed");
-      setThreeDImage(data.image);
-    } catch (e) {
-      setThreeDError("Could not generate 3D view. Please try again.");
-    } finally {
-      setThreeDLoading(false);
-    }
+  function handle3D() {
+    // Pass the original kitchen render directly to the WebGL room viewer.
+    // No API call needed — the render maps onto the back wall of the 3D box.
+    setThreeDImage(image_url);
   }
 
   /* ── Lightbox 2D zoom: non-passive wheel (cursor-centred) ─────────────── */

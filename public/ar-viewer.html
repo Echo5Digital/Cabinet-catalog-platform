@@ -107,8 +107,8 @@
 
 <div id="loader">
   <div class="ring"></div>
-  <p class="lt">3D Kitchen View</p>
-  <p class="ls">Waiting for scene…</p>
+  <p class="lt">Kitchen Viewer</p>
+  <p class="ls">Building room…</p>
 </div>
 
 <canvas id="c"></canvas>
@@ -118,7 +118,7 @@
 
 <div id="hint"><span class="dot"></span>Drag to look around · Scroll/pinch to zoom · Double-click to reset</div>
 <div id="fovl">FOV 75°</div>
-<div id="b360">3D</div>
+<div id="b360">360°</div>
 
 <div id="zs">
   <div class="zb" id="zi">+</div>
@@ -145,7 +145,7 @@
   </button>
 </div>
 
-<!-- ═══ Pure WebGL 360° viewer — zero CDN dependencies ═══════════════════ -->
+<!-- ═══ Immersive Kitchen Room — perspective UV projection across all surfaces ═════ -->
 <script>
 (function () {
   'use strict';
@@ -174,11 +174,10 @@
   var FS = [
     'precision highp float;',
     'uniform sampler2D uT;',
-    'uniform float uB;',       /* brightness 0→1 for fade-in */
+    'uniform float uB;',
     'varying vec2 vU;',
     'void main(){',
-    '  vec4 c = texture2D(uT, vU);',
-    '  gl_FragColor = vec4(c.rgb * uB, 1.0);',
+    '  gl_FragColor = vec4(texture2D(uT,vU).rgb * uB, 1.0);',
     '}'
   ].join('\n');
 
@@ -209,89 +208,153 @@
   var locT  = gl.getUniformLocation(prog, 'uT');
   var locB  = gl.getUniformLocation(prog, 'uB');
 
-  /* ── Flat quad geometry — image displayed on a large plane wall ─────────
+  /* ── Immersive kitchen room ────────────────────────────────────────────
    *
-   * The AI generates a wide-angle perspective photograph, NOT an equirectangular
-   * panorama. Mapping it onto a sphere warps it (fisheye / barrel distortion).
-   * The correct display: a large flat rectangle in front of the camera.
-   * Dragging rotates the camera's view direction → natural "look around" with
-   * zero distortion, as if you're standing inside the kitchen looking at the wall.
+   *  Camera sits at the origin, ~5-6 feet from the main kitchen wall,
+   *  as if standing at the marked position on the floor plan looking
+   *  straight at the cabinets.
    *
-   * Camera sits at origin (0,0,0) looking toward −Z (center of image).
-   * Image quad sits at z = −DIST, width×height preserving 3:2 source aspect.
-   * ──────────────────────────────────────────────────────────────────────── */
-  var DIST   = 500;    /* distance from camera to image wall   */
-  var QUAD_W = 2400;   /* wall width  — 1.5× height for 3:2   */
-  var QUAD_H = 1600;   /* wall height (QUAD_W / 1.5)           */
-  var HW = QUAD_W / 2, HH = QUAD_H / 2;
+   *  Texture mapping:
+   *  ┌──────────────────────────────────────────────────────────────────┐
+   *  │  BACK WALL  → full kitchen image UV [0-1 × 0-1]  (hero face)   │
+   *  │  LEFT WALL  → left edge column  u = 0  (GL_CLAMP_TO_EDGE)      │
+   *  │  RIGHT WALL → right edge column u = 1                           │
+   *  │  CEILING    → top edge row      v = 0                           │
+   *  │  FLOOR      → bottom edge row   v = 1                           │
+   *  │  FRONT WALL → centre pixel      u = 0.5, v = 0.5               │
+   *  └──────────────────────────────────────────────────────────────────┘
+   *
+   *  Every wall derives its colour from the real kitchen image with no
+   *  stretching or duplication.  All room-wall junctions are seamless
+   *  because adjacent UV edges match exactly.
+   *
+   *  Per-face brightness dim adds depth cues (side/floor/ceiling darker
+   *  than the hero kitchen wall).
+   *
+   *  Room extents:
+   *    D_BACK  = 700   camera → kitchen wall
+   *    D_FRONT = 1400  camera → wall behind viewer
+   *    RW      = 800   half room width
+   *    RH      = 500   half room height
+   * ──────────────────────────────────────────────────────────────────── */
+  var D_BACK  = 700;
+  var D_FRONT = 1400;
+  var RW      = 800;
+  var RH      = 500;
 
-  /*
-   * UV convention: WebGL uploads image row-0 (top of image) → V=0.
-   * Vertices at +Y (top of world) get V=0  → top of image.  ✓
-   * Vertices at −Y (bottom)       get V=1  → bottom of image. ✓
-   */
-  var posData = [
-    -HW,  HH, -DIST,   /* 0 top-left     */
-     HW,  HH, -DIST,   /* 1 top-right    */
-    -HW, -HH, -DIST,   /* 2 bottom-left  */
-     HW, -HH, -DIST    /* 3 bottom-right */
-  ];
-  var uvData = [
-    0, 0,              /* 0 → (left, top)     */
-    1, 0,              /* 1 → (right, top)    */
-    0, 1,              /* 2 → (left, bottom)  */
-    1, 1               /* 3 → (right, bottom) */
-  ];
-  var idxData = [0, 2, 1,  1, 2, 3];   /* two counter-clockwise triangles */
+  var IDX = new Uint16Array([0, 2, 1,  1, 2, 3]);
 
-  var vbP = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbP);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(posData), gl.STATIC_DRAW);
+  /* Build one room face.
+   * pos  = flat Float32 array: 4 vertices × xyz  (v0 v1 v2 v3)
+   * uvs  = flat Float32 array: 4 vertices × uv
+   * dim  = brightness multiplier for per-face depth shading [0..1]     */
+  function buildFace(pos, uvs, dim) {
+    var vbP = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbP);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
 
-  var vbU = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbU);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvData), gl.STATIC_DRAW);
+    var vbU = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbU);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
 
-  var ib = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idxData), gl.STATIC_DRAW);
-  var idxCount = idxData.length;
+    var ib = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, IDX, gl.STATIC_DRAW);
 
-  /* ── Placeholder texture (dark background) ─────────────────────────────── */
+    return { vbP: vbP, vbU: vbU, ib: ib, dim: dim !== undefined ? dim : 1.0 };
+  }
+
+  var faces = [];
+
+  function buildAllFaces() {
+    faces = [];
+
+    /* BACK WALL (z = -D_BACK): full kitchen render — hero face.
+     * v0=top-left  v1=top-right  v2=bottom-left  v3=bottom-right      */
+    faces.push(buildFace([
+      -RW,  RH, -D_BACK,   RW,  RH, -D_BACK,
+      -RW, -RH, -D_BACK,   RW, -RH, -D_BACK
+    ], [
+      0.0, 0.0,   1.0, 0.0,
+      0.0, 1.0,   1.0, 1.0
+    ], 1.0));
+
+    /* LEFT WALL (x = -RW): left edge strip (u=0), full height.
+     * Back edge UVs match back-wall left corners — seamless junction.  */
+    faces.push(buildFace([
+      -RW,  RH,  D_FRONT,  -RW,  RH, -D_BACK,
+      -RW, -RH,  D_FRONT,  -RW, -RH, -D_BACK
+    ], [
+      0.0, 0.0,   0.0, 0.0,
+      0.0, 1.0,   0.0, 1.0
+    ], 0.78));
+
+    /* RIGHT WALL (x = +RW): right edge strip (u=1).
+     * Back edge UVs match back-wall right corners — seamless.          */
+    faces.push(buildFace([
+       RW,  RH, -D_BACK,   RW,  RH,  D_FRONT,
+       RW, -RH, -D_BACK,   RW, -RH,  D_FRONT
+    ], [
+      1.0, 0.0,   1.0, 0.0,
+      1.0, 1.0,   1.0, 1.0
+    ], 0.78));
+
+    /* CEILING (y = +RH): top edge strip (v=0).
+     * Back edge UVs match back-wall top corners — seamless.            */
+    faces.push(buildFace([
+      -RW,  RH, -D_BACK,   RW,  RH, -D_BACK,
+      -RW,  RH,  D_FRONT,  RW,  RH,  D_FRONT
+    ], [
+      0.0, 0.0,   1.0, 0.0,
+      0.0, 0.0,   1.0, 0.0
+    ], 0.85));
+
+    /* FLOOR (y = -RH): bottom edge strip (v=1).
+     * Back edge UVs match back-wall bottom corners — seamless.         */
+    faces.push(buildFace([
+      -RW, -RH, -D_BACK,   RW, -RH, -D_BACK,
+      -RW, -RH,  D_FRONT,  RW, -RH,  D_FRONT
+    ], [
+      0.0, 1.0,   1.0, 1.0,
+      0.0, 1.0,   1.0, 1.0
+    ], 0.72));
+
+    /* FRONT WALL (z = +D_FRONT): centre pixel — neutral, behind viewer. */
+    faces.push(buildFace([
+       RW,  RH,  D_FRONT,  -RW,  RH,  D_FRONT,
+       RW, -RH,  D_FRONT,  -RW, -RH,  D_FRONT
+    ], [
+      0.5, 0.5,   0.5, 0.5,
+      0.5, 0.5,   0.5, 0.5
+    ], 0.55));
+  }
+
+  buildAllFaces();
+
+  /* ── Placeholder texture (dark until image loads) ─────────────────── */
   var tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-    new Uint8Array([5, 5, 15, 255]));
+    new Uint8Array([8, 8, 20, 255]));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  /* ── Matrix helpers ─────────────────────────────────────────────────────── */
-  /* Perspective matrix (column-major for WebGL) */
+  /* ── Matrix helpers ─────────────────────────────────────────────────── */
   function mkProj(fovRad, aspect, near, far) {
     var f = 1.0 / Math.tan(fovRad / 2);
     return new Float32Array([
-      f / aspect, 0,  0,                            0,
-      0,          f,  0,                            0,
-      0,          0,  (far + near) / (near - far), -1,
+      f / aspect, 0,  0,                               0,
+      0,          f,  0,                               0,
+      0,          0,  (far + near) / (near - far),    -1,
       0,          0,  (2 * far * near) / (near - far), 0
     ]);
   }
 
   /*
-   * View matrix from yaw (Y-axis) and pitch (X-axis).
-   * At yaw=−π/2, pitch=0 the camera looks toward +X world space,
-   * which corresponds to U=0.5 in the equirectangular image (front of scene).
-   * Column-major storage for WebGL.
-   *
-   * Rotation: Ry(yaw) * Rx(pitch), then transposed for view matrix.
-   * cy=cos(yaw), sy=sin(yaw), cp=cos(pitch), sp=sin(pitch)
-   *
-   * V = [  cy,    sp*sy,  cp*sy,  0 ]
-   *     [  0,     cp,    -sp,     0 ]
-   *     [ -sy,    sp*cy,  cp*cy,  0 ]
-   *     [  0,     0,      0,      1 ]
+   * View matrix: camera at origin, rotated by yaw (Y-axis) then pitch (X-axis).
+   * yaw=0, pitch=0 → looks toward −Z (back/kitchen wall).
    */
   function mkView(yaw, pitch) {
     var cy = Math.cos(yaw),  sy = Math.sin(yaw);
@@ -304,25 +367,19 @@
     ]);
   }
 
-  /* ── Camera state ───────────────────────────────────────────────────────── */
-  var yaw   = 0;     /* 0 = look straight at image centre           */
-  var pitch = 0;
-  var fovDeg = 75;
-  /*
-   * Pan limits for flat image: prevent camera rotating past the quad edges.
-   * At DIST=500 and QUAD_W=2400: atan(1200/500) ≈ 67° max reach.
-   * Limit to 50° so edges stay off-screen (natural room feel).
-   */
-  var MAX_YAW   =  0.87;   /* ~50° left/right  */
-  var MAX_PITCH =  0.55;   /* ~31° up/down     */
-  var velYaw   = 0;        /* no auto-rotate for flat image */
+  /* ── Camera state ──────────────────────────────────────────────────── */
+  var yaw      = 0;
+  var pitch    = 0;
+  var fovDeg   = 75;
+  var MAX_PITCH = 1.35;
+  var velYaw   = 0;
   var velPitch = 0;
   var dragging = false;
   var lastX = 0, lastY = 0;
-  var bright = 0, brightTarget = 0;  /* fade-in when image loads */
+  var bright = 0, brightTarget = 0;
   var imageLoaded = false;
 
-  /* ── Canvas resize ──────────────────────────────────────────────────────── */
+  /* ── Canvas resize ──────────────────────────────────────────────────── */
   function resize() {
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -331,104 +388,97 @@
   resize();
   window.addEventListener('resize', resize);
 
-  /* ── Render loop ────────────────────────────────────────────────────────── */
-  function tick() {
-    requestAnimationFrame(tick);
-
-    /* Apply momentum — clamp both axes (flat image, no wrap-around) */
-    if (!dragging) {
-      velYaw   *= 0.88;
-      velPitch *= 0.88;
-    }
-    yaw   += velYaw;
-    pitch += velPitch;
-    yaw   = Math.max(-MAX_YAW,   Math.min(MAX_YAW,   yaw));
-    pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch));
-
-    /* Brightness fade-in */
-    bright += (brightTarget - bright) * 0.05;
-
-    gl.clearColor(0.02, 0.02, 0.06, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.DEPTH_TEST);
-    gl.disable(gl.CULL_FACE);    /* render both sides of sphere */
-
-    var W = canvas.width, H = canvas.height;
-    gl.uniformMatrix4fv(locPr, false, mkProj(fovDeg * Math.PI / 180, W / H, 0.1, 1100));
-    gl.uniformMatrix4fv(locVw, false, mkView(yaw, pitch));
-    gl.uniform1i(locT, 0);
-    gl.uniform1f(locB, bright);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbP);
+  /* ── Draw one room face ─────────────────────────────────────────────── */
+  function drawFace(f) {
+    gl.uniform1f(locB, bright * f.dim);
+    gl.bindBuffer(gl.ARRAY_BUFFER, f.vbP);
     gl.enableVertexAttribArray(locP);
     gl.vertexAttribPointer(locP, 3, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbU);
+    gl.bindBuffer(gl.ARRAY_BUFFER, f.vbU);
     gl.enableVertexAttribArray(locU);
     gl.vertexAttribPointer(locU, 2, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, f.ib);
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  }
+
+  /* ── Render loop ────────────────────────────────────────────────────── */
+  function tick() {
+    requestAnimationFrame(tick);
+
+    if (!dragging) { velYaw *= 0.88; velPitch *= 0.88; }
+    yaw   += velYaw;
+    pitch += velPitch;
+
+    var TWO_PI = 2 * Math.PI;
+    yaw = ((yaw % TWO_PI) + TWO_PI) % TWO_PI;
+    if (yaw > Math.PI) yaw -= TWO_PI;
+
+    pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch));
+
+    bright += (brightTarget - bright) * 0.05;
+
+    gl.clearColor(0.0, 0.0, 0.0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.CULL_FACE);
+
+    var W = canvas.width, H = canvas.height;
+    gl.uniformMatrix4fv(locPr, false, mkProj(fovDeg * Math.PI / 180, W / H, 1, 4000));
+    gl.uniformMatrix4fv(locVw, false, mkView(yaw, pitch));
+    gl.uniform1i(locT, 0);
+
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.drawElements(gl.TRIANGLES, idxCount, gl.UNSIGNED_SHORT, 0);
+
+    for (var i = 0; i < faces.length; i++) drawFace(faces[i]);
   }
   tick();
 
-  /* ── Load kitchen render as flat-wall texture ───────────────────────────── */
-  function loadPanorama(src) {
+  /* ── Load kitchen render and upload as room texture ──────────────────── */
+  function loadImage(src) {
     if (imageLoaded) return;
     imageLoaded = true;
-
-    document.querySelector('.ls').textContent = 'Loading image…';
+    document.querySelector('.ls').textContent = 'Loading kitchen…';
 
     var img = new Image();
     img.onload = function () {
       gl.bindTexture(gl.TEXTURE_2D, tex);
-      /* Upload texture — non-POT safe: use LINEAR + CLAMP_TO_EDGE (no mipmaps) */
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-      brightTarget = 1.12;   /* slight boost */
+      brightTarget = 1.0;
 
-      /* Fade out loader */
       var el = document.getElementById('loader');
       if (el) { el.classList.add('out'); setTimeout(function () { el.remove(); }, 600); }
 
-      /* Auto-hide hint after 5 s */
       setTimeout(function () {
         var h = document.getElementById('hint');
         if (h) h.classList.add('out');
       }, 5000);
     };
     img.onerror = function () {
-      imageLoaded = false;   /* allow retry */
+      imageLoaded = false;
       document.querySelector('.ls').textContent = 'Image failed to load';
     };
-    /* data: URLs don't need crossOrigin — setting it causes errors */
     if (src.startsWith('http')) img.crossOrigin = 'anonymous';
     img.src = src;
   }
 
-  /* ── postMessage from parent React component ────────────────────────────── */
+  /* ── postMessage bridge from parent React component ─────────────────── */
   window.addEventListener('message', function (e) {
     if (e.data && e.data.type === 'LOAD_IMAGE' && e.data.src) {
-      loadPanorama(e.data.src);
+      loadImage(e.data.src);
     }
   });
 
-  /*
-   * VIEWER_READY handshake — tells the parent that this script has executed
-   * and the message listener is registered. The parent holds the image and
-   * will respond with LOAD_IMAGE as soon as it receives this signal.
-   *
-   * This is synchronous (no CDN loading), so it fires < 1 ms after page load.
-   */
   try { window.parent.postMessage({ type: 'VIEWER_READY' }, '*'); } catch (_) {}
 
-  /* ── Mouse ──────────────────────────────────────────────────────────────── */
+  /* ── Mouse ─────────────────────────────────────────────────────────── */
   canvas.addEventListener('mousedown', function (e) {
     dragging = true;
     lastX = e.clientX; lastY = e.clientY;
@@ -443,7 +493,6 @@
     velPitch = dy * 0.005;
     yaw   += velYaw;
     pitch += velPitch;
-    pitch  = Math.max(-Math.PI * 0.44, Math.min(Math.PI * 0.44, pitch));
   });
   window.addEventListener('mouseup', function () {
     dragging = false;
@@ -452,14 +501,14 @@
 
   canvas.addEventListener('dblclick', resetView);
 
-  /* ── Scroll zoom ────────────────────────────────────────────────────────── */
+  /* ── Scroll zoom ────────────────────────────────────────────────────── */
   canvas.addEventListener('wheel', function (e) {
     e.preventDefault();
-    fovDeg = Math.max(28, Math.min(110, fovDeg + e.deltaY * 0.04));
+    fovDeg = Math.max(30, Math.min(100, fovDeg + e.deltaY * 0.04));
     updateFovLabel();
   }, { passive: false });
 
-  /* ── Touch ──────────────────────────────────────────────────────────────── */
+  /* ── Touch ──────────────────────────────────────────────────────────── */
   var pinchD0 = 0;
   canvas.addEventListener('touchstart', function (e) {
     if (e.touches.length === 1) {
@@ -484,13 +533,12 @@
       velPitch = dy * 0.007;
       yaw   += velYaw;
       pitch += velPitch;
-      pitch  = Math.max(-Math.PI * 0.44, Math.min(Math.PI * 0.44, pitch));
     } else if (e.touches.length === 2 && pinchD0 > 0) {
       var d = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      fovDeg = Math.max(28, Math.min(110, fovDeg * (pinchD0 / d)));
+      fovDeg = Math.max(30, Math.min(100, fovDeg * (pinchD0 / d)));
       pinchD0 = d;
       updateFovLabel();
     }
@@ -498,7 +546,7 @@
 
   canvas.addEventListener('touchend', function () { dragging = false; pinchD0 = 0; }, { passive: true });
 
-  /* ── Helpers ────────────────────────────────────────────────────────────── */
+  /* ── Helpers ────────────────────────────────────────────────────────── */
   function updateFovLabel() {
     var el = document.getElementById('fovl');
     if (el) el.textContent = 'FOV ' + Math.round(fovDeg) + '\u00b0';
@@ -511,10 +559,10 @@
   }
 
   document.getElementById('zi').addEventListener('click', function () {
-    fovDeg = Math.max(28, fovDeg - 12); updateFovLabel();
+    fovDeg = Math.max(30, fovDeg - 12); updateFovLabel();
   });
   document.getElementById('zo').addEventListener('click', function () {
-    fovDeg = Math.min(110, fovDeg + 12); updateFovLabel();
+    fovDeg = Math.min(100, fovDeg + 12); updateFovLabel();
   });
   document.getElementById('rst').addEventListener('click', resetView);
   document.getElementById('fsbtn').addEventListener('click', function () {
@@ -525,7 +573,7 @@
     }
   });
 
-  /* ── WebXR AR (shown only when device supports immersive-ar) ─────────── */
+  /* ── WebXR AR ───────────────────────────────────────────────────────── */
   if (navigator.xr) {
     navigator.xr.isSessionSupported('immersive-ar').then(function (ok) {
       if (!ok) return;
