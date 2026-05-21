@@ -8,6 +8,20 @@ const nextConfig = {
       dynamic: 0,
     },
   },
+
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Konva's Node.js build path tries to require 'canvas' (node-canvas).
+      // We don't use Konva server-side (PlannerCanvas is dynamically imported
+      // with ssr:false), so we alias it to an empty module to prevent the
+      // build error. This does NOT affect client-side rendering.
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        canvas: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

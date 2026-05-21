@@ -125,6 +125,16 @@ function Header({ tenant, lines }) {
             </svg>
             Design AI
           </Link>
+          <Link
+            href="/planner"
+            className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition hover:bg-stone-50 shadow-sm"
+            style={{ borderColor: primaryColor, color: primaryColor }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
+            </svg>
+            Design Kitchen
+          </Link>
 
           {/* Mobile menu toggle */}
           <button
@@ -184,6 +194,17 @@ function Header({ tenant, lines }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
                 Design AI
+              </Link>
+              <Link
+                href="/planner"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold border rounded-full transition hover:bg-stone-50 shadow-sm"
+                style={{ borderColor: primaryColor, color: primaryColor }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
+                </svg>
+                Design Kitchen
               </Link>
               <Link
                 href="/catalog"
