@@ -94,8 +94,12 @@ export default function PlannerScene3D() {
           <Scene3DLighting sceneGraph={sceneGraph} />
           <Scene3DControls sceneGraph={sceneGraph} />
 
-          {/* Room shell + layout placeholder runs */}
-          <Scene3DRoom room={sceneGraph.room} layout={sceneGraph.meta?.layoutType} />
+          {/* Room shell + layout placeholder runs (hidden once real items are placed) */}
+          <Scene3DRoom
+            room={sceneGraph.room}
+            layout={sceneGraph.meta?.layoutType}
+            hasItems={scene.items.length > 0}
+          />
 
           {/* Contact shadows on the floor */}
           <ContactShadows

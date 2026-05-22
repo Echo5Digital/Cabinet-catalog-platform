@@ -15,7 +15,7 @@ import { buildLayoutRuns, COUNTER_THICK } from "@/lib/planner/layoutPresets";
  *   room   — room object from sceneGraph.room
  *   layout — layout id string (e.g. "L-Shape") from sceneGraph.meta.layoutType
  */
-export default function Scene3DRoom({ room, layout }) {
+export default function Scene3DRoom({ room, layout, hasItems = false }) {
   // Hooks must run unconditionally — derive safe defaults when room is null
   const W = room?.widthFt  ?? 0;
   const L = room?.lengthFt ?? 0;
@@ -38,7 +38,7 @@ export default function Scene3DRoom({ room, layout }) {
         receiveShadow
       >
         <planeGeometry args={[W, L]} />
-        <meshStandardMaterial color="#e8e4df" roughness={0.85} metalness={0} />
+        <meshStandardMaterial color="#d4c9b8" roughness={0.75} metalness={0} />
       </mesh>
 
       {/* Floor grid — 1 ft cells */}
@@ -69,8 +69,8 @@ export default function Scene3DRoom({ room, layout }) {
       {/* ── Room boundary edges ───────────────────────────────────────────── */}
       <RoomEdges W={W} L={L} H={H} />
 
-      {/* ── Layout cabinet run placeholders ──────────────────────────────── */}
-      {runs.map((run) => (
+      {/* ── Layout cabinet run placeholders — hidden once real items are placed */}
+      {!hasItems && runs.map((run) => (
         <LayoutRun key={run.id} run={run} />
       ))}
     </group>

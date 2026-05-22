@@ -4,6 +4,7 @@ import { useRef, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import usePlannerStore from "@/store/plannerStore";
+import { COUNTER_THICK } from "@/lib/planner/layoutPresets";
 
 /**
  * Scene3DCabinet — renders a single cabinet as a colored box with edge lines.
@@ -30,6 +31,10 @@ export default function Scene3DCabinet({ cabinet }) {
   const cx = xFt + widthFt / 2;
   const cy = yFt + heightFt / 2;
   const cz = zFt + depthFt  / 2;
+
+  // Countertop + toe-kick only for floor-level cabinets (not wall or tall units)
+  const isFloorCabinet =
+    cabinet.category !== "Wall Cabinets" && cabinet.category !== "Tall Units";
 
   const fillColor = isSelected ? "#0ea5e9" : hovered ? "#a8a29e" : cabinet.fallbackColor;
   const edgeColor = isSelected ? "#0284c7" : "#57534e";
@@ -93,6 +98,25 @@ export default function Scene3DCabinet({ cabinet }) {
             )}
           </div>
         </Html>
+      )}
+
+      {/* Countertop slab — base / island / peninsula only */}
+      {isFloorCabinet && (
+        <mesh
+          position={[0, heightFt / 2 + COUNTER_THICK / 2, depthFt * 0.04]}
+          castShadow
+        >
+          <boxGeometry args={[widthFt + 0.04, COUNTER_THICK, depthFt + 0.08]} />
+          <meshStandardMaterial color="#dbd5cd" roughness={0.22} metalness={0.06} />
+        </mesh>
+      )}
+
+      {/* Toe-kick strip — 1.5" tall × 0.75" deep at front-bottom */}
+      {isFloorCabinet && (
+        <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.03125]}>
+          <boxGeometry args={[widthFt, 0.13, 0.0625]} />
+          <meshStandardMaterial color="#c4bfb9" roughness={0.8} metalness={0} />
+        </mesh>
       )}
     </group>
   );
