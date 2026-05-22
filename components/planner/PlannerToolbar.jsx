@@ -5,13 +5,12 @@ import usePlannerStore from "@/store/plannerStore";
 import ViewModeToggle from "./ViewModeToggle";
 
 export default function PlannerToolbar({ onGenerateAI, primaryColor = "#1C1917" }) {
-  const placedItems = usePlannerStore((s) => s.placedItems);
+  const count       = usePlannerStore((s) => s.scene.items.length);
   const clearCanvas  = usePlannerStore((s) => s.clearCanvas);
   const aiLoading   = usePlannerStore((s) => s.aiLoading);
   const showAiPanel = usePlannerStore((s) => s.showAiPanel);
 
   const [confirmClear, setConfirmClear] = useState(false);
-  const count = placedItems.length;
 
   function handleClearClick() {
     if (count === 0) return;

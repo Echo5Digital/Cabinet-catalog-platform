@@ -6,6 +6,7 @@ import { ContactShadows } from "@react-three/drei";
 
 import usePlannerStore from "@/store/plannerStore";
 import { buildSceneGraph } from "@/lib/planner/sceneBuilder";
+import { selectProjectedItems } from "@/lib/planner/selectors";
 
 import Scene3DRoom     from "./Scene3DRoom";
 import Scene3DCabinet  from "./Scene3DCabinet";
@@ -24,14 +25,15 @@ import Scene3DControls from "./Scene3DControls";
 export default function PlannerScene3D() {
   const layout      = usePlannerStore((s) => s.layout);
   const dims        = usePlannerStore((s) => s.roomDimensions);
-  const placedItems = usePlannerStore((s) => s.placedItems);
-  const setSceneGraph = usePlannerStore((s) => s.setSceneGraph);
+  const scene       = usePlannerStore((s) => s.scene);
+  const setSceneGraph   = usePlannerStore((s) => s.setSceneGraph);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
 
-  // Rebuild scene graph whenever planner state changes
+  // Rebuild scene graph from authoritative scene.items via the 2D projection
+  // selector — keeps buildSceneGraph's existing API fully unchanged.
   const sceneGraph = useMemo(
-    () => buildSceneGraph(layout, dims, placedItems),
-    [layout, dims, placedItems]
+    () => buildSceneGraph(layout, dims, selectProjectedItems(scene)),
+    [layout, dims, scene]
   );
 
   // Sync derived scene graph into the store (for AI conditioning, export, etc.)
@@ -59,7 +61,7 @@ export default function PlannerScene3D() {
       </div>
 
       {/* Drag hint — only shown when no products placed yet */}
-      {placedItems.length === 0 && (
+      {scene.items.length === 0 && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/70 backdrop-blur-sm text-stone-200 text-xs font-medium shadow">
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

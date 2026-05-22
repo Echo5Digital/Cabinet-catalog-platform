@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, useDroppable } from "@dnd-kit/core";
 import PlannerHeader from "./PlannerHeader";
@@ -10,6 +10,7 @@ import ProductSidebar from "./ProductSidebar";
 import PlannerToolbar from "./PlannerToolbar";
 import AiPreviewPanel from "./AiPreviewPanel";
 import usePlannerStore from "@/store/plannerStore";
+import { selectProjectedItems } from "@/lib/planner/selectors";
 
 // Dynamically import both canvases to avoid SSR issues
 const PlannerCanvas   = dynamic(() => import("./PlannerCanvas"),        { ssr: false });
@@ -39,17 +40,19 @@ function newId() {
 export default function PlannerShell({ tenant, initialProducts = [] }) {
   const primaryColor = tenant?.primary_color || "#1C1917";
 
-  const step        = usePlannerStore((s) => s.step);
-  const layout      = usePlannerStore((s) => s.layout);
-  const viewMode    = usePlannerStore((s) => s.viewMode);
-  const dims        = usePlannerStore((s) => s.roomDimensions);
-  const addItem     = usePlannerStore((s) => s.addItem);
-  const showAiPanel = usePlannerStore((s) => s.showAiPanel);
-  const openAiPanel = usePlannerStore((s) => s.openAiPanel);
-  const closeAiPanel = usePlannerStore((s) => s.closeAiPanel);
-  const setAiState  = usePlannerStore((s) => s.setAiState);
-  const placedItems = usePlannerStore((s) => s.placedItems);
-  const aiLoading   = usePlannerStore((s) => s.aiLoading);
+  const step               = usePlannerStore((s) => s.step);
+  const layout             = usePlannerStore((s) => s.layout);
+  const viewMode           = usePlannerStore((s) => s.viewMode);
+  const dims               = usePlannerStore((s) => s.roomDimensions);
+  const addItem            = usePlannerStore((s) => s.addItem);
+  const scene              = usePlannerStore((s) => s.scene);
+  const setCatalogProducts = usePlannerStore((s) => s.setCatalogProducts);
+  const generateLayout     = usePlannerStore((s) => s.generateLayout);
+  const showAiPanel        = usePlannerStore((s) => s.showAiPanel);
+  const openAiPanel        = usePlannerStore((s) => s.openAiPanel);
+  const closeAiPanel       = usePlannerStore((s) => s.closeAiPanel);
+  const setAiState         = usePlannerStore((s) => s.setAiState);
+  const aiLoading          = usePlannerStore((s) => s.aiLoading);
 
   // Sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -59,6 +62,20 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
   // Active drag state (for DragOverlay ghost)
   const [activeDrag, setActiveDrag] = useState(null);
+
+  // ── Hydrate catalog products into store so procedural generator can use them ─
+  useEffect(() => {
+    setCatalogProducts(initialProducts);
+  }, [initialProducts, setCatalogProducts]);
+
+  // ── Auto-generate layout when entering Step 3 with an empty scene ─────────────
+  // Fires once when the user clicks "Start Designing" in RoomDimensionForm.
+  useEffect(() => {
+    if (step === 3 && scene.items.length === 0) {
+      generateLayout();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   // dnd-kit sensors — support both mouse and touch
   const sensors = useSensors(
@@ -85,7 +102,6 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
     const product  = active.data.current.product;
     const { clientX, clientY } = event.activatorEvent;
-    // Walk up to find final pointer position (for touch, use activatorEvent or nativeEvent)
     const pointerX = event.delta
       ? clientX + event.delta.x
       : clientX;
@@ -114,7 +130,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
   // AI generation handler
   const handleGenerateAI = useCallback(async () => {
-    if (aiLoading || placedItems.length === 0) return;
+    if (aiLoading || scene.items.length === 0) return;
 
     setAiState({ aiLoading: true, aiError: null, aiImageUrl: null });
     openAiPanel();
@@ -128,7 +144,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
           roomWidth:     dims.width,
           roomLength:    dims.length,
           ceilingHeight: dims.height,
-          items:         placedItems,
+          items:         selectProjectedItems(scene),
         }),
       });
 
@@ -147,7 +163,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
         aiError:    err.message || "An error occurred. Please try again.",
       });
     }
-  }, [aiLoading, placedItems, layout, dims, setAiState, openAiPanel]);
+  }, [aiLoading, scene, layout, dims, setAiState, openAiPanel]);
 
   // ─── Step 1 — Layout Selection ────────────────────────────────────────────────
   if (step === 1) {

@@ -1,79 +1,135 @@
 import { create } from "zustand";
+import {
+  applyCommand as engineApplyCommand,
+  COMMANDS,
+} from "@/lib/planner/engine/SpatialEngine";
+import { generateLayout as engineGenerateLayout } from "@/lib/planner/engine/commands/generateLayout";
 
 /**
- * Isolated planner store — does NOT interact with any existing app state.
- * All planner state lives here and is reset on page navigation.
+ * plannerStore.js  — Zustand store for the kitchen planner.
+ *
+ * v2 architecture: the authoritative spatial state lives in `scene.items[]`
+ * (SceneItem objects) instead of the old flat `placedItems[]`.
+ *
+ * All mutations go through `applyCommand()` → SpatialEngine (pure functions).
+ * Both the 2D Konva canvas and the 3D React Three Fiber scene read from the
+ * same `scene` via lib/planner/selectors.js — they are both projection views.
+ *
+ * Backward-compatible wrappers (addItem / moveItem / removeItem / clearCanvas /
+ * rotateItem) are preserved so PlannerShell and PlannerCanvas need only minimal
+ * changes to their call sites.
  */
+
+const EMPTY_SCENE = { items: [], zones: [] };
+
 const usePlannerStore = create((set, get) => ({
   // ─── Step navigation ─────────────────────────────────────────────────────────
-  step: 1, // 1 = layout, 2 = room dimensions, 3 = canvas + AI
-
+  step: 1,                  // 1 = layout selector, 2 = room dims, 3 = canvas+AI
   setStep: (step) => set({ step }),
 
   // ─── Layout selection ─────────────────────────────────────────────────────────
-  layout: null, // 'Straight' | 'L-Shape' | 'U-Shape' | 'Parallel' | 'Island' | 'G-Shape'
-
+  layout: null,             // "Straight" | "L-Shape" | "U-Shape" | "Parallel" | "Island" | "G-Shape"
   setLayout: (layout) => set({ layout }),
 
-  // ─── Room dimensions (in feet) ───────────────────────────────────────────────
+  // ─── Room dimensions (feet) ───────────────────────────────────────────────────
   roomDimensions: { width: 14, length: 11, height: 9 },
-
   setDimensions: (dims) =>
     set((state) => ({ roomDimensions: { ...state.roomDimensions, ...dims } })),
 
-  // ─── Placed items on canvas ───────────────────────────────────────────────────
-  // Each item: { id, productId, sku, name, category, widthFt, depthFt, x, y, imageUrl }
-  // x, y are in feet from top-left of room
-  placedItems: [],
+  // ─── Authoritative spatial scene ──────────────────────────────────────────────
+  // scene.items  = SceneItem[]        — single source of truth for placements
+  // scene.zones  = ZoneDescriptor[]   — cabinet-run zones (set by generator)
+  scene: EMPTY_SCENE,
+
+  // ─── Catalog products (stored for procedural generator access) ────────────────
+  catalogProducts: [],
+  setCatalogProducts: (products) => set({ catalogProducts: products ?? [] }),
+
+  // ─── Apply spatial command ────────────────────────────────────────────────────
+  // All item mutations go through SpatialEngine.applyCommand (pure functions).
+  applyCommand: (command) =>
+    set((state) => ({
+      scene: engineApplyCommand(state.scene, command, state.roomDimensions),
+    })),
+
+  // ─── Procedural layout generation ────────────────────────────────────────────
+  // Triggered automatically when entering step 3 with an empty scene.
+  generateLayout: () =>
+    set((state) => {
+      if (!state.layout) return {};
+      const result = engineGenerateLayout(
+        state.layout,
+        state.roomDimensions,
+        state.catalogProducts,
+      );
+      return {
+        scene: {
+          ...state.scene,
+          items: result.items,
+          zones: result.zones,
+        },
+      };
+    }),
+
+  // ─── Backward-compatible item actions ────────────────────────────────────────
+  // These delegate to applyCommand so existing call sites need minimal changes.
 
   addItem: (item) =>
-    set((state) => ({
-      placedItems: [...state.placedItems, item],
-    })),
+    get().applyCommand({
+      type:    COMMANDS.PLACE_ITEM,
+      id:      item.id,
+      product: {
+        id:       item.productId,
+        sku:      item.sku,
+        name:     item.name,
+        category: item.category,
+        widthFt:  item.widthFt,
+        depthFt:  item.depthFt,
+        imageUrl: item.imageUrl ?? null,
+        gltfUrl:  item.gltfUrl  ?? null,
+      },
+      position: { xFt: item.x, yFt: 0, zFt: item.y },
+    }),
 
   removeItem: (id) =>
-    set((state) => ({
-      placedItems: state.placedItems.filter((item) => item.id !== id),
-      selectedItemId: state.selectedItemId === id ? null : state.selectedItemId,
-    })),
+    get().applyCommand({ type: COMMANDS.REMOVE_ITEM, id }),
 
   moveItem: (id, x, y) =>
-    set((state) => ({
-      placedItems: state.placedItems.map((item) =>
-        item.id === id ? { ...item, x, y } : item
-      ),
-    })),
+    get().applyCommand({
+      type:     COMMANDS.MOVE_ITEM,
+      id,
+      position: { xFt: x, yFt: 0, zFt: y },
+    }),
 
-  clearCanvas: () => set({ placedItems: [], selectedItemId: null }),
+  clearCanvas: () => {
+    get().applyCommand({ type: COMMANDS.CLEAR_SCENE });
+    set({ selectedItemId: null });
+  },
 
   // ─── Selection ────────────────────────────────────────────────────────────────
   selectedItemId: null,
-
   setSelectedItem: (id) => set({ selectedItemId: id }),
 
   // ─── Zoom ─────────────────────────────────────────────────────────────────────
   zoomLevel: 1.0,
-
   setZoom: (zoom) => set({ zoomLevel: Math.min(3.0, Math.max(0.4, zoom)) }),
 
   // ─── AI visualization ─────────────────────────────────────────────────────────
   showAiPanel: false,
-  aiImageUrl: null,
-  aiLoading: false,
-  aiError: null,
-  aiPrompt: null,
-
-  setAiState: (updates) => set(updates),
-
-  openAiPanel: () => set({ showAiPanel: true }),
+  aiImageUrl:  null,
+  aiLoading:   false,
+  aiError:     null,
+  aiPrompt:    null,
+  setAiState:   (updates) => set(updates),
+  openAiPanel:  () => set({ showAiPanel: true }),
   closeAiPanel: () => set({ showAiPanel: false }),
 
   // ─── View mode (2D Konva canvas vs 3D React Three Fiber scene) ───────────────
-  viewMode: "3D",             // "2D" | "3D" — default 3D so layout is shown immediately
+  viewMode: "3D",
   setViewMode: (mode) => set({ viewMode: mode }),
 
-  // ─── Scene graph (derived 3D representation of the current planner state) ────
-  // Rebuilt via buildSceneGraph() whenever placedItems or room dims change.
+  // ─── Scene graph (derived — synced by PlannerScene3D for AI/export use) ──────
+  // Rebuilt from scene.items by PlannerScene3D via selectProjectedItems().
   sceneGraph: null,
   setSceneGraph: (graph) => set({ sceneGraph: graph }),
   updateCabinetInScene: (id, patch) =>
@@ -83,7 +139,7 @@ const usePlannerStore = create((set, get) => ({
         sceneGraph: {
           ...state.sceneGraph,
           cabinets: state.sceneGraph.cabinets.map((c) =>
-            c.id === id ? { ...c, ...patch } : c
+            c.id === id ? { ...c, ...patch } : c,
           ),
         },
       };
@@ -93,16 +149,12 @@ const usePlannerStore = create((set, get) => ({
   cameraState: { position: [7, 8, 14], target: [7, 0, 5.5], mode: "perspective" },
   setCameraState: (cs) => set({ cameraState: cs }),
 
-  // ─── Item rotation (degrees, Y-axis — 0 / 90 / 180 / 270) ───────────────────
+  // ─── Item rotation ────────────────────────────────────────────────────────────
   rotateItem: (id, yDeg) =>
-    set((state) => ({
-      placedItems: state.placedItems.map((item) =>
-        item.id === id ? { ...item, rotation: yDeg } : item
-      ),
-    })),
+    get().applyCommand({ type: COMMANDS.ROTATE_ITEM, id, yDeg }),
 
   // ─── Convenience getters ──────────────────────────────────────────────────────
-  getPlacedCount: () => get().placedItems.length,
+  getPlacedCount: () => get().scene.items.length,
 }));
 
 export default usePlannerStore;

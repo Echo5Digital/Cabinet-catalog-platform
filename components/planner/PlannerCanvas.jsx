@@ -6,6 +6,7 @@ import usePlannerStore from "@/store/plannerStore";
 import { ftToPx, pxToFt } from "@/lib/planner/dimensionConverter";
 import { snapItem } from "@/lib/planner/snap";
 import { buildLayoutRuns } from "@/lib/planner/layoutPresets";
+import { selectProjectedItems } from "@/lib/planner/selectors";
 
 /** Color mapping by cabinet category */
 const CATEGORY_COLORS = {
@@ -34,7 +35,8 @@ export default function PlannerCanvas({ onDropRef }) {
 
   const layout         = usePlannerStore((s) => s.layout);
   const dims           = usePlannerStore((s) => s.roomDimensions);
-  const placedItems    = usePlannerStore((s) => s.placedItems);
+  const scene          = usePlannerStore((s) => s.scene);
+  const placedItems    = useMemo(() => selectProjectedItems(scene), [scene]);
   const selectedItemId = usePlannerStore((s) => s.selectedItemId);
   const zoomLevel      = usePlannerStore((s) => s.zoomLevel);
   const moveItem       = usePlannerStore((s) => s.moveItem);
