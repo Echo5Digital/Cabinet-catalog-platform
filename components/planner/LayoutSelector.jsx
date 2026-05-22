@@ -101,6 +101,31 @@ const LAYOUTS = [
       </svg>
     ),
   },
+  {
+    id: "G-Shape",
+    label: "G-Shape",
+    description: "U-shape with a peninsula",
+    icon: (
+      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
+        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
+        {/* Back wall */}
+        <rect x="8" y="8" width="64" height="12" rx="2" fill="currentColor" opacity="0.15" />
+        <rect x="8" y="8" width="64" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Left wall */}
+        <rect x="8" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
+        <rect x="8" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Right wall */}
+        <rect x="60" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
+        <rect x="60" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        {/* Peninsula (bottom-left) */}
+        <rect x="8" y="40" width="34" height="12" rx="2" fill="currentColor" opacity="0.15" />
+        <rect x="8" y="40" width="34" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        <line x1="25" y1="40" x2="25" y2="52" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        <line x1="28" y1="8" x2="28" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        <line x1="44" y1="8" x2="44" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      </svg>
+    ),
+  },
 ];
 
 export default function LayoutSelector({ primaryColor = "#1C1917" }) {
@@ -140,7 +165,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
 
       {/* Layout cards */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
           {LAYOUTS.map((l) => {
             const isSelected = layout === l.id;
             return (

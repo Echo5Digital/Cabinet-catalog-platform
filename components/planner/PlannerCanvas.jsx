@@ -5,6 +5,7 @@ import { Stage, Layer, Rect, Line, Text, Group } from "react-konva";
 import usePlannerStore from "@/store/plannerStore";
 import { ftToPx, pxToFt } from "@/lib/planner/dimensionConverter";
 import { snapItem } from "@/lib/planner/snap";
+import { buildLayoutRuns } from "@/lib/planner/layoutPresets";
 
 /** Color mapping by cabinet category */
 const CATEGORY_COLORS = {
@@ -261,6 +262,44 @@ export default function PlannerCanvas({ onDropRef }) {
             />
             {gridLines}
             {gridLabels}
+
+            {/* Layout cabinet run zones — visual background showing the chosen layout */}
+            {buildLayoutRuns(layout, { width: roomW, length: roomL }).map((run) => {
+              const isUpper = run.type === "upper";
+              const rx = run.x2d * scale;
+              const ry = run.y2d * scale;
+              const rw = run.widthFt * scale;
+              const rh = run.depthFt * scale;
+              return (
+                <Group key={run.id} listening={false}>
+                  <Rect
+                    x={rx}
+                    y={ry}
+                    width={rw}
+                    height={rh}
+                    fill={isUpper ? "rgba(147,197,253,0.18)" : "rgba(180,168,155,0.28)"}
+                    stroke={isUpper ? "#93c4fd" : "#c0b4a8"}
+                    strokeWidth={1}
+                    dash={[5, 4]}
+                    cornerRadius={2}
+                  />
+                  {rw > 48 && rh > 14 && (
+                    <Text
+                      x={rx + 5}
+                      y={ry + rh / 2 - 5}
+                      text={
+                        run.type === "island"    ? "Island"     :
+                        run.type === "peninsula" ? "Peninsula"  :
+                        run.type === "upper"     ? "Upper Cabs" :
+                        "Base Run"
+                      }
+                      fontSize={9}
+                      fill={isUpper ? "#60a5fa" : "#a09080"}
+                    />
+                  )}
+                </Group>
+              );
+            })}
 
             {/* Placed items */}
             {placedItems.map((item) => {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import usePlannerStore from "@/store/plannerStore";
+import ViewModeToggle from "./ViewModeToggle";
 
 export default function PlannerToolbar({ onGenerateAI, primaryColor = "#1C1917" }) {
   const placedItems = usePlannerStore((s) => s.placedItems);
@@ -38,8 +39,11 @@ export default function PlannerToolbar({ onGenerateAI, primaryColor = "#1C1917" 
         </span>
       </div>
 
-      {/* Center: clear button */}
-      <button
+      {/* Center: 2D / 3D toggle + clear button */}
+      <div className="flex items-center gap-2">
+        <ViewModeToggle primaryColor={primaryColor} />
+        <div className="w-px h-5 bg-stone-200 hidden sm:block" />
+        <button
         onClick={handleClearClick}
         disabled={count === 0}
         className={[
@@ -56,6 +60,7 @@ export default function PlannerToolbar({ onGenerateAI, primaryColor = "#1C1917" 
         </svg>
         {confirmClear ? "Confirm clear?" : "Clear Canvas"}
       </button>
+      </div>
 
       {/* Right: Generate AI button */}
       <button

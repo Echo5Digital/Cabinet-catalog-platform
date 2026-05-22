@@ -11,8 +11,9 @@ import PlannerToolbar from "./PlannerToolbar";
 import AiPreviewPanel from "./AiPreviewPanel";
 import usePlannerStore from "@/store/plannerStore";
 
-// Dynamically import the Konva canvas to avoid SSR issues
-const PlannerCanvas = dynamic(() => import("./PlannerCanvas"), { ssr: false });
+// Dynamically import both canvases to avoid SSR issues
+const PlannerCanvas   = dynamic(() => import("./PlannerCanvas"),        { ssr: false });
+const PlannerScene3D  = dynamic(() => import("./3d/PlannerScene3D"),    { ssr: false });
 
 /** Droppable wrapper for the canvas area — dnd-kit hook must be inside DndContext */
 function CanvasDropArea({ canvasDropRef, children }) {
@@ -40,6 +41,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
   const step        = usePlannerStore((s) => s.step);
   const layout      = usePlannerStore((s) => s.layout);
+  const viewMode    = usePlannerStore((s) => s.viewMode);
   const dims        = usePlannerStore((s) => s.roomDimensions);
   const addItem     = usePlannerStore((s) => s.addItem);
   const showAiPanel = usePlannerStore((s) => s.showAiPanel);
@@ -206,8 +208,12 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
               </svg>
             </button>
 
-            {/* Canvas (Konva — dynamically imported, no SSR) */}
-            <PlannerCanvas onDropRef={canvasDropRef} />
+            {/* Canvas: 2D Konva or 3D React Three Fiber */}
+            {viewMode === "3D" ? (
+              <PlannerScene3D />
+            ) : (
+              <PlannerCanvas onDropRef={canvasDropRef} />
+            )}
 
             {/* Bottom toolbar */}
             <PlannerToolbar

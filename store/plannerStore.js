@@ -11,7 +11,7 @@ const usePlannerStore = create((set, get) => ({
   setStep: (step) => set({ step }),
 
   // ─── Layout selection ─────────────────────────────────────────────────────────
-  layout: null, // 'Straight' | 'L-Shape' | 'U-Shape' | 'Parallel' | 'Island'
+  layout: null, // 'Straight' | 'L-Shape' | 'U-Shape' | 'Parallel' | 'Island' | 'G-Shape'
 
   setLayout: (layout) => set({ layout }),
 
@@ -67,6 +67,39 @@ const usePlannerStore = create((set, get) => ({
 
   openAiPanel: () => set({ showAiPanel: true }),
   closeAiPanel: () => set({ showAiPanel: false }),
+
+  // ─── View mode (2D Konva canvas vs 3D React Three Fiber scene) ───────────────
+  viewMode: "3D",             // "2D" | "3D" — default 3D so layout is shown immediately
+  setViewMode: (mode) => set({ viewMode: mode }),
+
+  // ─── Scene graph (derived 3D representation of the current planner state) ────
+  // Rebuilt via buildSceneGraph() whenever placedItems or room dims change.
+  sceneGraph: null,
+  setSceneGraph: (graph) => set({ sceneGraph: graph }),
+  updateCabinetInScene: (id, patch) =>
+    set((state) => {
+      if (!state.sceneGraph) return {};
+      return {
+        sceneGraph: {
+          ...state.sceneGraph,
+          cabinets: state.sceneGraph.cabinets.map((c) =>
+            c.id === id ? { ...c, ...patch } : c
+          ),
+        },
+      };
+    }),
+
+  // ─── Camera state (saved for AI conditioning + scene restore) ────────────────
+  cameraState: { position: [7, 8, 14], target: [7, 0, 5.5], mode: "perspective" },
+  setCameraState: (cs) => set({ cameraState: cs }),
+
+  // ─── Item rotation (degrees, Y-axis — 0 / 90 / 180 / 270) ───────────────────
+  rotateItem: (id, yDeg) =>
+    set((state) => ({
+      placedItems: state.placedItems.map((item) =>
+        item.id === id ? { ...item, rotation: yDeg } : item
+      ),
+    })),
 
   // ─── Convenience getters ──────────────────────────────────────────────────────
   getPlacedCount: () => get().placedItems.length,

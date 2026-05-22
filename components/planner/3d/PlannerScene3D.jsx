@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useMemo, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { ContactShadows } from "@react-three/drei";
+
+import usePlannerStore from "@/store/plannerStore";
+import { buildSceneGraph } from "@/lib/planner/sceneBuilder";
+
+import Scene3DRoom     from "./Scene3DRoom";
+import Scene3DCabinet  from "./Scene3DCabinet";
+import Scene3DLighting from "./Scene3DLighting";
+import Scene3DControls from "./Scene3DControls";
+
+/**
+ * PlannerScene3D — React Three Fiber canvas for the kitchen planner.
+ *
+ * Dynamically imported in PlannerShell to avoid SSR issues (same pattern as
+ * the existing PlannerCanvas Konva component).
+ *
+ * Reads from the same Zustand store as the 2D canvas so any cabinet placed
+ * in 2D mode appears immediately here when the user switches to 3D.
+ */
+export default function PlannerScene3D() {
+  const layout      = usePlannerStore((s) => s.layout);
+  const dims        = usePlannerStore((s) => s.roomDimensions);
+  const placedItems = usePlannerStore((s) => s.placedItems);
+  const setSceneGraph = usePlannerStore((s) => s.setSceneGraph);
+  const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
+
+  // Rebuild scene graph whenever planner state changes
+  const sceneGraph = useMemo(
+    () => buildSceneGraph(layout, dims, placedItems),
+    [layout, dims, placedItems]
+  );
+
+  // Sync derived scene graph into the store (for AI conditioning, export, etc.)
+  useEffect(() => {
+    setSceneGraph(sceneGraph);
+  }, [sceneGraph, setSceneGraph]);
+
+  const { widthFt: W, lengthFt: L } = sceneGraph.room;
+
+  return (
+    <div className="flex-1 relative overflow-hidden bg-stone-200" style={{ minHeight: 0 }}>
+      {/* Layout + room badge */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-stone-200 text-xs text-stone-600 font-medium shadow-sm pointer-events-none">
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        {layout} · {dims.width}ft × {dims.length}ft · 3D View
+      </div>
+
+      {/* Hint */}
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <p className="text-[10px] text-stone-400 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-full border border-stone-200">
+          Drag to orbit · Scroll to zoom · Right-click to pan
+        </p>
+      </div>
+
+      {/* Drag hint — only shown when no products placed yet */}
+      {placedItems.length === 0 && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/70 backdrop-blur-sm text-stone-200 text-xs font-medium shadow">
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            Drag products from the sidebar to place them in your kitchen
+          </div>
+        </div>
+      )}
+
+      <Canvas
+        shadows
+        camera={{
+          fov:      55,
+          near:     0.1,
+          far:      200,
+          position: sceneGraph.camera.position,
+        }}
+        gl={{ antialias: true, alpha: false }}
+        style={{ background: "#e8e5e1" }}
+        onClick={(e) => {
+          // Deselect when clicking empty space
+          if (e.object?.type === undefined || e.object === undefined) {
+            setSelectedItem(null);
+          }
+        }}
+        onPointerMissed={() => setSelectedItem(null)}
+      >
+        <Suspense fallback={null}>
+          <Scene3DLighting sceneGraph={sceneGraph} />
+          <Scene3DControls sceneGraph={sceneGraph} />
+
+          {/* Room shell + layout placeholder runs */}
+          <Scene3DRoom room={sceneGraph.room} layout={sceneGraph.meta?.layoutType} />
+
+          {/* Contact shadows on the floor */}
+          <ContactShadows
+            position={[W / 2, 0.01, L / 2]}
+            width={Math.max(W, L) * 1.5}
+            height={Math.max(W, L) * 1.5}
+            far={6}
+            blur={1.5}
+            opacity={0.35}
+            color="#292524"
+          />
+
+          {/* All placed cabinets */}
+          {sceneGraph.cabinets.map((cabinet) => (
+            <Scene3DCabinet key={cabinet.id} cabinet={cabinet} />
+          ))}
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+}
