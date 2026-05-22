@@ -212,15 +212,15 @@ export default function PlannerCanvas({ onDropRef }) {
       )}
 
       {/* Zoom controls */}
-      <div className="absolute bottom-14 right-3 z-10 flex flex-col gap-1">
+      <div className="absolute bottom-16 right-3 z-10 flex flex-col gap-1">
         <button
           onClick={() => setZoom(Math.min(3.0, zoomLevel + 0.15))}
-          className="w-8 h-8 rounded-lg bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:bg-white hover:text-stone-900 transition text-lg font-light"
+          className="w-11 h-11 rounded-lg bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:bg-white hover:text-stone-900 transition text-lg font-light"
           aria-label="Zoom in"
         >+</button>
         <button
           onClick={() => setZoom(Math.max(0.4, zoomLevel - 0.15))}
-          className="w-8 h-8 rounded-lg bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:bg-white hover:text-stone-900 transition text-lg font-light"
+          className="w-11 h-11 rounded-lg bg-white/90 backdrop-blur-sm border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:bg-white hover:text-stone-900 transition text-lg font-light"
           aria-label="Zoom out"
         >−</button>
       </div>
@@ -343,7 +343,7 @@ export default function PlannerCanvas({ onDropRef }) {
 
       {/* Selected item hint */}
       {selectedItemId && (
-        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>

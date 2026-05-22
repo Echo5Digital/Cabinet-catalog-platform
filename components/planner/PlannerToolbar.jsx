@@ -24,7 +24,7 @@ export default function PlannerToolbar({ onGenerateAI, primaryColor = "#1C1917" 
   }
 
   return (
-    <div className="h-12 shrink-0 flex items-center justify-between px-4 bg-white border-t border-stone-200 shadow-[0_-1px_4px_rgba(0,0,0,0.04)]">
+    <div className="h-14 shrink-0 flex items-center justify-between px-4 bg-white border-t border-stone-200 shadow-[0_-1px_4px_rgba(0,0,0,0.04)]">
       {/* Left: item count */}
       <div className="flex items-center gap-2">
         <span

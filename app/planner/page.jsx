@@ -77,7 +77,6 @@ async function getPlannerProducts(tenantId, admin) {
       name:     p.name,
       category: p.categories?.name || "Cabinets",
       widthFt:  inToFt(p.width_in),
-      heightFt: inToFt(p.height_in),
       depthFt:  inToFt(p.depth_in),
       imageUrl: imageMap[p.id] || null,
     }));

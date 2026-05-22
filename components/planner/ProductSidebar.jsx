@@ -124,7 +124,7 @@ export default function ProductSidebar({ products = [], isOpen, onToggle }) {
       {/* Mobile: bottom sheet trigger + drawer */}
       <div className="md:hidden">
         {/* Mobile toggle strip */}
-        <div className="absolute bottom-14 left-0 z-20">
+        <div className="absolute bottom-16 left-0 z-20">
           <button
             onClick={onToggle}
             className="flex items-center gap-2 px-3 py-2 rounded-r-xl bg-white border border-l-0 border-stone-200 shadow-md text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition"
@@ -140,7 +140,7 @@ export default function ProductSidebar({ products = [], isOpen, onToggle }) {
         {isOpen && (
           <div className="fixed inset-0 z-40 flex">
             <div className="absolute inset-0 bg-black/40" onClick={onToggle} />
-            <div className="relative ml-auto w-72 h-full bg-white shadow-xl flex flex-col">
+            <div className="relative ml-auto w-[min(288px,90vw)] h-full bg-white shadow-xl flex flex-col">
               <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
                 <p className="text-sm font-semibold text-stone-900">Products</p>
                 <button onClick={onToggle} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-100 transition text-stone-500">
@@ -193,7 +193,7 @@ function SidebarContent({ products, filtered, grouped, activeCategory, setActive
       </div>
 
       {/* Product list */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4" style={{ WebkitOverflowScrolling: "touch" }}>
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-stone-400">
             <svg className="w-8 h-8 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

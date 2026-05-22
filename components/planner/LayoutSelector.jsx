@@ -140,7 +140,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
 
       {/* Layout cards */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           {LAYOUTS.map((l) => {
             const isSelected = layout === l.id;
             return (
@@ -148,7 +148,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
                 key={l.id}
                 onClick={() => setLayout(l.id)}
                 className={[
-                  "group relative flex flex-col items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-150 text-left cursor-pointer",
+                  "group relative flex flex-col items-center gap-3 p-3 sm:p-5 rounded-2xl border-2 transition-all duration-150 text-left cursor-pointer",
                   isSelected
                     ? "border-stone-800 bg-stone-900 shadow-lg"
                     : "border-stone-200 bg-white hover:border-stone-400 hover:shadow-md",
@@ -158,7 +158,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
                 {/* Icon */}
                 <div
                   className={[
-                    "w-full aspect-[4/3] rounded-xl flex items-center justify-center p-3 transition-colors",
+                    "w-full aspect-[4/3] rounded-xl flex items-center justify-center p-2 sm:p-3 transition-colors",
                     isSelected ? "bg-stone-100/10" : "bg-stone-50 group-hover:bg-stone-100",
                   ].join(" ")}
                   style={isSelected ? { color: primaryColor } : { color: "#78716c" }}

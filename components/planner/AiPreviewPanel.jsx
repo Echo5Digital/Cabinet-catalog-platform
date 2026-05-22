@@ -13,7 +13,13 @@ export default function AiPreviewPanel({ onRegenerate, onClose }) {
   const [imgLoaded,  setImgLoaded]  = useState(false);
 
   return (
-    <div className="w-full md:w-80 xl:w-96 shrink-0 bg-white border-l border-stone-200 flex flex-col overflow-hidden">
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className="md:hidden fixed inset-0 bg-black/40 z-40"
+        onClick={onClose}
+      />
+    <div className="fixed top-[64px] sm:top-[76px] right-0 bottom-0 z-50 md:relative md:top-auto md:right-auto md:bottom-auto md:z-auto w-[min(320px,92vw)] md:w-80 xl:w-96 shrink-0 bg-white border-l border-stone-200 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
         <div className="flex items-center gap-2">
@@ -159,5 +165,6 @@ export default function AiPreviewPanel({ onRegenerate, onClose }) {
         </div>
       )}
     </div>
+    </>
   );
 }

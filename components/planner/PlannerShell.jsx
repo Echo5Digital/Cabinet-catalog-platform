@@ -64,7 +64,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
       activationConstraint: { distance: 6 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 100, tolerance: 5 },
     })
   );
 

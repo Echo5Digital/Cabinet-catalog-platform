@@ -24,7 +24,7 @@ export async function GET(request) {
     // Fetch active products with category info
     const { data: products, error: productsError } = await admin
       .from("products")
-      .select("id, sku, name, width_in, height_in, depth_in, sort_order, categories(id, name, sort_order)")
+      .select("id, sku, name, width_in, depth_in, sort_order, categories(id, name, sort_order)")
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
@@ -79,7 +79,6 @@ export async function GET(request) {
       name:     p.name,
       category: p.categories?.name || "Cabinets",
       widthFt:  inToFt(p.width_in),
-      heightFt: inToFt(p.height_in),
       depthFt:  inToFt(p.depth_in),
       imageUrl: imageMap[p.id] || null,
     }));
