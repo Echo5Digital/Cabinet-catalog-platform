@@ -98,13 +98,6 @@ function Header({ tenant, lines }) {
             </div>
           </div>
 
-          <Link
-            href="/catalog"
-            className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
-          >
-            About Us
-          </Link>
-
           <a
             href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
             className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
@@ -123,7 +116,7 @@ function Header({ tenant, lines }) {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-            Design AI
+            AI Kitchen Designer
           </Link>
           <Link
             href="/planner"
@@ -133,7 +126,7 @@ function Header({ tenant, lines }) {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
             </svg>
-            Design Kitchen
+            Kitchen Planner
           </Link>
 
           {/* Mobile menu toggle */}
@@ -193,7 +186,7 @@ function Header({ tenant, lines }) {
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
-                Design AI
+                AI Kitchen Designer
               </Link>
               <Link
                 href="/planner"
@@ -204,14 +197,7 @@ function Header({ tenant, lines }) {
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
                 </svg>
-                Design Kitchen
-              </Link>
-              <Link
-                href="/catalog"
-                onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition uppercase tracking-wide"
-              >
-                About Us
+                Kitchen Planner
               </Link>
               <a
                 href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
