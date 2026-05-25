@@ -33,10 +33,10 @@ function DimensionInput({ field, value, onChange, error }) {
           placeholder={field === "height" ? "9" : ""}
           className={[
             "w-full rounded-xl border px-4 py-3 pr-12 text-sm text-stone-900 bg-white outline-none transition",
-            "placeholder:text-stone-300 focus:ring-2",
+            "placeholder:text-stone-300",
             error
-              ? "border-red-300 focus:ring-red-200"
-              : "border-stone-200 hover:border-stone-300 focus:border-stone-400 focus:ring-stone-100",
+              ? "border-red-300 focus:ring-2 focus:ring-red-200"
+              : "border-stone-200 hover:border-stone-300 dim-input",
           ].join(" ")}
         />
         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-stone-400 pointer-events-none">
@@ -109,6 +109,14 @@ export default function RoomDimensionForm({ primaryColor = "#1C1917" }) {
   }
 
   return (
+    <>
+    <style>{`
+      .dim-input:focus {
+        border-color: ${primaryColor};
+        box-shadow: 0 0 0 3px ${primaryColor}18;
+        outline: none;
+      }
+    `}</style>
     <div className="min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-76px)] bg-[#FAFAF9] flex flex-col">
       {/* Hero */}
       <div
@@ -146,7 +154,7 @@ export default function RoomDimensionForm({ primaryColor = "#1C1917" }) {
 
             {/* Visual diagram */}
             <div className="mb-6 flex justify-center">
-              <div className="relative w-48 h-32 border-2 border-stone-300 rounded-lg bg-stone-50 flex items-center justify-center">
+              <div className="relative w-48 h-32 border-2 rounded-lg bg-stone-50 flex items-center justify-center" style={{ borderColor: `${primaryColor}55` }}>
                 {/* Width arrow */}
                 <div className="absolute -bottom-5 left-0 right-0 flex items-center justify-center gap-1">
                   <div className="h-px flex-1 bg-stone-400" />
@@ -203,5 +211,6 @@ export default function RoomDimensionForm({ primaryColor = "#1C1917" }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -31,6 +31,10 @@ const usePlannerStore = create((set, get) => ({
   layout: null,             // "Straight" | "L-Shape" | "U-Shape" | "Parallel" | "Island" | "G-Shape"
   setLayout: (layout) => set({ layout }),
 
+  // ─── Cabinet style selection ──────────────────────────────────────────────────
+  cabinetStyle: null,       // "American" | "Euro"
+  setCabinetStyle: (style) => set({ cabinetStyle: style }),
+
   // ─── Room dimensions (feet) ───────────────────────────────────────────────────
   roomDimensions: { width: 14, length: 11, height: 9 },
   setDimensions: (dims) =>

@@ -129,12 +129,16 @@ const LAYOUTS = [
 ];
 
 export default function LayoutSelector({ primaryColor = "#1C1917" }) {
-  const layout    = usePlannerStore((s) => s.layout);
-  const setLayout = usePlannerStore((s) => s.setLayout);
-  const setStep   = usePlannerStore((s) => s.setStep);
+  const layout          = usePlannerStore((s) => s.layout);
+  const setLayout       = usePlannerStore((s) => s.setLayout);
+  const cabinetStyle    = usePlannerStore((s) => s.cabinetStyle);
+  const setCabinetStyle = usePlannerStore((s) => s.setCabinetStyle);
+  const setStep         = usePlannerStore((s) => s.setStep);
+
+  const canContinue = !!layout && !!cabinetStyle;
 
   function handleContinue() {
-    if (layout) setStep(2);
+    if (canContinue) setStep(2);
   }
 
   return (
@@ -165,6 +169,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
 
       {/* Layout cards */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
+        <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">Select Layout:</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
           {LAYOUTS.map((l) => {
             const isSelected = layout === l.id;
@@ -221,14 +226,44 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
           })}
         </div>
 
+        {/* Cabinet Style */}
+        <div className="mt-10">
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">Select Cabinet Style:</p>
+          <div className="flex gap-3 max-w-xs">
+            {["American", "Euro"].map((style) => {
+              const isSelected = cabinetStyle === style;
+              return (
+                <button
+                  key={style}
+                  onClick={() => setCabinetStyle(style)}
+                  className={[
+                    "flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-2xl border-2 text-sm font-semibold transition-all duration-150",
+                    isSelected
+                      ? "text-white shadow-sm"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50",
+                  ].join(" ")}
+                  style={isSelected ? { borderColor: primaryColor, backgroundColor: primaryColor } : {}}
+                >
+                  {style}
+                  {isSelected && (
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Continue button */}
         <div className="mt-10 flex justify-center">
           <button
             onClick={handleContinue}
-            disabled={!layout}
+            disabled={!canContinue}
             className={[
               "flex items-center gap-2 px-8 py-3 rounded-full text-sm font-semibold text-white transition-all duration-150 shadow-sm",
-              layout ? "hover:opacity-90 cursor-pointer" : "opacity-40 cursor-not-allowed",
+              canContinue ? "hover:opacity-90 cursor-pointer" : "opacity-40 cursor-not-allowed",
             ].join(" ")}
             style={{ backgroundColor: primaryColor }}
           >
@@ -239,9 +274,11 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
           </button>
         </div>
 
-        {layout && (
+        {canContinue && (
           <p className="mt-3 text-center text-xs text-stone-400">
-            Selected: <span className="font-medium text-stone-600">{layout}</span>
+            <span className="font-medium text-stone-600">{layout}</span>
+            {" · "}
+            <span className="font-medium text-stone-600">{cabinetStyle} Style</span>
           </p>
         )}
       </div>

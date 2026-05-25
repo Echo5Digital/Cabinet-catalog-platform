@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, useDroppable } from "@dnd-kit/core";
 import PlannerHeader from "./PlannerHeader";
@@ -42,6 +42,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
   const step               = usePlannerStore((s) => s.step);
   const layout             = usePlannerStore((s) => s.layout);
+  const cabinetStyle       = usePlannerStore((s) => s.cabinetStyle);
   const viewMode           = usePlannerStore((s) => s.viewMode);
   const dims               = usePlannerStore((s) => s.roomDimensions);
   const addItem            = usePlannerStore((s) => s.addItem);
@@ -63,10 +64,19 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
   // Active drag state (for DragOverlay ghost)
   const [activeDrag, setActiveDrag] = useState(null);
 
+  // ── Filter products by selected cabinet style (American / Euro) ──────────────
+  const filteredProducts = useMemo(() => {
+    if (!cabinetStyle) return initialProducts;
+    const style = cabinetStyle.toLowerCase();
+    return initialProducts.filter((p) =>
+      (p.lineName || "").toLowerCase().includes(style)
+    );
+  }, [initialProducts, cabinetStyle]);
+
   // ── Hydrate catalog products into store so procedural generator can use them ─
   useEffect(() => {
-    setCatalogProducts(initialProducts);
-  }, [initialProducts, setCatalogProducts]);
+    setCatalogProducts(filteredProducts);
+  }, [filteredProducts, setCatalogProducts]);
 
   // ── Auto-generate layout when entering Step 3 with an empty scene ─────────────
   // Fires once when the user clicks "Start Designing" in RoomDimensionForm.
@@ -203,7 +213,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
         >
           {/* Left: Product Sidebar */}
           <ProductSidebar
-            products={initialProducts}
+            products={filteredProducts}
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen((v) => !v)}
           />
@@ -243,6 +253,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
             <AiPreviewPanel
               onRegenerate={handleGenerateAI}
               onClose={closeAiPanel}
+              primaryColor={primaryColor}
             />
           )}
 
