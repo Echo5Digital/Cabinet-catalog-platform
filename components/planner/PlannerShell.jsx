@@ -92,8 +92,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
     if (step === 3 && scene.items.length === 0 && catalogProducts.length > 0) {
       generateLayout();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, catalogProducts.length]);
+  }, [step, catalogProducts.length, generateLayout]);
 
   // dnd-kit sensors — support both mouse and touch
   const sensors = useSensors(

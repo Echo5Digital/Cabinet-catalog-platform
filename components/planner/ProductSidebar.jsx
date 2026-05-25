@@ -4,6 +4,16 @@ import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 
 const CATEGORY_ORDER = ["Base Cabinets", "Wall Cabinets", "Tall Units", "Appliances"];
+
+// Normalise DB short names ("Base", "Wall", "Tall") to canonical long forms so
+// tabs, filters, and colour lookups all work regardless of how the admin named them.
+function normalizeCategory(cat) {
+  const c = (cat || "").toLowerCase().trim();
+  if (c === "base" || c === "base cabinet")            return "Base Cabinets";
+  if (c === "wall" || c === "wall cabinet")            return "Wall Cabinets";
+  if (c === "tall" || c === "tall unit" || c === "pantry") return "Tall Units";
+  return cat || "";
+}
 const CATEGORY_COLORS = {
   "Base Cabinets": "bg-stone-100 text-stone-600 border-stone-200",
   "Wall Cabinets": "bg-blue-50 text-blue-600 border-blue-100",
@@ -65,7 +75,7 @@ function DraggableProduct({ product }) {
           <span
             className={[
               "inline-block w-1.5 h-1.5 rounded-full shrink-0",
-              CATEGORY_DOTS[product.category] || "bg-stone-300",
+              CATEGORY_DOTS[normalizeCategory(product.category)] || "bg-stone-300",
             ].join(" ")}
           />
           <p className="text-[10px] text-stone-500 truncate">
@@ -87,17 +97,17 @@ export default function ProductSidebar({ products = [], isOpen, onToggle }) {
 
   // Determine which categories are present in the product list
   const presentCategories = ["All", ...CATEGORY_ORDER.filter((cat) =>
-    products.some((p) => p.category === cat)
+    products.some((p) => normalizeCategory(p.category) === cat)
   )];
 
   const filtered = activeCategory === "All"
     ? products
-    : products.filter((p) => p.category === activeCategory);
+    : products.filter((p) => normalizeCategory(p.category) === activeCategory);
 
-  // Group by category for display
+  // Group by canonical category for display
   const grouped = {};
   for (const p of filtered) {
-    const cat = p.category || "Other";
+    const cat = normalizeCategory(p.category) || "Other";
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(p);
   }
