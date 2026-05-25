@@ -114,7 +114,12 @@ export default function PlannerScene3D() {
 
           {/* All placed cabinets */}
           {sceneGraph.cabinets.map((cabinet) => (
-            <Scene3DCabinet key={cabinet.id} cabinet={cabinet} />
+            <Scene3DCabinet
+              key={cabinet.id}
+              cabinet={cabinet}
+              roomWidthFt={sceneGraph.room.widthFt}
+              roomLengthFt={sceneGraph.room.lengthFt}
+            />
           ))}
         </Suspense>
       </Canvas>

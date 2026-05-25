@@ -148,7 +148,9 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
       category:  product.category,
       widthFt:   product.widthFt  || 2,
       depthFt:   product.depthFt  || 2,
-      imageUrl:  product.imageUrl || null,
+      imageUrl:    product.imageUrl    || null,
+      doorCount:   product.doorCount   ?? null,
+      drawerCount: product.drawerCount ?? null,
       x:         pos?.x ?? 0,
       y:         pos?.y ?? 0,
     });

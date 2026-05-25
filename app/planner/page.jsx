@@ -30,7 +30,7 @@ async function getPlannerProducts(tenantId, admin) {
   try {
     const { data: products } = await admin
       .from("products")
-      .select("id, sku, name, width_in, depth_in, sort_order, categories(id, name, sort_order), catalog_line:catalog_lines!catalog_line_id(id, name)")
+      .select("id, sku, name, width_in, depth_in, door_count, drawer_count, sort_order, categories(id, name, sort_order), catalog_line:catalog_lines!catalog_line_id(id, name)")
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
@@ -79,7 +79,9 @@ async function getPlannerProducts(tenantId, admin) {
       lineName: p.catalog_line?.name || "",
       widthFt:  inToFt(p.width_in),
       depthFt:  inToFt(p.depth_in),
-      imageUrl: imageMap[p.id] || null,
+      imageUrl:    imageMap[p.id] || null,
+      doorCount:   p.door_count   ?? null,
+      drawerCount: p.drawer_count ?? null,
     }));
   } catch {
     return [];
