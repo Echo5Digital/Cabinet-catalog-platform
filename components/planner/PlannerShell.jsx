@@ -11,17 +11,21 @@ import PlannerToolbar from "./PlannerToolbar";
 import AiPreviewPanel from "./AiPreviewPanel";
 import usePlannerStore from "@/store/plannerStore";
 import { selectProjectedItems } from "@/lib/planner/selectors";
+import { snapItem } from "@/lib/planner/snap";
 
 // Dynamically import both canvases to avoid SSR issues
 const PlannerCanvas   = dynamic(() => import("./PlannerCanvas"),        { ssr: false });
 const PlannerScene3D  = dynamic(() => import("./3d/PlannerScene3D"),    { ssr: false });
 
 /** Droppable wrapper for the canvas area — dnd-kit hook must be inside DndContext */
-function CanvasDropArea({ canvasDropRef, children }) {
+function CanvasDropArea({ canvasDropRef, canvasAreaRef, children }) {
   const { setNodeRef, isOver } = useDroppable({ id: "planner-canvas-drop" });
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        if (canvasAreaRef) canvasAreaRef.current = node;
+      }}
       className={[
         "flex-1 flex flex-col overflow-hidden min-w-0 relative transition-colors duration-100",
         isOver ? "ring-2 ring-inset ring-blue-300/50" : "",
@@ -48,6 +52,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
   const addItem            = usePlannerStore((s) => s.addItem);
   const scene              = usePlannerStore((s) => s.scene);
   const setCatalogProducts = usePlannerStore((s) => s.setCatalogProducts);
+  const catalogProducts    = usePlannerStore((s) => s.catalogProducts);
   const generateLayout     = usePlannerStore((s) => s.generateLayout);
   const showAiPanel        = usePlannerStore((s) => s.showAiPanel);
   const openAiPanel        = usePlannerStore((s) => s.openAiPanel);
@@ -60,6 +65,8 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
 
   // Ref to canvas drop resolver (set by PlannerCanvas via onDropRef)
   const canvasDropRef = useRef(null);
+  // Ref to the canvas area DOM node (used for 3D drop position calculation)
+  const canvasAreaRef = useRef(null);
 
   // Active drag state (for DragOverlay ghost)
   const [activeDrag, setActiveDrag] = useState(null);
@@ -79,13 +86,14 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
   }, [filteredProducts, setCatalogProducts]);
 
   // ── Auto-generate layout when entering Step 3 with an empty scene ─────────────
-  // Fires once when the user clicks "Start Designing" in RoomDimensionForm.
+  // Depends on both `step` and `catalogProducts.length` so that if products
+  // finish loading after the step transition, generation still fires automatically.
   useEffect(() => {
-    if (step === 3 && scene.items.length === 0) {
+    if (step === 3 && scene.items.length === 0 && catalogProducts.length > 0) {
       generateLayout();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step, catalogProducts.length]);
 
   // dnd-kit sensors — support both mouse and touch
   const sensors = useSensors(
@@ -119,10 +127,19 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
       ? clientY + event.delta.y
       : clientY;
 
-    // Use canvas resolver to convert pointer position → room coordinates
-    const pos = canvasDropRef.current
-      ? canvasDropRef.current(pointerX, pointerY, product)
-      : { x: 0, y: 0 };
+    // Use canvas resolver (2D mode) or linear map (3D mode) for drop position
+    let pos;
+    if (canvasDropRef.current) {
+      pos = canvasDropRef.current(pointerX, pointerY, product);
+    } else if (canvasAreaRef.current) {
+      // 3D mode: map pointer linearly over the canvas area bounding rect to room feet
+      const rect = canvasAreaRef.current.getBoundingClientRect();
+      const rawX  = ((pointerX - rect.left)  / rect.width)  * dims.width  - (product.widthFt || 2) / 2;
+      const rawY  = ((pointerY - rect.top)   / rect.height) * dims.length - (product.depthFt || 2) / 2;
+      pos = snapItem(rawX, rawY, product.widthFt || 2, product.depthFt || 2, dims.width, dims.length);
+    } else {
+      pos = { x: 0, y: 0 };
+    }
 
     addItem({
       id:        newId(),
@@ -136,7 +153,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
       x:         pos?.x ?? 0,
       y:         pos?.y ?? 0,
     });
-  }, [addItem]);
+  }, [addItem, dims]);
 
   // AI generation handler
   const handleGenerateAI = useCallback(async () => {
@@ -219,7 +236,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
           />
 
           {/* Center: Canvas area (droppable — fills remaining space) */}
-          <CanvasDropArea canvasDropRef={canvasDropRef}>
+          <CanvasDropArea canvasDropRef={canvasDropRef} canvasAreaRef={canvasAreaRef}>
             {/* Sidebar toggle button — desktop */}
             <button
               onClick={() => setSidebarOpen((v) => !v)}

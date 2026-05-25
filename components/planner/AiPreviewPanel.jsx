@@ -7,10 +7,7 @@ export default function AiPreviewPanel({ onRegenerate, onClose, primaryColor = "
   const aiLoading  = usePlannerStore((s) => s.aiLoading);
   const aiImageUrl = usePlannerStore((s) => s.aiImageUrl);
   const aiError    = usePlannerStore((s) => s.aiError);
-  const aiPrompt   = usePlannerStore((s) => s.aiPrompt);
-
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [imgLoaded,  setImgLoaded]  = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   return (
     <>
@@ -103,29 +100,6 @@ export default function AiPreviewPanel({ onRegenerate, onClose, primaryColor = "
                 onLoad={() => setImgLoaded(true)}
               />
             </div>
-
-            {/* Prompt toggle */}
-            {aiPrompt && (
-              <div>
-                <button
-                  onClick={() => setShowPrompt((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition"
-                >
-                  <svg
-                    className={`w-3 h-3 transition-transform ${showPrompt ? "rotate-90" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                  {showPrompt ? "Hide prompt" : "View AI prompt"}
-                </button>
-                {showPrompt && (
-                  <div className="mt-2 p-3 rounded-xl bg-stone-50 border border-stone-100">
-                    <p className="text-[10px] text-stone-500 leading-relaxed font-mono">{aiPrompt}</p>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Download link */}
             {!aiImageUrl.startsWith("data:") && (

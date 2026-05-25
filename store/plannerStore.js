@@ -132,6 +132,10 @@ const usePlannerStore = create((set, get) => ({
   viewMode: "3D",
   setViewMode: (mode) => set({ viewMode: mode }),
 
+  // ─── 2D plan layer — Lower (base/tall) or Upper (wall cabs) ──────────────────
+  planLayer: "lower",
+  setPlanLayer: (layer) => set({ planLayer: layer }),
+
   // ─── Scene graph (derived — synced by PlannerScene3D for AI/export use) ──────
   // Rebuilt from scene.items by PlannerScene3D via selectProjectedItems().
   sceneGraph: null,

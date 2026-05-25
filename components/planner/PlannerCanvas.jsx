@@ -43,6 +43,16 @@ export default function PlannerCanvas({ onDropRef }) {
   const removeItem     = usePlannerStore((s) => s.removeItem);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
   const setZoom        = usePlannerStore((s) => s.setZoom);
+  const planLayer      = usePlannerStore((s) => s.planLayer);
+  const setPlanLayer   = usePlannerStore((s) => s.setPlanLayer);
+
+  // Filter to the active plan layer for 2D display only
+  const visibleItems = useMemo(() => {
+    if (planLayer === "upper") {
+      return placedItems.filter((item) => item.category === "Wall Cabinets");
+    }
+    return placedItems.filter((item) => item.category !== "Wall Cabinets");
+  }, [placedItems, planLayer]);
 
   const roomW = dims.width;
   const roomL = dims.length;
@@ -204,15 +214,34 @@ export default function PlannerCanvas({ onDropRef }) {
       className="flex-1 relative overflow-hidden bg-stone-100"
       style={{ minHeight: 0 }}
     >
-      {/* Layout badge */}
-      {layout && (
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-stone-200 text-xs text-stone-600 font-medium shadow-sm">
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
-          </svg>
-          {layout} · {roomW}ft × {roomL}ft
+      {/* Layout badge + plan layer toggle */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+        {layout && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-stone-200 text-xs text-stone-600 font-medium shadow-sm">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
+            </svg>
+            {layout} · {roomW}ft × {roomL}ft
+          </div>
+        )}
+        {/* Lower / Upper plan layer toggle */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-white border border-stone-200 shadow-sm">
+          {["lower", "upper"].map((id) => (
+            <button
+              key={id}
+              onClick={() => setPlanLayer(id)}
+              className={[
+                "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all",
+                planLayer === id
+                  ? "bg-stone-800 text-white shadow-sm"
+                  : "text-stone-500 hover:text-stone-700",
+              ].join(" ")}
+            >
+              {id === "lower" ? "Lower" : "Upper"}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Zoom controls */}
       <div className="absolute bottom-16 right-3 z-10 flex flex-col gap-1">
@@ -229,13 +258,17 @@ export default function PlannerCanvas({ onDropRef }) {
       </div>
 
       {/* Empty state */}
-      {placedItems.length === 0 && (
+      {visibleItems.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="flex flex-col items-center gap-2 text-stone-400">
             <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <p className="text-sm font-medium opacity-60">Drag cabinets from the sidebar to place them</p>
+            <p className="text-sm font-medium opacity-60">
+              {planLayer === "upper"
+                ? "No wall cabinets placed — drag from the sidebar"
+                : "Drag cabinets from the sidebar to place them"}
+            </p>
           </div>
         </div>
       )}
@@ -266,7 +299,11 @@ export default function PlannerCanvas({ onDropRef }) {
             {gridLabels}
 
             {/* Layout cabinet run zones — visual background showing the chosen layout */}
-            {buildLayoutRuns(layout, { width: roomW, length: roomL }).map((run) => {
+            {buildLayoutRuns(layout, { width: roomW, length: roomL })
+              .filter((run) =>
+                planLayer === "upper" ? run.type === "upper" : run.type !== "upper"
+              )
+              .map((run) => {
               const isUpper = run.type === "upper";
               const rx = run.x2d * scale;
               const ry = run.y2d * scale;
@@ -303,8 +340,8 @@ export default function PlannerCanvas({ onDropRef }) {
               );
             })}
 
-            {/* Placed items */}
-            {placedItems.map((item) => {
+            {/* Placed items (filtered to active plan layer) */}
+            {visibleItems.map((item) => {
               const colors   = getColors(item.category);
               const isSelected = selectedItemId === item.id;
               const itemPxW  = ftToPx(item.widthFt) * zoomLevel * autoZoom;

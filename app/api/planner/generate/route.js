@@ -7,6 +7,22 @@ import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
 export const dynamic = "force-dynamic";
 import { buildPlannerPrompt } from "@/lib/planner/promptGenerator";
 
+/** Persist an OpenAI error to ai_settings so the admin can see it in the panel. */
+async function recordAIError(tenantId, errorMessage) {
+  try {
+    const adminDb = createAdminClient();
+    await adminDb
+      .from("ai_settings")
+      .update({
+        last_error:    errorMessage,
+        last_error_at: new Date().toISOString(),
+      })
+      .eq("tenant_id", tenantId);
+  } catch {
+    // Never block the response — this is informational only
+  }
+}
+
 /**
  * POST /api/planner/generate
  *
@@ -91,6 +107,9 @@ export async function POST(request) {
 
   } catch (err) {
     console.error("[planner/generate] error:", err);
+    if (tenantId && err instanceof OpenAI.APIError) {
+      await recordAIError(tenantId, err.message);
+    }
     return NextResponse.json(
       { error: err.message || "Failed to generate kitchen visualization." },
       { status: 500 }

@@ -46,7 +46,7 @@ export default function PlannerScene3D() {
   return (
     <div className="flex-1 relative overflow-hidden bg-stone-200" style={{ minHeight: 0 }}>
       {/* Layout + room badge */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-stone-200 text-xs text-stone-600 font-medium shadow-sm pointer-events-none">
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-stone-300 text-xs text-stone-800 font-semibold shadow-md pointer-events-none">
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
@@ -55,7 +55,7 @@ export default function PlannerScene3D() {
 
       {/* Hint */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <p className="text-[10px] text-stone-400 bg-white/60 backdrop-blur-sm px-2 py-1 rounded-full border border-stone-200">
+        <p className="text-[10px] text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-300 shadow-sm font-medium">
           Drag to orbit · Scroll to zoom · Right-click to pan
         </p>
       </div>
