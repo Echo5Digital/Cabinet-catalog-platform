@@ -8,13 +8,8 @@ const LAYOUTS = [
     label: "Straight",
     description: "Single wall, linear run",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        <rect x="8" y="30" width="64" height="14" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="30" width="64" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="24" y1="30" x2="24" y2="44" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="40" y1="30" x2="40" y2="44" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="56" y1="30" x2="56" y2="44" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6" y="8" width="68" height="10" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -23,19 +18,9 @@ const LAYOUTS = [
     label: "L-Shape",
     description: "Two walls at a corner",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        {/* Back wall */}
-        <rect x="8" y="8" width="64" height="14" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="64" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Left wall */}
-        <rect x="8" y="8" width="14" height="44" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="14" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="28" y1="8" x2="28" y2="22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="44" y1="8" x2="44" y2="22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="60" y1="8" x2="60" y2="22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="8" y1="26" x2="22" y2="26" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="8" y1="38" x2="22" y2="38" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -44,19 +29,10 @@ const LAYOUTS = [
     label: "U-Shape",
     description: "Three walls, horseshoe",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        {/* Back wall */}
-        <rect x="8" y="8" width="64" height="12" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="64" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Left wall */}
-        <rect x="8" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Right wall */}
-        <rect x="60" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="60" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="28" y1="8" x2="28" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="44" y1="8" x2="44" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="6"  y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -65,20 +41,9 @@ const LAYOUTS = [
     label: "Parallel",
     description: "Galley — two facing walls",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        {/* Top run */}
-        <rect x="8" y="8" width="64" height="13" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="64" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Bottom run */}
-        <rect x="8" y="39" width="64" height="13" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="39" width="64" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="24" y1="8" x2="24" y2="21" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="40" y1="8" x2="40" y2="21" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="56" y1="8" x2="56" y2="21" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="24" y1="39" x2="24" y2="52" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="40" y1="39" x2="40" y2="52" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="56" y1="39" x2="56" y2="52" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6" y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="6" y="42" width="68" height="10" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -87,17 +52,10 @@ const LAYOUTS = [
     label: "Island",
     description: "Open plan with center island",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        {/* Back wall */}
-        <rect x="8" y="8" width="64" height="12" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="64" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Island */}
-        <rect x="24" y="32" width="32" height="14" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="24" y="32" width="32" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="40" y1="32" x2="40" y2="46" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="28" y1="8" x2="28" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="52" y1="8" x2="52" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="22" y="30" width="28" height="12" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -106,29 +64,55 @@ const LAYOUTS = [
     label: "G-Shape",
     description: "U-shape with a peninsula",
     icon: (
-      <svg viewBox="0 0 80 60" fill="none" className="w-full h-full">
-        <rect x="8" y="8" width="64" height="44" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.3" />
-        {/* Back wall */}
-        <rect x="8" y="8" width="64" height="12" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="64" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Left wall */}
-        <rect x="8" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Right wall */}
-        <rect x="60" y="8" width="12" height="44" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="60" y="8" width="12" height="44" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        {/* Peninsula (bottom-left) */}
-        <rect x="8" y="40" width="34" height="12" rx="2" fill="currentColor" opacity="0.15" />
-        <rect x="8" y="40" width="34" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="25" y1="40" x2="25" y2="52" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="28" y1="8" x2="28" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        <line x1="44" y1="8" x2="44" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="6"  y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="16" y="42" width="28" height="10" rx="1" fill="currentColor" />
       </svg>
     ),
   },
 ];
 
-export default function LayoutSelector({ primaryColor = "#1C1917" }) {
+/**
+ * Maps each planner layout ID to the possible admin structure names/codes.
+ * Matching is case-insensitive; spaces and hyphens are normalised.
+ */
+const STRUCTURE_KEY_MAP = {
+  "Straight": ["straight", "single-wall", "single wall", "single_wall"],
+  "L-Shape":  ["l-shape", "l-shaped", "lshape", "lshaped"],
+  "U-Shape":  ["u-shape", "u-shaped", "ushape", "ushaped"],
+  "Parallel": ["parallel", "galley"],
+  "Island":   ["island"],
+  "G-Shape":  ["g-shape", "g-shaped", "gshape", "gshaped"],
+};
+
+// Normalise a string for matching: lowercase, collapse spaces/hyphens/underscores to "-"
+function norm(s) {
+  return (s || "").toLowerCase().replace(/[\s_-]+/g, "-").trim();
+}
+
+function findStructureImage(layoutId, structures) {
+  const keys = (STRUCTURE_KEY_MAP[layoutId] || []).map(norm);
+
+  // Pass 1 — exact normalised match on name or code
+  const exact = structures.find((s) => {
+    const n = norm(s.name);
+    const c = norm(s.code);
+    return keys.includes(n) || keys.includes(c);
+  });
+  if (exact?.imageUrl) return exact.imageUrl;
+
+  // Pass 2 — substring match: handles "L-Shaped Kitchen", "Galley Kitchen", etc.
+  const partial = structures.find((s) => {
+    const n = norm(s.name);
+    const c = norm(s.code);
+    return keys.some((k) => n.includes(k) || c.includes(k) || k.includes(n) || k.includes(c));
+  });
+  return partial?.imageUrl ?? null;
+}
+
+export default function LayoutSelector({ primaryColor = "#1C1917", structures = [] }) {
   const layout          = usePlannerStore((s) => s.layout);
   const setLayout       = usePlannerStore((s) => s.setLayout);
   const cabinetStyle    = usePlannerStore((s) => s.cabinetStyle);
@@ -146,7 +130,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
       {/* Hero section */}
       <div
         className="py-12 sm:py-16 px-4 text-center"
-        style={{ background: "linear-gradient(160deg, #1c1917 0%, #292524 100%)" }}
+        style={{ background: `linear-gradient(160deg, ${primaryColor} 0%, ${primaryColor}e0 100%)` }}
       >
         <div className="max-w-2xl mx-auto">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-stone-300 bg-white/10 ring-1 ring-white/20 mb-4">
@@ -167,12 +151,22 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
         </div>
       </div>
 
-      {/* Layout cards */}
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">Select Layout:</p>
+      {/* Body — centred flex column */}
+      <div className="flex-1 w-full px-4 sm:px-6 py-10 flex flex-col items-center">
+
+        {/* Layout section */}
+        <div className="w-full max-w-5xl">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-5 text-center"
+            style={{ color: primaryColor }}
+          >
+            Select Layout
+          </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-          {LAYOUTS.map((l) => {
+          {LAYOUTS.map((l, idx) => {
             const isSelected = layout === l.id;
+            // Primary: match by name/code. Fallback: nth structure → nth layout card (by sort_order).
+            const imgUrl = findStructureImage(l.id, structures) ?? (structures[idx]?.imageUrl ?? null);
             return (
               <button
                 key={l.id}
@@ -185,15 +179,29 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
                 ].join(" ")}
                 style={isSelected ? { borderColor: primaryColor, backgroundColor: primaryColor + "08" } : {}}
               >
-                {/* Icon */}
+                {/* Image (from admin) or SVG icon fallback */}
                 <div
                   className={[
-                    "w-full aspect-[4/3] rounded-xl flex items-center justify-center p-2 sm:p-3 transition-colors",
-                    isSelected ? "bg-stone-100/10" : "bg-stone-50 group-hover:bg-stone-100",
+                    "w-full aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center transition-colors",
+                    imgUrl
+                      ? ""
+                      : isSelected
+                        ? "bg-stone-100/10 p-2 sm:p-3"
+                        : "bg-stone-50 group-hover:bg-stone-100 p-2 sm:p-3",
                   ].join(" ")}
-                  style={isSelected ? { color: primaryColor } : { color: "#78716c" }}
+                  style={!imgUrl ? (isSelected ? { color: primaryColor } : { color: "#78716c" }) : {}}
                 >
-                  {l.icon}
+                  {imgUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imgUrl}
+                      alt={l.label}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    l.icon
+                  )}
                 </div>
 
                 {/* Label */}
@@ -225,11 +233,17 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
             );
           })}
         </div>
+        </div>{/* /layout section */}
 
-        {/* Cabinet Style */}
-        <div className="mt-10">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-4">Select Cabinet Style:</p>
-          <div className="flex gap-3 max-w-xs">
+        {/* Cabinet Style section */}
+        <div className="mt-8 pt-8 border-t border-stone-200 w-full max-w-5xl flex flex-col items-center">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-5 text-center"
+            style={{ color: primaryColor }}
+          >
+            Select Cabinet Style
+          </p>
+          <div className="flex gap-4">
             {["American", "Euro"].map((style) => {
               const isSelected = cabinetStyle === style;
               return (
@@ -254,7 +268,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917" }) {
               );
             })}
           </div>
-        </div>
+        </div>{/* /cabinet style section */}
 
         {/* Continue button */}
         <div className="mt-10 flex justify-center">

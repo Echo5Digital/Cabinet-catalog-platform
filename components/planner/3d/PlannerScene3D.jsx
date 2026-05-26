@@ -44,7 +44,7 @@ export default function PlannerScene3D() {
   const { widthFt: W, lengthFt: L } = sceneGraph.room;
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-stone-200" style={{ minHeight: 0 }}>
+    <div className="flex-1 relative overflow-hidden bg-stone-200" style={{ minHeight: 0, touchAction: "none" }}>
       {/* Layout + room badge */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-stone-300 text-xs text-stone-800 font-semibold shadow-md pointer-events-none">
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -56,7 +56,8 @@ export default function PlannerScene3D() {
       {/* Hint */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
         <p className="text-[10px] text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-300 shadow-sm font-medium">
-          Drag to orbit · Scroll to zoom · Right-click to pan
+          <span className="hidden sm:inline">Drag to orbit · Scroll to zoom · Right-click to pan</span>
+          <span className="sm:hidden">Drag to orbit · Pinch to zoom</span>
         </p>
       </div>
 

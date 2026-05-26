@@ -121,7 +121,7 @@ export default function RoomDimensionForm({ primaryColor = "#1C1917" }) {
       {/* Hero */}
       <div
         className="py-10 sm:py-14 px-4 text-center"
-        style={{ background: "linear-gradient(160deg, #1c1917 0%, #292524 100%)" }}
+        style={{ background: `linear-gradient(160deg, ${primaryColor} 0%, ${primaryColor}e0 100%)` }}
       >
         <div className="max-w-2xl mx-auto">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-stone-300 bg-white/10 ring-1 ring-white/20 mb-4">
@@ -153,8 +153,8 @@ export default function RoomDimensionForm({ primaryColor = "#1C1917" }) {
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8">
 
             {/* Visual diagram */}
-            <div className="mb-6 flex justify-center">
-              <div className="relative w-48 h-32 border-2 rounded-lg bg-stone-50 flex items-center justify-center" style={{ borderColor: `${primaryColor}55` }}>
+            <div className="mb-10 sm:mb-6 flex justify-center">
+              <div className="relative w-36 h-24 sm:w-48 sm:h-32 border-2 rounded-lg bg-stone-50 flex items-center justify-center" style={{ borderColor: `${primaryColor}55` }}>
                 {/* Width arrow */}
                 <div className="absolute -bottom-5 left-0 right-0 flex items-center justify-center gap-1">
                   <div className="h-px flex-1 bg-stone-400" />

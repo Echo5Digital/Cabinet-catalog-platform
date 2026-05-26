@@ -8,22 +8,25 @@ import { COUNTER_THICK } from "@/lib/planner/layoutPresets";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getFrontDir(xFt, zFt, widthFt, roomW, roomL) {
+function getFrontDir(xFt, zFt, widthFt, depthFt, roomW, roomL) {
   const T = 0.6;
-  if (zFt <= T)                   return "z+";
-  if (xFt <= T)                   return "x+";
-  if (xFt + widthFt >= roomW - T) return "x-";
+  if (zFt <= T)                         return "z+";  // north wall → face south
+  if (xFt <= T)                         return "x+";  // west wall  → face east
+  if (xFt + widthFt >= roomW - T)       return "x-";  // east wall  → face west
+  if (zFt + depthFt >= roomL - T)       return "z-";  // south wall → face north (inward)
   return "z+";
 }
 
 function getFacePlane(widthFt, depthFt, heightFt, dir) {
   switch (dir) {
     case "x+":
-      return { pos: [widthFt  / 2 + 0.005, 0, 0], rot: [0,  Math.PI / 2, 0], faceW: depthFt,  faceH: heightFt };
+      return { pos: [widthFt  / 2 + 0.005, 0, 0],  rot: [0,  Math.PI / 2, 0], faceW: depthFt,  faceH: heightFt };
     case "x-":
-      return { pos: [-widthFt / 2 - 0.005, 0, 0], rot: [0, -Math.PI / 2, 0], faceW: depthFt,  faceH: heightFt };
-    default:
-      return { pos: [0, 0, depthFt / 2 + 0.005],  rot: [0, 0, 0],            faceW: widthFt,  faceH: heightFt };
+      return { pos: [-widthFt / 2 - 0.005, 0, 0],  rot: [0, -Math.PI / 2, 0], faceW: depthFt,  faceH: heightFt };
+    case "z-":
+      return { pos: [0, 0, -depthFt / 2 - 0.005],  rot: [0,  Math.PI, 0],     faceW: widthFt,  faceH: heightFt };
+    default: // "z+"
+      return { pos: [0, 0,  depthFt / 2 + 0.005],  rot: [0, 0, 0],            faceW: widthFt,  faceH: heightFt };
   }
 }
 
@@ -301,7 +304,7 @@ export default function Scene3DCabinet({
     [widthFt, heightFt, depthFt]
   );
 
-  const frontDir  = getFrontDir(xFt, zFt, widthFt, roomWidthFt, roomLengthFt);
+  const frontDir  = getFrontDir(xFt, zFt, widthFt, depthFt, roomWidthFt, roomLengthFt);
   const facePlane = getFacePlane(widthFt, depthFt, heightFt, frontDir);
 
   return (

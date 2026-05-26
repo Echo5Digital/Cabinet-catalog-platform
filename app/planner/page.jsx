@@ -88,22 +88,69 @@ async function getPlannerProducts(tenantId, admin) {
   }
 }
 
+/**
+ * Fetch active layout structures with their swatch image URLs.
+ * Uses two separate queries (same pattern as /app/catalog/structures/page.jsx)
+ * to avoid Supabase join tenant-filter limitations.
+ */
+async function getLayoutStructures(tenantId, admin) {
+  try {
+    // Step 1: fetch structures filtered by tenant
+    const { data: structures } = await admin
+      .from("structures")
+      .select("id, name, code, sort_order")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (!structures || structures.length === 0) return [];
+
+    // Step 2: fetch assets by structure_id membership — avoids any tenant_id
+    // mismatch on the assets table (implicit tenant safety via FK relationship)
+    const structureIds = structures.map((s) => s.id);
+    const { data: assets } = await admin
+      .from("assets")
+      .select("structure_id, public_url, asset_type")
+      .in("structure_id", structureIds)
+      .in("asset_type", ["structure_image", "structure_reference"])
+      .eq("status", "confirmed");
+
+    // Map structure_id → URL; prefer structure_image over structure_reference
+    const imageMap = {};
+    for (const a of assets || []) {
+      const existing = imageMap[a.structure_id];
+      if (!existing || (existing.type !== "structure_image" && a.asset_type === "structure_image")) {
+        imageMap[a.structure_id] = { url: a.public_url, type: a.asset_type };
+      }
+    }
+
+    return structures.map((s) => ({
+      ...s,
+      imageUrl: imageMap[s.id]?.url ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function PlannerPage() {
-  let tenant          = {};
-  let initialProducts = [];
+  let tenant             = {};
+  let initialProducts    = [];
+  let initialStructures  = [];
 
   try {
     const tenantId = await resolveTenantId();
     if (tenantId) {
       const admin = createAdminClient();
-      [tenant, initialProducts] = await Promise.all([
+      [tenant, initialProducts, initialStructures] = await Promise.all([
         getTenant(tenantId, admin),
         getPlannerProducts(tenantId, admin),
+        getLayoutStructures(tenantId, admin),
       ]);
     }
   } catch {
     // Planner still renders without data — sidebar shows empty state
   }
 
-  return <PlannerShell tenant={tenant} initialProducts={initialProducts} />;
+  return <PlannerShell tenant={tenant} initialProducts={initialProducts} initialStructures={initialStructures} />;
 }

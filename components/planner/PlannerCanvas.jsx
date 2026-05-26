@@ -30,7 +30,8 @@ function getColors(category) {
 }
 
 export default function PlannerCanvas({ onDropRef }) {
-  const containerRef = useRef(null);
+  const containerRef  = useRef(null);
+  const lastPinchDist = useRef(0);
   const [size, setSize]   = useState({ width: 800, height: 600 });
 
   const layout         = usePlannerStore((s) => s.layout);
@@ -202,6 +203,25 @@ export default function PlannerCanvas({ onDropRef }) {
     setZoom(newZoom);
   }, [zoomLevel, setZoom]);
 
+  // Pinch-to-zoom (two-finger gesture on mobile)
+  const handleTouchMove = useCallback((e) => {
+    const touches = e.evt.touches;
+    if (touches.length !== 2) { lastPinchDist.current = 0; return; }
+    e.evt.preventDefault();
+    const dx   = touches[0].clientX - touches[1].clientX;
+    const dy   = touches[0].clientY - touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (lastPinchDist.current > 0) {
+      const delta = (dist - lastPinchDist.current) * 0.005;
+      setZoom(Math.min(3.0, Math.max(0.4, zoomLevel + delta)));
+    }
+    lastPinchDist.current = dist;
+  }, [zoomLevel, setZoom]);
+
+  const handleTouchEnd = useCallback(() => {
+    lastPinchDist.current = 0;
+  }, []);
+
   const handleStageClick = useCallback((e) => {
     if (e.target === e.target.getStage()) {
       setSelectedItem(null);
@@ -212,7 +232,7 @@ export default function PlannerCanvas({ onDropRef }) {
     <div
       ref={containerRef}
       className="flex-1 relative overflow-hidden bg-stone-100"
-      style={{ minHeight: 0 }}
+      style={{ minHeight: 0, touchAction: "none" }}
     >
       {/* Layout badge + plan layer toggle */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
@@ -279,6 +299,8 @@ export default function PlannerCanvas({ onDropRef }) {
         height={size.height}
         onClick={handleStageClick}
         onWheel={handleWheel}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <Layer>
           {/* Room background + grid */}
@@ -356,8 +378,10 @@ export default function PlannerCanvas({ onDropRef }) {
                   x={itemX}
                   y={itemY}
                   draggable
-                  onClick={(e) => { e.cancelBubble = true; setSelectedItem(item.id); }}
-                  onTap={(e)   => { e.cancelBubble = true; setSelectedItem(item.id); }}
+                  onClick={(e)    => { e.cancelBubble = true; setSelectedItem(item.id); }}
+                  onTap={(e)      => { e.cancelBubble = true; setSelectedItem(item.id); }}
+                  onDblClick={(e) => { e.cancelBubble = true; removeItem(item.id); }}
+                  onDblTap={(e)   => { e.cancelBubble = true; removeItem(item.id); }}
                   onDragEnd={(e) => handleDragEnd(e, item)}
                 >
                   {/* Selection ring */}
@@ -421,11 +445,12 @@ export default function PlannerCanvas({ onDropRef }) {
 
       {/* Selected item hint */}
       {selectedItemId && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
+        <div className="absolute bottom-20 sm:bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Drag to move · Press Delete to remove
+          <span className="hidden sm:inline">Drag to move · Dbl-click or Delete key to remove</span>
+          <span className="sm:hidden">Drag to move · Double-tap to remove</span>
         </div>
       )}
     </div>

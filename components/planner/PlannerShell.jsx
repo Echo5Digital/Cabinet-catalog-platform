@@ -41,7 +41,7 @@ function newId() {
   return `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function PlannerShell({ tenant, initialProducts = [] }) {
+export default function PlannerShell({ tenant, initialProducts = [], initialStructures = [] }) {
   const primaryColor = tenant?.primary_color || "#1C1917";
 
   const step               = usePlannerStore((s) => s.step);
@@ -199,7 +199,7 @@ export default function PlannerShell({ tenant, initialProducts = [] }) {
       <div className="min-h-screen flex flex-col">
         <PlannerHeader tenant={tenant} />
         <div className="flex-1 pt-[64px] sm:pt-[76px]">
-          <LayoutSelector primaryColor={primaryColor} />
+          <LayoutSelector primaryColor={primaryColor} structures={initialStructures} />
         </div>
       </div>
     );
