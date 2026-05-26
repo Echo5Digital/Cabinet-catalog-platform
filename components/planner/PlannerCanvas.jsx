@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
-import { Stage, Layer, Rect, Line, Text, Group } from "react-konva";
+import { Stage, Layer, Rect, Line, Text, Group, Circle } from "react-konva";
 import usePlannerStore from "@/store/plannerStore";
 import { ftToPx, pxToFt } from "@/lib/planner/dimensionConverter";
 import { snapItem } from "@/lib/planner/snap";
@@ -14,6 +14,8 @@ const CATEGORY_COLORS = {
   "Wall Cabinets":  { fill: "#bfdbfe", stroke: "#3b82f6", label: "#1d4ed8" },
   "Tall Units":     { fill: "#d1fae5", stroke: "#10b981", label: "#065f46" },
   Appliances:       { fill: "#fde68a", stroke: "#f59e0b", label: "#92400e" },
+  Sink:             { fill: "#bae6fd", stroke: "#0284c7", label: "#075985" },
+  Range:            { fill: "#fed7aa", stroke: "#ea580c", label: "#9a3412" },
   default:          { fill: "#e7e5e4", stroke: "#a8a29e", label: "#57534e" },
 };
 
@@ -42,10 +44,17 @@ export default function PlannerCanvas({ onDropRef }) {
   const zoomLevel      = usePlannerStore((s) => s.zoomLevel);
   const moveItem       = usePlannerStore((s) => s.moveItem);
   const removeItem     = usePlannerStore((s) => s.removeItem);
+  const rotateItem     = usePlannerStore((s) => s.rotateItem);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
   const setZoom        = usePlannerStore((s) => s.setZoom);
   const planLayer      = usePlannerStore((s) => s.planLayer);
   const setPlanLayer   = usePlannerStore((s) => s.setPlanLayer);
+
+  // Currently-selected item (for rotation value)
+  const selectedItem = useMemo(
+    () => placedItems.find((i) => i.id === selectedItemId),
+    [placedItems, selectedItemId]
+  );
 
   // Filter to the active plan layer for 2D display only
   const visibleItems = useMemo(() => {
@@ -172,28 +181,37 @@ export default function PlannerCanvas({ onDropRef }) {
   }, [roomW, roomL, scale, autoZoom, zoomLevel]);
 
   // Handle drag end of placed items
+  // node.x()/node.y() is the group center (due to center-pivot offsetX/offsetY)
   const handleDragEnd = useCallback((e, item) => {
-    const node   = e.target;
-    const rawX   = pxToFt(node.x(), 1) / (zoomLevel * autoZoom);
-    const rawY   = pxToFt(node.y(), 1) / (zoomLevel * autoZoom);
+    const node     = e.target;
+    const centerX  = pxToFt(node.x(), 1) / (zoomLevel * autoZoom);
+    const centerY  = pxToFt(node.y(), 1) / (zoomLevel * autoZoom);
+    const rawX     = centerX - item.widthFt  / 2;
+    const rawY     = centerY - item.depthFt  / 2;
     const { x, y } = snapItem(rawX, rawY, item.widthFt, item.depthFt, roomW, roomL);
-    // Snap node back to grid position
-    node.x(ftToPx(x) * zoomLevel * autoZoom);
-    node.y(ftToPx(y) * zoomLevel * autoZoom);
+    // Snap node center back to snapped position
+    node.x(ftToPx(x + item.widthFt  / 2) * zoomLevel * autoZoom);
+    node.y(ftToPx(y + item.depthFt  / 2) * zoomLevel * autoZoom);
     moveItem(item.id, x, y);
   }, [moveItem, roomW, roomL, zoomLevel, autoZoom]);
 
-  // Keyboard delete
+  // Keyboard: Delete = remove selected · R = rotate selected 90°
   useEffect(() => {
     function onKeyDown(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       if ((e.key === "Delete" || e.key === "Backspace") && selectedItemId) {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
         removeItem(selectedItemId);
+      }
+      if ((e.key === "r" || e.key === "R") && selectedItemId) {
+        const state    = usePlannerStore.getState();
+        const items    = selectProjectedItems(state.scene);
+        const current  = items.find((i) => i.id === selectedItemId)?.rotation || 0;
+        rotateItem(selectedItemId, (current + 90) % 360);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedItemId, removeItem]);
+  }, [selectedItemId, removeItem, rotateItem]);
 
   // Wheel zoom
   const handleWheel = useCallback((e) => {
@@ -375,8 +393,11 @@ export default function PlannerCanvas({ onDropRef }) {
               return (
                 <Group
                   key={item.id}
-                  x={itemX}
-                  y={itemY}
+                  x={itemX + itemPxW / 2}
+                  y={itemY + itemPxH / 2}
+                  offsetX={itemPxW / 2}
+                  offsetY={itemPxH / 2}
+                  rotation={item.rotation || 0}
                   draggable
                   onClick={(e)    => { e.cancelBubble = true; setSelectedItem(item.id); }}
                   onTap={(e)      => { e.cancelBubble = true; setSelectedItem(item.id); }}
@@ -436,6 +457,37 @@ export default function PlannerCanvas({ onDropRef }) {
                       listening={false}
                     />
                   )}
+                  {/* Sink: basin outline + faucet dot */}
+                  {item.category === "Sink" && itemPxW > 24 && itemPxH > 18 && (
+                    <>
+                      <Rect
+                        x={itemPxW * 0.15} y={itemPxH * 0.15}
+                        width={itemPxW * 0.7} height={itemPxH * 0.55}
+                        fill="transparent" stroke={colors.stroke} strokeWidth={1}
+                        cornerRadius={2} listening={false}
+                      />
+                      {itemPxW > 40 && (
+                        <Circle
+                          x={itemPxW / 2} y={itemPxH * 0.06}
+                          radius={2.5} fill={colors.stroke} listening={false}
+                        />
+                      )}
+                    </>
+                  )}
+                  {/* Range: 4 burner circles */}
+                  {item.category === "Range" && itemPxW > 28 && itemPxH > 24 && (
+                    <>
+                      {[[0.28, 0.3],[0.72, 0.3],[0.28, 0.72],[0.72, 0.72]].map(([rx, ry], i) => (
+                        <Circle
+                          key={i}
+                          x={itemPxW * rx} y={itemPxH * ry}
+                          radius={Math.min(itemPxW, itemPxH) * 0.12}
+                          fill="transparent" stroke={colors.stroke} strokeWidth={1}
+                          listening={false}
+                        />
+                      ))}
+                    </>
+                  )}
                 </Group>
               );
             })}
@@ -443,14 +495,25 @@ export default function PlannerCanvas({ onDropRef }) {
         </Layer>
       </Stage>
 
-      {/* Selected item hint */}
+      {/* Selected item hint + rotate button */}
       {selectedItemId && (
         <div className="absolute bottom-20 sm:bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="hidden sm:inline">Drag to move · Dbl-click or Delete key to remove</span>
-          <span className="sm:hidden">Drag to move · Double-tap to remove</span>
+          <span className="hidden sm:inline">Drag to move · Dbl-click or Delete to remove</span>
+          <span className="sm:hidden">Drag · Double-tap to remove</span>
+          <span className="text-stone-400 hidden sm:inline">·</span>
+          <button
+            onClick={() => rotateItem(selectedItemId, ((selectedItem?.rotation || 0) + 90) % 360)}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 transition text-white text-xs font-semibold"
+            title="Rotate 90° (R)"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0114.83-4.83M20 15a9 9 0 01-14.83 4.83" />
+            </svg>
+            <span className="hidden sm:inline">Rotate</span>
+          </button>
         </div>
       )}
     </div>

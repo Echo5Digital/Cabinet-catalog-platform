@@ -10,6 +10,7 @@ import { selectProjectedItems } from "@/lib/planner/selectors";
 
 import Scene3DRoom     from "./Scene3DRoom";
 import Scene3DCabinet  from "./Scene3DCabinet";
+import Scene3DFixture  from "./Scene3DFixture";
 import Scene3DLighting from "./Scene3DLighting";
 import Scene3DControls from "./Scene3DControls";
 
@@ -22,7 +23,7 @@ import Scene3DControls from "./Scene3DControls";
  * Reads from the same Zustand store as the 2D canvas so any cabinet placed
  * in 2D mode appears immediately here when the user switches to 3D.
  */
-export default function PlannerScene3D() {
+export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
   const layout      = usePlannerStore((s) => s.layout);
   const dims        = usePlannerStore((s) => s.roomDimensions);
   const scene       = usePlannerStore((s) => s.scene);
@@ -113,15 +114,18 @@ export default function PlannerScene3D() {
             color="#292524"
           />
 
-          {/* All placed cabinets */}
-          {sceneGraph.cabinets.map((cabinet) => (
-            <Scene3DCabinet
-              key={cabinet.id}
-              cabinet={cabinet}
-              roomWidthFt={sceneGraph.room.widthFt}
-              roomLengthFt={sceneGraph.room.lengthFt}
-            />
-          ))}
+          {/* All placed cabinets and fixtures */}
+          {sceneGraph.cabinets.map((cab) =>
+            cab.category === "Sink" || cab.category === "Range"
+              ? <Scene3DFixture key={cab.id} fixture={cab} primaryColor={primaryColor} />
+              : <Scene3DCabinet
+                  key={cab.id}
+                  cabinet={cab}
+                  roomWidthFt={sceneGraph.room.widthFt}
+                  roomLengthFt={sceneGraph.room.lengthFt}
+                  primaryColor={primaryColor}
+                />
+          )}
         </Suspense>
       </Canvas>
     </div>

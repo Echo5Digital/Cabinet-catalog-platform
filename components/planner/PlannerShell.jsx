@@ -254,7 +254,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
 
             {/* Canvas: 2D Konva or 3D React Three Fiber */}
             {viewMode === "3D" ? (
-              <PlannerScene3D />
+              <PlannerScene3D primaryColor={primaryColor} />
             ) : (
               <PlannerCanvas onDropRef={canvasDropRef} />
             )}

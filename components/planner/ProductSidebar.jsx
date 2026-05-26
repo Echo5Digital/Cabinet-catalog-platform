@@ -28,6 +28,33 @@ const CATEGORY_DOTS = {
   Appliances:      "bg-amber-400",
 };
 
+const FIXTURES = [
+  { id: "fixture-sink",  name: "Sink",           category: "Sink",
+    widthFt: 2.5, depthFt: 1.67, imageUrl: null, sku: null, doorCount: null, drawerCount: null },
+  { id: "fixture-range", name: "Range / Cooktop", category: "Range",
+    widthFt: 2.5, depthFt: 2.0,  imageUrl: null, sku: null, doorCount: null, drawerCount: null },
+];
+
+const FIXTURE_ICONS = {
+  Sink: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="3" y="8" width="18" height="11" rx="1"/>
+      <rect x="7" y="11" width="10" height="5" rx="0.5"/>
+      <line x1="12" y1="5" x2="12" y2="8"/>
+      <circle cx="12" cy="4.5" r="1"/>
+    </svg>
+  ),
+  Range: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="4" width="20" height="16" rx="1"/>
+      <circle cx="7.5" cy="10" r="2.2"/>
+      <circle cx="16.5" cy="10" r="2.2"/>
+      <circle cx="7.5" cy="17" r="2.2"/>
+      <circle cx="16.5" cy="17" r="2.2"/>
+    </svg>
+  ),
+};
+
 // Individual draggable product card
 function DraggableProduct({ product }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -59,9 +86,11 @@ function DraggableProduct({ product }) {
             draggable={false}
           />
         ) : (
-          <svg className="w-5 h-5 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+          FIXTURE_ICONS[product.category] || (
+            <svg className="w-5 h-5 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          )
         )}
       </div>
 
@@ -227,6 +256,16 @@ function SidebarContent({ products, filtered, grouped, activeCategory, setActive
             </div>
           ))
         )}
+      </div>
+
+      {/* Kitchen Fixtures */}
+      <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2 px-1">
+          Kitchen Fixtures
+        </p>
+        <div className="space-y-1.5">
+          {FIXTURES.map((f) => <DraggableProduct key={f.id} product={f} />)}
+        </div>
       </div>
 
       {/* Tip */}
