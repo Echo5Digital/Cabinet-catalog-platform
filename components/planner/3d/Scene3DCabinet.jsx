@@ -294,11 +294,9 @@ export default function Scene3DCabinet({
   const isFloorCabinet =
     cabinet.category !== "Wall Cabinets" && cabinet.category !== "Tall Units";
 
-  // Body uses a single realistic paint colour — not the category indicator tint.
-  // Real kitchens have all cabinets in one consistent finish.
-  const fillColor = hovered ? "#c2bdb7" : BODY_CLR;
-  // Edge lines are close to body tone so they define shape without harsh contrast.
-  const edgeColor = isSelected ? primaryColor : "#908c87";
+  // Hover and selection both highlight in blue.
+  const fillColor = (hovered || isSelected) ? "#bfdbfe" : BODY_CLR;
+  const edgeColor = (hovered || isSelected) ? "#3b82f6" : "#908c87";
 
   const edgesGeo = useMemo(
     () => new THREE.EdgesGeometry(new THREE.BoxGeometry(widthFt, heightFt, depthFt)),
@@ -332,11 +330,11 @@ export default function Scene3DCabinet({
         <lineBasicMaterial color={edgeColor} />
       </lineSegments>
 
-      {/* Selection wireframe — brand-coloured outline, body stays natural */}
+      {/* Selection wireframe — blue outline */}
       {isSelected && (
         <mesh>
           <boxGeometry args={[widthFt + 0.06, heightFt + 0.06, depthFt + 0.06]} />
-          <meshBasicMaterial color={primaryColor} wireframe />
+          <meshBasicMaterial color="#3b82f6" wireframe />
         </mesh>
       )}
 
@@ -362,7 +360,7 @@ export default function Scene3DCabinet({
         >
           <div
             className="px-2 py-0.5 rounded-full text-white text-[10px] font-semibold shadow-md"
-            style={{ backgroundColor: isSelected ? primaryColor : "#44403c", opacity: 0.95 }}
+            style={{ backgroundColor: "#3b82f6", opacity: 0.95 }}
           >
             {cabinet.name}
             {isSelected && <span className="ml-1 opacity-70 text-[9px]">· dbl-click to remove</span>}

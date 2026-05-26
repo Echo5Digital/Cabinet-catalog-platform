@@ -72,7 +72,7 @@ function getFrontGeom(faceDir, widthFt, depthFt, heightFt) {
 // ─── Sink geometry ─────────────────────────────────────────────────────────────
 
 function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
-  const bodyColor    = hovered ? "#c8c3bc" : "#d4cfc8";  // cabinet-matching warm taupe
+  const bodyColor    = hovered ? "#bfdbfe" : "#d4cfc8";  // blue highlight on hover
   const counterColor = "#b5afa8";   // exactly matches Scene3DCabinet countertop color
   const basinColor   = "#3d6870";   // deep brushed stainless basin
   const faucetColor  = "#9eaeb6";   // brushed chrome
@@ -166,7 +166,7 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
 // ─── Range geometry ────────────────────────────────────────────────────────────
 
 function RangeMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
-  const bodyColor    = hovered ? "#b0a8a0" : "#c0b8ac";
+  const bodyColor    = hovered ? "#bfdbfe" : "#c0b8ac";  // blue highlight on hover
   const cooktopColor = "#1e1a17";   // near-black ceramic/glass cooktop
   const burnerColor  = "#3a3530";   // dark iron torus rings
   const knobColor    = "#555050";   // control knobs
@@ -291,11 +291,11 @@ export default function Scene3DFixture({
         <RangeMesh widthFt={widthFt} heightFt={heightFt} depthFt={depthFt} hovered={hovered} faceDir={faceDir} />
       )}
 
-      {/* Selection wireframe — brand-coloured outline */}
+      {/* Selection wireframe — blue outline */}
       {isSelected && (
         <mesh>
           <boxGeometry args={[widthFt + 0.06, heightFt + 0.06, depthFt + 0.06]} />
-          <meshBasicMaterial color={primaryColor} wireframe />
+          <meshBasicMaterial color="#3b82f6" wireframe />
         </mesh>
       )}
 
@@ -308,7 +308,7 @@ export default function Scene3DFixture({
         >
           <div
             className="px-2 py-0.5 rounded-full text-white text-[10px] font-semibold shadow-md"
-            style={{ backgroundColor: isSelected ? primaryColor : "#44403c", opacity: 0.95 }}
+            style={{ backgroundColor: "#3b82f6", opacity: 0.95 }}
           >
             {fixture.name}
             {isSelected && <span className="ml-1 opacity-70 text-[9px]">· dbl-click to remove</span>}
