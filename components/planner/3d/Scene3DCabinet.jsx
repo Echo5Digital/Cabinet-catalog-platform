@@ -45,6 +45,7 @@ const POST_R       = 0.017;   // mount post radius (slightly wider than bar)
 const POST_LEN     = 0.022;   // mount post length (short bracket)
 const SHELF_GAP    = 0.100;   // tall-unit shelf-divider band height
 const DRAWER_DEPTH = 0.55;    // drawer box depth for slide-out animation (~6.6 in)
+const PANEL_T      = 0.025;   // cabinet shell panel thickness (~0.3 in)
 
 // ── Palette — realistic shaker-white / warm cream finish ──────────────────────
 const BODY_CLR    = "#d4cfc8";  // cabinet body — warm taupe matte
@@ -206,17 +207,18 @@ function SilverwareOrganizer({ sW }) {
 // The outer group is positioned at the hinge edge (caller's responsibility).
 // pivotOffsetX shifts door content from hinge back to visual center.
 function DoorPanel({ panelW, sH, pivotOffsetX, latchSign, wallStyle, hasInner, innerW, innerH, frameColor, isOpen, onToggle }) {
-  const posRef  = useRef(0);
-  const velRef  = useRef(0);
-  const groupRef = useRef();
-  const target  = isOpen ? -latchSign * Math.PI * 0.62 : 0;
+  const posRef    = useRef(0);
+  const velRef    = useRef(0);
+  const groupRef  = useRef();
+  const targetRef = useRef(0);
+  // Write to ref every render so the useFrame closure always reads the latest value
+  targetRef.current = isOpen ? -latchSign * Math.PI * 0.62 : 0;
 
   // Underdamped spring — door swings past target slightly then settles (natural feel)
   useFrame((_, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const STIFFNESS = 200;
-    const DAMPING   = 18;   // below critical (~28) → slight overshoot on open
-    const force = STIFFNESS * (target - posRef.current) - DAMPING * velRef.current;
+    const dt  = Math.min(delta, 0.05);
+    const tgt = targetRef.current;
+    const force = 200 * (tgt - posRef.current) - 18 * velRef.current;
     velRef.current += force * dt;
     posRef.current += velRef.current * dt;
     if (groupRef.current) groupRef.current.rotation.y = posRef.current;
@@ -256,38 +258,45 @@ function DoorPanel({ panelW, sH, pivotOffsetX, latchSign, wallStyle, hasInner, i
 // ─── DrawerPanel ──────────────────────────────────────────────────────────────
 // Single drawer that slides out along Z via spring physics (soft-close feel).
 // Shows SilverwareOrganizer when open.
+//
+// TWO-GROUP pattern prevents RTF from resetting position.z on re-render:
+//   outer group — declarative Y position only (no ref, no Z)
+//   inner group — imperative Z slide only (ref, no JSX position)
 function DrawerPanel({ sW, dH, v, frameColor, isOpen, onToggle }) {
-  const posRef  = useRef(0);
-  const velRef  = useRef(0);
-  const groupRef = useRef();
-  const target  = isOpen ? DRAWER_DEPTH * 0.85 : 0;
+  const posRef    = useRef(0);
+  const velRef    = useRef(0);
+  const slideRef  = useRef();
+  const targetRef = useRef(0);
+  // Write to ref every render so the useFrame closure always reads the latest value
+  targetRef.current = isOpen ? DRAWER_DEPTH * 0.85 : 0;
 
-  // Slightly overdamped spring — smooth deceleration, no bounce (soft-close)
+  // Critically-damped spring — fast, smooth stop, no bounce
   useFrame((_, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const STIFFNESS = 150;
-    const DAMPING   = 27;   // above critical (~24.5) → no overshoot, glides to stop
-    const force = STIFFNESS * (target - posRef.current) - DAMPING * velRef.current;
+    const dt  = Math.min(delta, 0.05);
+    const tgt = targetRef.current;
+    const force = 300 * (tgt - posRef.current) - 36 * velRef.current;
     velRef.current += force * dt;
     posRef.current += velRef.current * dt;
-    if (groupRef.current) groupRef.current.position.z = posRef.current;
+    if (slideRef.current) slideRef.current.position.z = posRef.current;
   });
 
   const hLen = Math.min(sW * 0.40, HDL_LEN);
 
   return (
-    <group
-      ref={groupRef}
-      position={[0, v, 0]}
-      onClick={(e) => { e.stopPropagation(); onToggle(); }}
-    >
-      {/* Drawer front face */}
-      <mesh castShadow position={[0, 0, (BACK_D + FRONT_D) / 2]}>
-        <boxGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5, BACK_D + FRONT_D]} />
-        <meshStandardMaterial color={frameColor ?? DRAWER_CLR} roughness={0.48} metalness={0.0} />
-      </mesh>
-      <BarHandle x={0} y={0} len={hLen} horizontal={true} />
-      {isOpen && <SilverwareOrganizer sW={sW} />}
+    <group position={[0, v, 0]}>
+      {/* Inner group: only Z is touched imperatively — no JSX position so RTF won't reset it */}
+      <group
+        ref={slideRef}
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      >
+        {/* Drawer front face */}
+        <mesh castShadow position={[0, 0, (BACK_D + FRONT_D) / 2]}>
+          <boxGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5, BACK_D + FRONT_D]} />
+          <meshStandardMaterial color={frameColor ?? DRAWER_CLR} roughness={0.48} metalness={0.0} />
+        </mesh>
+        <BarHandle x={0} y={0} len={hLen} horizontal={true} />
+        {isOpen && <SilverwareOrganizer sW={sW} />}
+      </group>
     </group>
   );
 }
@@ -478,7 +487,8 @@ export default function Scene3DCabinet({
   const isFloorCabinet =
     cabinet.category !== "Wall Cabinets" && cabinet.category !== "Tall Units";
 
-  const fillColor = (hovered || isSelected) ? "#bfdbfe" : (cabinetColorHex ?? BODY_CLR);
+  // Body always shows the chosen finish — selection is indicated by the blue wireframe outline.
+  const fillColor = cabinetColorHex ?? BODY_CLR;
   const edgeColor = (hovered || isSelected) ? "#3b82f6" : "#908c87";
 
   const edgesGeo = useMemo(
@@ -505,15 +515,39 @@ export default function Scene3DCabinet({
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={() => setHovered(false)}
     >
-      {/* Cabinet body */}
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <boxGeometry args={[widthFt, heightFt, depthFt]} />
-        <meshStandardMaterial
-          color={fillColor}
-          roughness={cabinet.material?.roughness ?? 0.52}
-          metalness={cabinet.material?.metalness ?? 0.01}
-        />
-      </mesh>
+      {/* Cabinet shell:
+           • Doors closed → solid BoxGeometry (opaque exterior, prevents corner-overlap artefacts)
+           • Any door open  → 5-panel hollow shell (front face removed, interior visible) */}
+      {openDoors.size === 0 ? (
+        <mesh ref={meshRef} castShadow receiveShadow>
+          <boxGeometry args={[widthFt, heightFt, depthFt]} />
+          <meshStandardMaterial color={fillColor} roughness={cabinet.material?.roughness ?? 0.52} metalness={cabinet.material?.metalness ?? 0.01} />
+        </mesh>
+      ) : (() => {
+        const mat = { color: fillColor, roughness: cabinet.material?.roughness ?? 0.52, metalness: cabinet.material?.metalness ?? 0.01 };
+        const W = widthFt; const H = heightFt; const D = depthFt; const T = PANEL_T;
+        const backZ  = frontDir === "z-" ?  (D/2 - T/2) : -(D/2 - T/2);
+        const backX  = frontDir === "x-" ?  (W/2 - T/2) : -(W/2 - T/2);
+        const panels = (frontDir === "z+" || frontDir === "z-") ? [
+          { pos: [0, 0, backZ],             size: [W,   H, T] },
+          { pos: [-(W/2 - T/2), 0, 0],      size: [T,   H, D] },
+          { pos: [ (W/2 - T/2), 0, 0],      size: [T,   H, D] },
+          { pos: [0,  (H/2 - T/2), 0],      size: [W,   T, D] },
+          { pos: [0, -(H/2 - T/2), 0],      size: [W,   T, D] },
+        ] : [
+          { pos: [backX, 0, 0],             size: [T,   H, D] },
+          { pos: [0, 0, -(D/2 - T/2)],      size: [W,   H, T] },
+          { pos: [0, 0,  (D/2 - T/2)],      size: [W,   H, T] },
+          { pos: [0,  (H/2 - T/2), 0],      size: [W,   T, D] },
+          { pos: [0, -(H/2 - T/2), 0],      size: [W,   T, D] },
+        ];
+        return panels.map(({ pos, size }, k) => (
+          <mesh key={k} ref={k === 0 ? meshRef : undefined} castShadow receiveShadow position={pos}>
+            <boxGeometry args={size} />
+            <meshStandardMaterial {...mat} />
+          </mesh>
+        ));
+      })()}
 
       {/* Edge definition lines */}
       <lineSegments geometry={edgesGeo}>
