@@ -41,7 +41,7 @@ function newId() {
   return `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function PlannerShell({ tenant, initialProducts = [], initialStructures = [] }) {
+export default function PlannerShell({ tenant, initialProducts = [], initialStructures = [], initialFinishes = [] }) {
   const primaryColor = tenant?.primary_color || "#1C1917";
 
   const step               = usePlannerStore((s) => s.step);
@@ -79,6 +79,16 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
       (p.lineName || "").toLowerCase().includes(style)
     );
   }, [initialProducts, cabinetStyle]);
+
+  // ── Filter finishes by selected cabinet style — same string-match approach ───
+  const filteredFinishes = useMemo(() => {
+    if (!cabinetStyle) return initialFinishes.flatMap((g) => g.finishes);
+    const style = cabinetStyle.toLowerCase();
+    const matching = initialFinishes.filter((g) =>
+      (g.lineName || "").toLowerCase().includes(style)
+    );
+    return (matching.length > 0 ? matching : initialFinishes).flatMap((g) => g.finishes);
+  }, [initialFinishes, cabinetStyle]);
 
   // ── Hydrate catalog products into store so procedural generator can use them ─
   useEffect(() => {
@@ -153,6 +163,29 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
       drawerCount: product.drawerCount ?? null,
       x:         pos?.x ?? 0,
       y:         pos?.y ?? 0,
+    });
+  }, [addItem, dims]);
+
+  // Handle click-to-place: add product at room centre (snapped)
+  const handleQuickAdd = useCallback((product) => {
+    const wFt = product.widthFt  || 2;
+    const dFt = product.depthFt  || 2;
+    const rawX = dims.width  / 2 - wFt / 2;
+    const rawY = dims.length / 2 - dFt / 2;
+    const pos  = snapItem(rawX, rawY, wFt, dFt, dims.width, dims.length);
+    addItem({
+      id:          newId(),
+      productId:   product.id,
+      sku:         product.sku,
+      name:        product.name,
+      category:    product.category,
+      widthFt:     wFt,
+      depthFt:     dFt,
+      imageUrl:    product.imageUrl    || null,
+      doorCount:   product.doorCount   ?? null,
+      drawerCount: product.drawerCount ?? null,
+      x:           pos.x,
+      y:           pos.y,
     });
   }, [addItem, dims]);
 
@@ -232,8 +265,10 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
           {/* Left: Product Sidebar */}
           <ProductSidebar
             products={filteredProducts}
+            finishes={filteredFinishes}
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen((v) => !v)}
+            onQuickAdd={handleQuickAdd}
           />
 
           {/* Center: Canvas area (droppable — fills remaining space) */}

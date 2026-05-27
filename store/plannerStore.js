@@ -138,6 +138,13 @@ const usePlannerStore = create((set, get) => ({
   planLayer: "lower",
   setPlanLayer: (layer) => set({ planLayer: layer }),
 
+  // ─── Cabinet color selection ──────────────────────────────────────────────────
+  // Each value: { id, name, code, finishFamily, swatchUrl, hex } | null
+  upperCabinetColor: null,
+  lowerCabinetColor: null,
+  setUpperCabinetColor: (color) => set({ upperCabinetColor: color }),
+  setLowerCabinetColor: (color) => set({ lowerCabinetColor: color }),
+
   // ─── Scene graph (derived — synced by PlannerScene3D for AI/export use) ──────
   // Rebuilt from scene.items by PlannerScene3D via selectProjectedItems().
   sceneGraph: null,

@@ -74,7 +74,7 @@ function getFrontGeom(faceDir, widthFt, depthFt, heightFt) {
 function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
   const bodyColor    = hovered ? "#bfdbfe" : "#d4cfc8";  // blue highlight on hover
   const counterColor = "#b5afa8";   // exactly matches Scene3DCabinet countertop color
-  const basinColor   = "#3d6870";   // deep brushed stainless basin
+  const basinColor   = "#8c9fa5";   // brushed stainless steel
   const faucetColor  = "#9eaeb6";   // brushed chrome
 
   // Undermount basin — top flush with stone bottom (heightFt/2), recessed downward
@@ -124,23 +124,40 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
 
   return (
     <>
-      {/* Cabinet body — matches surrounding cabinet finish */}
+      {/* Cabinet body — semi-gloss painted finish */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[widthFt, heightFt, depthFt]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.55} metalness={0.0} />
+        <meshStandardMaterial color={bodyColor} roughness={0.50} metalness={0.01} />
       </mesh>
 
-      {/* Stone countertop — identical geometry to Scene3DCabinet:
-          same COUNTER_THICK, same +0.04 W / +0.08 D overhang, same z-offset, same color */}
-      <mesh castShadow position={[0, heightFt / 2 + COUNTER_THICK / 2, depthFt * 0.04]}>
-        <boxGeometry args={[widthFt + 0.04, COUNTER_THICK, depthFt + 0.08]} />
-        <meshStandardMaterial color={counterColor} roughness={0.15} metalness={0.05} />
-      </mesh>
+      {/* Stone countertop — direction-aware overhang (matches Scene3DCabinet fix):
+          extend only toward the front face so adjacent countertop seams never overlap. */}
+      {(() => {
+        const OV = 0.12;
+        const isNS = faceDir === "z+" || faceDir === "z-";
+        const sign = (faceDir === "z+" || faceDir === "x+") ? 1 : -1;
+        const ctW  = isNS ? widthFt : widthFt + OV;
+        const ctD  = isNS ? depthFt + OV : depthFt;
+        const ctOX = isNS ? 0 : sign * OV / 2;
+        const ctOZ = isNS ? sign * OV / 2 : 0;
+        return (
+          <mesh castShadow position={[ctOX, heightFt / 2 + COUNTER_THICK / 2, ctOZ]}>
+            <boxGeometry args={[ctW, COUNTER_THICK, ctD]} />
+            <meshStandardMaterial color={counterColor} roughness={0.10} metalness={0.10} />
+          </mesh>
+        );
+      })()}
 
-      {/* Undermount basin — top at stone bottom, recessed into cabinet body */}
+      {/* Undermount basin outer shell — brushed stainless */}
       <mesh castShadow position={[0, basinCy, 0]}>
         <boxGeometry args={[basinW, basinH, basinD]} />
-        <meshStandardMaterial color={basinColor} roughness={0.18} metalness={0.65} />
+        <meshStandardMaterial color={basinColor} roughness={0.22} metalness={0.82} />
+      </mesh>
+
+      {/* Inner basin — slightly smaller, darker; gives illusion of basin walls + depth */}
+      <mesh position={[0, basinCy, 0]}>
+        <boxGeometry args={[basinW - 0.05, basinH, basinD - 0.05]} />
+        <meshStandardMaterial color="#4e6268" roughness={0.28} metalness={0.70} />
       </mesh>
 
       {/* Drain disk at basin floor */}
@@ -149,13 +166,55 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
         <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
       </mesh>
 
+      {/* Drain crosshair — strainer grill bars */}
+      <mesh position={[0, heightFt / 2 - basinH + 0.010, 0]}>
+        <boxGeometry args={[0.065, 0.004, 0.011]} />
+        <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
+      </mesh>
+      <mesh position={[0, heightFt / 2 - basinH + 0.010, 0]}>
+        <boxGeometry args={[0.011, 0.004, 0.065]} />
+        <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
+      </mesh>
+
       {/* Gooseneck faucet arc */}
       <mesh castShadow geometry={faucetGeo}>
         <meshStandardMaterial color={faucetColor} roughness={0.08} metalness={0.88} />
       </mesh>
 
-      {/* Toe kick */}
-      <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.03]}>
+      {/* Faucet mounting disc + hot/cold valve handles — direction-aware */}
+      {(() => {
+        const mountY = heightFt / 2 + COUNTER_THICK;
+        // Base position mirrors faucet curve start point
+        const bx = faceDir === "x+" ? -widthFt * 0.30
+                 : faceDir === "x-" ?  widthFt * 0.30 : 0;
+        const bz = (faceDir === "z+" || faceDir === "z-") ? -depthFt * 0.30 : 0;
+        // Valve offset direction: perpendicular to the faucet axis
+        const isNS = faceDir === "z+" || faceDir === "z-";
+        const vOX  = isNS ? 0.09 : 0;   // offset along X for NS walls
+        const vOZ  = isNS ? 0   : 0.09; // offset along Z for EW walls
+        return (
+          <>
+            {/* Faucet base disc */}
+            <mesh position={[bx, mountY, bz]}>
+              <cylinderGeometry args={[0.048, 0.052, 0.022, 12]} />
+              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.90} />
+            </mesh>
+            {/* Hot handle (left/front) */}
+            <mesh position={[bx - vOX, mountY + 0.04, bz - vOZ]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.06, 8]} />
+              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.88} />
+            </mesh>
+            {/* Cold handle (right/back) */}
+            <mesh position={[bx + vOX, mountY + 0.04, bz + vOZ]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.06, 8]} />
+              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.88} />
+            </mesh>
+          </>
+        );
+      })()}
+
+      {/* Toe kick — recessed 0.03 ft from body front face to prevent z-fighting */}
+      <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.06]}>
         <boxGeometry args={[widthFt - 0.01, 0.13, 0.06]} />
         <meshStandardMaterial color="#252220" roughness={0.9} metalness={0} />
       </mesh>
@@ -166,8 +225,8 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
 // ─── Range geometry ────────────────────────────────────────────────────────────
 
 function RangeMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
-  const bodyColor    = hovered ? "#bfdbfe" : "#c0b8ac";  // blue highlight on hover
-  const cooktopColor = "#1e1a17";   // near-black ceramic/glass cooktop
+  const bodyColor    = hovered ? "#bfdbfe" : "#c4c8cb";  // blue highlight on hover; cooler brushed stainless
+  const cooktopColor = "#1a1614";   // near-black ultra-gloss glass-ceramic
   const burnerColor  = "#3a3530";   // dark iron torus rings
   const knobColor    = "#555050";   // control knobs
 
@@ -187,25 +246,37 @@ function RangeMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
 
   return (
     <>
-      {/* Stainless body — slightly inset so adjacent stone countertops butt in cleanly.
-          A real slide-in range has no separate countertop; adjacent stone butts into its sides. */}
+      {/* Brushed stainless body — slide-in range, no countertop overhang */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[widthFt - 0.04, heightFt, depthFt - 0.02]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.28} metalness={0.25} />
+        <meshStandardMaterial color={bodyColor} roughness={0.18} metalness={0.62} />
       </mesh>
 
-      {/* Cooktop surface — at body top (adjacent stone is COUNTER_THICK higher, correct) */}
+      {/* Ultra-gloss glass-ceramic cooktop surface */}
       <mesh castShadow position={[0, heightFt / 2 + 0.005, 0]}>
         <boxGeometry args={[widthFt - 0.06, 0.010, depthFt - 0.06]} />
-        <meshStandardMaterial color={cooktopColor} roughness={0.10} metalness={0.08} />
+        <meshStandardMaterial color={cooktopColor} roughness={0.03} metalness={0.10} />
       </mesh>
 
-      {/* Burner torus rings — top-mounted, direction-independent */}
+      {/* Burner outer torus rings + inner coil + center cap — direction-independent */}
       {burners.map(([bx, bz], i) => (
-        <mesh key={i} position={[bx, heightFt / 2 + 0.012, bz]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[burnerR, burnerR * 0.18, 8, 24]} />
-          <meshStandardMaterial color={burnerColor} roughness={0.7} metalness={0.3} />
-        </mesh>
+        <group key={i}>
+          {/* Outer iron ring */}
+          <mesh position={[bx, heightFt / 2 + 0.012, bz]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[burnerR, burnerR * 0.18, 8, 24]} />
+            <meshStandardMaterial color={burnerColor} roughness={0.7} metalness={0.3} />
+          </mesh>
+          {/* Inner coil ring — simulates gas burner concentric rings */}
+          <mesh position={[bx, heightFt / 2 + 0.013, bz]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[burnerR * 0.50, burnerR * 0.14, 6, 20]} />
+            <meshStandardMaterial color="#555050" roughness={0.55} metalness={0.25} />
+          </mesh>
+          {/* Cast iron center cap */}
+          <mesh position={[bx, heightFt / 2 + 0.014, bz]}>
+            <cylinderGeometry args={[burnerR * 0.18, burnerR * 0.18, 0.016, 10]} />
+            <meshStandardMaterial color="#2a2520" roughness={0.80} metalness={0.10} />
+          </mesh>
+        </group>
       ))}
 
       {/* Oven door — placed on the correct front face */}
@@ -220,10 +291,29 @@ function RangeMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
         />
       </mesh>
 
+      {/* Oven door window — amber glass panel inset on door face */}
+      {(() => {
+        const isNSDir = faceDir === "z+" || faceDir === "z-";
+        const winPos = isNSDir
+          ? [g.doorPos[0], g.doorPos[1], g.doorPos[2] + 0.009]
+          : faceDir === "x+"
+            ? [g.doorPos[0] + 0.009, g.doorPos[1], g.doorPos[2]]
+            : [g.doorPos[0] - 0.009, g.doorPos[1], g.doorPos[2]];
+        const winSize = isNSDir
+          ? [g.doorSize[0] * 0.64, g.doorSize[1] * 0.54, 0.004]
+          : [0.004, g.doorSize[1] * 0.54, g.doorSize[2] * 0.64];
+        return (
+          <mesh position={winPos}>
+            <boxGeometry args={winSize} />
+            <meshStandardMaterial color="#d4944a" roughness={0.04} metalness={0.05} transparent opacity={0.38} />
+          </mesh>
+        );
+      })()}
+
       {/* Oven door handle */}
       <mesh castShadow position={g.hdlPos} rotation={g.hdlRot}>
         <cylinderGeometry args={[0.013, 0.013, g.hdlLen, 10]} />
-        <meshStandardMaterial color="#9eaeb6" roughness={0.08} metalness={0.90} />
+        <meshStandardMaterial color="#9eaeb6" roughness={0.06} metalness={0.92} />
       </mesh>
 
       {/* Control panel strip — at the top of the front face */}
@@ -232,13 +322,33 @@ function RangeMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
         <meshStandardMaterial color="#2a2520" roughness={0.4} metalness={0.1} />
       </mesh>
 
-      {/* Control knobs in panel */}
+      {/* Control knobs — polished metal caps */}
       {knobs.map((k, i) => (
         <mesh key={i} position={g.knobPos(k)} rotation={g.knobRot}>
           <cylinderGeometry args={[0.025, 0.020, 0.020, 12]} />
-          <meshStandardMaterial color={knobColor} roughness={0.4} metalness={0.5} />
+          <meshStandardMaterial color={knobColor} roughness={0.28} metalness={0.68} />
         </mesh>
       ))}
+
+      {/* Back guard — raised stainless panel at rear top, wall-facing direction */}
+      {(() => {
+        const gH = 0.18;
+        const gD = 0.04;
+        const isNSDir = faceDir === "z+" || faceDir === "z-";
+        const wallSign = (faceDir === "z+" || faceDir === "x-") ? -1 : 1;
+        const gPos = isNSDir
+          ? [0, heightFt / 2 + gH / 2, wallSign * (depthFt / 2 - gD / 2)]
+          : [wallSign * (widthFt / 2 - gD / 2), heightFt / 2 + gH / 2, 0];
+        const gSize = isNSDir
+          ? [widthFt - 0.04, gH, gD]
+          : [gD, gH, depthFt - 0.04];
+        return (
+          <mesh castShadow position={gPos}>
+            <boxGeometry args={gSize} />
+            <meshStandardMaterial color={bodyColor} roughness={0.18} metalness={0.62} />
+          </mesh>
+        );
+      })()}
 
       {/* Toe kick */}
       <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.03]}>

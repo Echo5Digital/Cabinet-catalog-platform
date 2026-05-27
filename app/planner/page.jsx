@@ -89,6 +89,62 @@ async function getPlannerProducts(tenantId, admin) {
 }
 
 /**
+ * Fetch active finishes grouped by catalog line so the planner sidebar can
+ * show the correct finish options based on the selected cabinet style.
+ */
+async function getPlannerFinishes(tenantId, admin) {
+  try {
+    const { data: lines } = await admin
+      .from("catalog_lines")
+      .select("id, name")
+      .eq("tenant_id", tenantId)
+      .order("sort_order", { ascending: true });
+
+    if (!lines || lines.length === 0) return [];
+
+    const { data: finishes } = await admin
+      .from("finishes")
+      .select("id, name, code, finish_family, catalog_line_id, sort_order")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (!finishes || finishes.length === 0) return [];
+
+    const finishIds = finishes.map((f) => f.id);
+    const { data: swatches } = await admin
+      .from("assets")
+      .select("finish_id, public_url")
+      .in("finish_id", finishIds)
+      .eq("asset_type", "finish_swatch")
+      .eq("status", "confirmed");
+
+    const swatchMap = {};
+    for (const s of swatches || []) swatchMap[s.finish_id] = s.public_url;
+
+    const lineMap = {};
+    for (const line of lines) {
+      lineMap[line.id] = { lineId: line.id, lineName: line.name, finishes: [] };
+    }
+    for (const f of finishes) {
+      if (f.catalog_line_id && lineMap[f.catalog_line_id]) {
+        lineMap[f.catalog_line_id].finishes.push({
+          id:           f.id,
+          name:         f.name,
+          code:         f.code,
+          finishFamily: f.finish_family,
+          swatchUrl:    swatchMap[f.id] || null,
+        });
+      }
+    }
+
+    return Object.values(lineMap).filter((g) => g.finishes.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch active layout structures with their swatch image URLs.
  * Uses two separate queries (same pattern as /app/catalog/structures/page.jsx)
  * to avoid Supabase join tenant-filter limitations.
@@ -137,20 +193,29 @@ export default async function PlannerPage() {
   let tenant             = {};
   let initialProducts    = [];
   let initialStructures  = [];
+  let initialFinishes    = [];
 
   try {
     const tenantId = await resolveTenantId();
     if (tenantId) {
       const admin = createAdminClient();
-      [tenant, initialProducts, initialStructures] = await Promise.all([
+      [tenant, initialProducts, initialStructures, initialFinishes] = await Promise.all([
         getTenant(tenantId, admin),
         getPlannerProducts(tenantId, admin),
         getLayoutStructures(tenantId, admin),
+        getPlannerFinishes(tenantId, admin),
       ]);
     }
   } catch {
     // Planner still renders without data — sidebar shows empty state
   }
 
-  return <PlannerShell tenant={tenant} initialProducts={initialProducts} initialStructures={initialStructures} />;
+  return (
+    <PlannerShell
+      tenant={tenant}
+      initialProducts={initialProducts}
+      initialStructures={initialStructures}
+      initialFinishes={initialFinishes}
+    />
+  );
 }

@@ -1,20 +1,24 @@
 "use client";
 
+import { Environment } from "@react-three/drei";
+
 /**
  * Scene3DLighting — light rig for the kitchen planner 3D scene.
  *
- * Uses only built-in Three.js lights (no external HDR files required in Phase 1).
- * In Phase 2+ we swap the fill light for Drei <Environment preset="apartment">.
+ * Uses IBL via Drei <Environment> for physically-based reflections on all
+ * materials, plus directional key/fill lights for shadow casting.
  */
 export default function Scene3DLighting({ sceneGraph }) {
   const sun = sceneGraph?.lighting?.sunPosition  ?? [5, 10, -3];
   const si  = sceneGraph?.lighting?.sunIntensity ?? 1.0;
-  const ai  = sceneGraph?.lighting?.ambientIntensity ?? 0.5;
 
   return (
     <>
-      {/* Soft ambient fill */}
-      <ambientLight intensity={ai} color="#f5f0eb" />
+      {/* IBL — provides ambient and environment reflections for all PBR surfaces */}
+      <Environment preset="apartment" />
+
+      {/* Reduced ambient — Environment already contributes fill */}
+      <ambientLight intensity={0.30} color="#f5f0eb" />
 
       {/* Key light — warm sun from above-front */}
       <directionalLight

@@ -41,9 +41,9 @@ export default function Scene3DRoom({ room, layout, hasItems = false }) {
         <meshStandardMaterial color="#d4c9b8" roughness={0.75} metalness={0} />
       </mesh>
 
-      {/* Floor grid — 1 ft cells */}
+      {/* Floor grid — 1 ft cells (lighter tones so grid doesn't overpower the floor) */}
       <gridHelper
-        args={[Math.max(W, L) * 2, Math.max(W, L) * 2, "#c8c4c0", "#dbd7d4"]}
+        args={[Math.max(W, L) * 2, Math.max(W, L) * 2, "#d8d4d0", "#eae6e2"]}
         position={[W / 2, 0.001, L / 2]}
       />
 
