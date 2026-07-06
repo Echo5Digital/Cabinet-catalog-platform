@@ -43,7 +43,7 @@ function SuggestionCard({ product, onAdd }) {
           </button>
           {product.sku && (
             <Link
-              href={`/catalog/${product.catalog_line?.toLowerCase().replace(/\s+/g, "-") || ""}/${product.sku}`}
+              href={`/catalog/${product.catalog_line_slug || product.catalog_line?.toLowerCase().replace(/\s+/g, "-") || ""}/${product.sku}`}
               className="text-xs text-stone-400 hover:text-stone-700 transition"
               target="_blank"
             >

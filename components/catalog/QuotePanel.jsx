@@ -108,7 +108,7 @@ export default function QuotePanel() {
                   </div>
 
                   {/* Quantity */}
-                  <div className="mt-3 ml-13 flex items-center gap-2 pl-[52px]">
+                  <div className="mt-3 flex items-center gap-2 pl-[52px]">
                     <span className="text-xs text-stone-400">Qty</span>
                     <QuantityInput
                       value={item.quantity}
