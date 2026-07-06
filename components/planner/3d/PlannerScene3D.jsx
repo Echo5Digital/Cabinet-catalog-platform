@@ -85,13 +85,9 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
           position: sceneGraph.camera.position,
         }}
         gl={{ antialias: true, alpha: false }}
-        style={{ background: "#e8e5e1" }}
-        onClick={(e) => {
-          // Deselect when clicking empty space
-          if (e.object?.type === undefined || e.object === undefined) {
-            setSelectedItem(null);
-          }
-        }}
+        style={{ background: "#e8e5e1", touchAction: "none" }}
+        // raycaster.params tune: larger points/line threshold helps mobile touch
+        raycaster={{ params: { Points: { threshold: 0.1 }, Line: { threshold: 0.1 } } }}
         onPointerMissed={() => setSelectedItem(null)}
       >
         <Suspense fallback={null}>

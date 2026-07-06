@@ -292,17 +292,17 @@ function DoorPanel({ panelW, sH, pivotOffsetX, latchSign, wallStyle, hasInner, i
 
         <BarHandle x={hX} y={hY} len={hLen} horizontal={wallStyle} />
 
-        {/* ── Full-face invisible hit plane ──────────────────────────────────
-             Covers the entire door face so any tap/click anywhere on the door
-             (frame, panel, groove, handle gap) reliably fires the toggle.
-             Positioned just in front of the raised panel so it is always the
-             topmost raycaster target on this door. */}
+        {/* ── Full-face invisible hit volume ─────────────────────────────────
+             Thin box (not plane) so raycasting works from any camera angle,
+             including open-door positions and wall-facing normals.
+             Covers the full door face; sits just proud of all visible geometry.
+             meshBasicMaterial with side=DoubleSide catches hits from both faces. */}
         <mesh
-          position={[0, 0, DOOR_D + PANEL_RAISE + 0.001]}
+          position={[0, 0, DOOR_D + PANEL_RAISE + 0.003]}
           onClick={(e) => { e.stopPropagation(); onToggle(); }}
         >
-          <planeGeometry args={[panelW - GAP * 0.5, sH - GAP * 0.5]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          <boxGeometry args={[panelW - GAP * 0.5, sH - GAP * 0.5, 0.004]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
     </group>
@@ -359,15 +359,15 @@ function DrawerPanel({ sW, dH, v, frameColor, isOpen, onToggle }) {
         <BarHandle x={0} y={0} len={hLen} horizontal={true} />
         {isOpen && <SilverwareOrganizer sW={sW} />}
 
-        {/* Full-face invisible hit plane — ensures any tap/click on the drawer
-            front reliably fires the toggle, even between the handle gap and
-            groove decoration. Works on desktop and mobile touch. */}
+        {/* Full-face invisible hit volume — thin box ensures raycasting works
+            from any camera angle and on mobile touch. DoubleSide catches
+            hits from any viewing direction. */}
         <mesh
-          position={[0, 0, DOOR_D + 0.001]}
+          position={[0, 0, DOOR_D + 0.003]}
           onClick={(e) => { e.stopPropagation(); onToggle(); }}
         >
-          <planeGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          <boxGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5, 0.004]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
     </group>

@@ -43,11 +43,18 @@ export default function Scene3DControls({ sceneGraph }) {
   return (
     <OrbitControls
       ref={controlsRef}
+      makeDefault
       enableDamping
       dampingFactor={0.06}
       minDistance={2}
       maxDistance={60}
-      maxPolarAngle={Math.PI / 2 + 0.1}   // prevent going below floor
+      maxPolarAngle={Math.PI / 2 + 0.1}
+      // Mobile touch: ONE finger = ROTATE (0), TWO fingers = DOLLY_PAN (2).
+      // THREE.TOUCH values: ROTATE=0, PAN=1, DOLLY_PAN=2, DOLLY_ROTATE=3
+      touches={{
+        ONE: 0,  // THREE.TOUCH.ROTATE
+        TWO: 2,  // THREE.TOUCH.DOLLY_PAN
+      }}
       onEnd={handleChange}
     />
   );
