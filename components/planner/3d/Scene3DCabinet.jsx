@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo, useCallback } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
@@ -35,33 +35,37 @@ function getFacePlane(widthFt, depthFt, heightFt, dir) {
 
 const GAP          = 0.014;   // gap between adjacent panels
 const MARG         = 0.018;   // perimeter margin inset from cabinet edge
-const BACK_D       = 0.010;   // door frame slab depth
-const FRONT_D      = 0.018;   // shaker raised-panel extra depth  (total ≈ 0.028 ft ≈ 8.5 mm)
-const FRAME_W      = 0.060;   // shaker frame border width (~0.72")
-const HDL_R        = 0.013;   // bar handle radius (~0.16" — slender European pull)
-const HDL_LEN      = 0.36;    // max bar length (~4.3")
-const HDL_GAP      = 0.030;   // handle stand-off from door face
-const POST_R       = 0.017;   // mount post radius (slightly wider than bar)
-const POST_LEN     = 0.022;   // mount post length (short bracket)
+const DOOR_D       = 0.048;   // total door slab depth (≈ 14.6 mm — solid, substantial)
+const GROOVE_D     = 0.009;   // recess groove depth between frame and raised panel
+const GROOVE_W     = 0.008;   // groove channel width (shadow line)
+const PANEL_RAISE  = 0.012;   // raised-panel protrusion above door face
+const FRAME_W      = 0.072;   // shaker frame rail/stile width (~0.86" — more architectural)
+const HDL_R        = 0.011;   // bar handle radius (slender modern pull)
+const HDL_LEN      = 0.40;    // max bar length (~4.8")
+const HDL_GAP      = 0.028;   // handle stand-off from door face
+const POST_R       = 0.014;   // mount post radius
+const POST_LEN     = 0.020;   // mount post length
 const SHELF_GAP    = 0.100;   // tall-unit shelf-divider band height
 const DRAWER_DEPTH = 0.55;    // drawer box depth for slide-out animation (~6.6 in)
 const PANEL_T      = 0.025;   // cabinet shell panel thickness (~0.3 in)
 
-// ── Palette — realistic shaker-white / warm cream finish ──────────────────────
-const BODY_CLR    = "#d4cfc8";  // cabinet body — warm taupe matte
-const FRAME_CLR   = "#d4cfc8";  // door frame slab — same as body
-const PANEL_CLR   = "#f2ede4";  // raised inner panel — noticeably lighter/smoother
-const DRAWER_CLR  = "#dbd7d0";  // drawer front face
-const METAL_CLR   = "#b4bbc3";  // brushed stainless steel (cooler grey)
-const SHELF_CLR   = "#bcb8b1";  // shelf divider band
-const TOEKICK_CLR = "#252220";  // very dark recess — standard on modern kitchens
+// ── Palette — natural warm-wood / painted finish ───────────────────────────────
+const BODY_CLR    = "#cdc8c1";  // cabinet body — warm stone
+const FRAME_CLR   = "#cdc8c1";  // door outer frame — same as body
+const PANEL_CLR   = "#e8e2d8";  // raised centre panel — lighter, natural warmth
+const GROOVE_CLR  = "#a8a29e";  // shadow groove — visually deeper
+const DRAWER_CLR  = "#d6d0c8";  // drawer front
+const METAL_CLR   = "#a8b0b8";  // brushed stainless (cooler grey)
+const SHELF_CLR   = "#b8b4ac";  // shelf divider
+const TOEKICK_CLR = "#1e1b18";  // very dark recess
 
 // ─── BarHandle ────────────────────────────────────────────────────────────────
+// Modern slim bar pull — sits proud of door face on two cylindrical posts.
 function BarHandle({ x = 0, y = 0, len, horizontal }) {
-  const barZ    = BACK_D + FRONT_D + HDL_GAP + HDL_R;
-  const postZ   = BACK_D + FRONT_D + POST_LEN / 2 + 0.002;
+  const barZ    = DOOR_D + PANEL_RAISE + HDL_GAP + HDL_R;
+  const postZ   = DOOR_D + PANEL_RAISE + POST_LEN / 2;
   const halfOff = Math.max(0, len / 2 - POST_R);
-  const showPosts = len >= 2 * (POST_R + 0.008);
+  const showPosts = len >= 2 * (POST_R + 0.010);
 
   const [p1, p2] = horizontal
     ? [[x + halfOff, y, postZ], [x - halfOff, y, postZ]]
@@ -71,14 +75,16 @@ function BarHandle({ x = 0, y = 0, len, horizontal }) {
 
   return (
     <>
+      {/* Bar */}
       <mesh castShadow position={[x, y, barZ]} rotation={barRot}>
-        <cylinderGeometry args={[HDL_R, HDL_R, len, 14]} />
-        <meshStandardMaterial color={METAL_CLR} roughness={0.08} metalness={0.95} />
+        <cylinderGeometry args={[HDL_R, HDL_R, len, 16]} />
+        <meshStandardMaterial color={METAL_CLR} roughness={0.06} metalness={0.96} envMapIntensity={1.2} />
       </mesh>
+      {/* Mount posts */}
       {showPosts && [p1, p2].map(([px, py, pz], k) => (
         <mesh key={k} castShadow position={[px, py, pz]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[POST_R, POST_R * 0.80, POST_LEN, 8]} />
-          <meshStandardMaterial color={METAL_CLR} roughness={0.10} metalness={0.90} />
+          <cylinderGeometry args={[POST_R, POST_R * 0.85, POST_LEN, 10]} />
+          <meshStandardMaterial color={METAL_CLR} roughness={0.10} metalness={0.92} envMapIntensity={1.0} />
         </mesh>
       ))}
     </>
@@ -204,52 +210,100 @@ function SilverwareOrganizer({ sW }) {
 
 // ─── DoorPanel ────────────────────────────────────────────────────────────────
 // Single door with hinge-pivot rotation animated via spring physics.
+// Door anatomy (front-to-back, z axis):
+//   Raised centre panel  (z = DOOR_D/2 .. DOOR_D/2 + PANEL_RAISE)
+//   Frame slab           (z = 0 .. DOOR_D)
+//   Shadow groove inset  (recessed channel at frame/panel boundary)
 // The outer group is positioned at the hinge edge (caller's responsibility).
-// pivotOffsetX shifts door content from hinge back to visual center.
 function DoorPanel({ panelW, sH, pivotOffsetX, latchSign, wallStyle, hasInner, innerW, innerH, frameColor, isOpen, onToggle }) {
   const posRef    = useRef(0);
   const velRef    = useRef(0);
   const groupRef  = useRef();
   const targetRef = useRef(0);
-  // Write to ref every render so the useFrame closure always reads the latest value
   targetRef.current = isOpen ? -latchSign * Math.PI * 0.62 : 0;
 
-  // Underdamped spring — door swings past target slightly then settles (natural feel)
+  // Underdamped spring — door swings past target slightly then settles
   useFrame((_, delta) => {
-    const dt  = Math.min(delta, 0.05);
-    const tgt = targetRef.current;
+    const dt    = Math.min(delta, 0.05);
+    const tgt   = targetRef.current;
     const force = 200 * (tgt - posRef.current) - 18 * velRef.current;
     velRef.current += force * dt;
     posRef.current += velRef.current * dt;
     if (groupRef.current) groupRef.current.rotation.y = posRef.current;
   });
 
+  // Derive a slightly lighter shade for the raised panel when using a custom color
+  // so it reads as a separate surface even on non-white finishes.
+  const frameFill = frameColor ?? FRAME_CLR;
+  const panelFill = frameColor
+    ? (() => {
+        // Lighten by mixing 12 % with white
+        const c = new THREE.Color(frameColor);
+        c.lerp(new THREE.Color("#ffffff"), 0.12);
+        return "#" + c.getHexString();
+      })()
+    : PANEL_CLR;
+
   const hLen = wallStyle
-    ? Math.min(panelW * 0.52, HDL_LEN * 0.85)
-    : Math.min(sH * 0.26, HDL_LEN);
-  const hX = wallStyle ? 0              : panelW * 0.38 * latchSign;
-  const hY = wallStyle ? -sH / 2 + 0.06 : 0;
+    ? Math.min(panelW * 0.50, HDL_LEN * 0.85)
+    : Math.min(sH * 0.24, HDL_LEN);
+  const hX = wallStyle ? 0               : panelW * 0.36 * latchSign;
+  const hY = wallStyle ? -sH / 2 + 0.065 : 0;
 
   return (
-    <group
-      ref={groupRef}
-      onClick={(e) => { e.stopPropagation(); onToggle(); }}
-    >
+    <group ref={groupRef}>
       {/* Shift door content so it pivots around its hinge edge */}
       <group position={[pivotOffsetX, 0, 0]}>
-        {/* Frame slab */}
-        <mesh castShadow position={[0, 0, BACK_D / 2]}>
-          <boxGeometry args={[panelW - GAP * 0.5, sH - GAP * 0.5, BACK_D]} />
-          <meshStandardMaterial color={frameColor ?? FRAME_CLR} roughness={0.42} metalness={0.01} />
+        {/* ── Main door slab (frame) ─────────────────────────────────────── */}
+        <mesh castShadow receiveShadow position={[0, 0, DOOR_D / 2]}>
+          <boxGeometry args={[panelW - GAP * 0.5, sH - GAP * 0.5, DOOR_D]} />
+          <meshStandardMaterial
+            color={frameFill}
+            roughness={0.38}
+            metalness={0.02}
+            envMapIntensity={0.6}
+          />
         </mesh>
-        {/* Raised shaker centre panel */}
+
+        {/* ── Raised centre panel ────────────────────────────────────────── */}
         {hasInner && (
-          <mesh castShadow position={[0, 0, BACK_D + FRONT_D / 2]}>
-            <boxGeometry args={[innerW, innerH, FRONT_D]} />
-            <meshStandardMaterial color={frameColor ?? PANEL_CLR} roughness={0.16} metalness={0.02} />
-          </mesh>
+          <>
+            {/* Shadow groove — thin recessed box slightly smaller than inner panel */}
+            <mesh position={[0, 0, DOOR_D - GROOVE_D / 2]}>
+              <boxGeometry args={[innerW + GROOVE_W * 2, innerH + GROOVE_W * 2, GROOVE_D + 0.001]} />
+              <meshStandardMaterial
+                color={GROOVE_CLR}
+                roughness={0.80}
+                metalness={0.0}
+              />
+            </mesh>
+            {/* Raised panel surface */}
+            <mesh castShadow position={[0, 0, DOOR_D + PANEL_RAISE / 2]}>
+              <boxGeometry args={[innerW, innerH, PANEL_RAISE]} />
+              <meshStandardMaterial
+                color={panelFill}
+                roughness={0.28}
+                metalness={0.03}
+                envMapIntensity={0.8}
+              />
+            </mesh>
+          </>
         )}
+
         <BarHandle x={hX} y={hY} len={hLen} horizontal={wallStyle} />
+
+        {/* ── Full-face invisible hit plane ──────────────────────────────────
+             Covers the entire door face so any tap/click anywhere on the door
+             (frame, panel, groove, handle gap) reliably fires the toggle.
+             Positioned just in front of the raised panel so it is always the
+             topmost raycaster target on this door. */}
+        <mesh
+          position={[0, 0, DOOR_D + PANEL_RAISE + 0.001]}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        >
+          <planeGeometry args={[panelW - GAP * 0.5, sH - GAP * 0.5]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
       </group>
     </group>
   );
@@ -267,35 +321,54 @@ function DrawerPanel({ sW, dH, v, frameColor, isOpen, onToggle }) {
   const velRef    = useRef(0);
   const slideRef  = useRef();
   const targetRef = useRef(0);
-  // Write to ref every render so the useFrame closure always reads the latest value
   targetRef.current = isOpen ? DRAWER_DEPTH * 0.85 : 0;
 
   // Critically-damped spring — fast, smooth stop, no bounce
   useFrame((_, delta) => {
-    const dt  = Math.min(delta, 0.05);
-    const tgt = targetRef.current;
+    const dt    = Math.min(delta, 0.05);
+    const tgt   = targetRef.current;
     const force = 300 * (tgt - posRef.current) - 36 * velRef.current;
     velRef.current += force * dt;
     posRef.current += velRef.current * dt;
     if (slideRef.current) slideRef.current.position.z = posRef.current;
   });
 
-  const hLen = Math.min(sW * 0.40, HDL_LEN);
+  const hLen     = Math.min(sW * 0.42, HDL_LEN);
+  const drawFill = frameColor ?? DRAWER_CLR;
 
   return (
     <group position={[0, v, 0]}>
-      {/* Inner group: only Z is touched imperatively — no JSX position so RTF won't reset it */}
-      <group
-        ref={slideRef}
-        onClick={(e) => { e.stopPropagation(); onToggle(); }}
-      >
-        {/* Drawer front face */}
-        <mesh castShadow position={[0, 0, (BACK_D + FRONT_D) / 2]}>
-          <boxGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5, BACK_D + FRONT_D]} />
-          <meshStandardMaterial color={frameColor ?? DRAWER_CLR} roughness={0.48} metalness={0.0} />
+      <group ref={slideRef}>
+        {/* Drawer front slab — same depth as door for visual consistency */}
+        <mesh castShadow receiveShadow position={[0, 0, DOOR_D / 2]}>
+          <boxGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5, DOOR_D]} />
+          <meshStandardMaterial
+            color={drawFill}
+            roughness={0.40}
+            metalness={0.02}
+            envMapIntensity={0.5}
+          />
         </mesh>
+        {/* Thin accent groove near bottom of drawer front */}
+        {dH > 0.18 && (
+          <mesh position={[0, -(dH / 2 - 0.035), DOOR_D + 0.002]}>
+            <boxGeometry args={[sW * 0.72, GROOVE_W * 0.8, GROOVE_D]} />
+            <meshStandardMaterial color={GROOVE_CLR} roughness={0.85} metalness={0.0} />
+          </mesh>
+        )}
         <BarHandle x={0} y={0} len={hLen} horizontal={true} />
         {isOpen && <SilverwareOrganizer sW={sW} />}
+
+        {/* Full-face invisible hit plane — ensures any tap/click on the drawer
+            front reliably fires the toggle, even between the handle gap and
+            groove decoration. Works on desktop and mobile touch. */}
+        <mesh
+          position={[0, 0, DOOR_D + 0.001]}
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        >
+          <planeGeometry args={[sW - GAP * 0.5, dH - GAP * 0.5]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
       </group>
     </group>
   );
@@ -444,7 +517,7 @@ function CabinetFront({ faceW, faceH, pos, rot, doors, drawers, category, frameC
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function Scene3DCabinet({
+function Scene3DCabinetInner({
   cabinet,
   roomWidthFt  = 20,
   roomLengthFt = 20,
@@ -521,10 +594,10 @@ export default function Scene3DCabinet({
       {openDoors.size === 0 ? (
         <mesh ref={meshRef} castShadow receiveShadow>
           <boxGeometry args={[widthFt, heightFt, depthFt]} />
-          <meshStandardMaterial color={fillColor} roughness={cabinet.material?.roughness ?? 0.52} metalness={cabinet.material?.metalness ?? 0.01} />
+          <meshStandardMaterial color={fillColor} roughness={cabinet.material?.roughness ?? 0.44} metalness={cabinet.material?.metalness ?? 0.02} envMapIntensity={0.5} />
         </mesh>
       ) : (() => {
-        const mat = { color: fillColor, roughness: cabinet.material?.roughness ?? 0.52, metalness: cabinet.material?.metalness ?? 0.01 };
+        const mat = { color: fillColor, roughness: cabinet.material?.roughness ?? 0.44, metalness: cabinet.material?.metalness ?? 0.02, envMapIntensity: 0.5 };
         const W = widthFt; const H = heightFt; const D = depthFt; const T = PANEL_T;
         const backZ  = frontDir === "z-" ?  (D/2 - T/2) : -(D/2 - T/2);
         const backX  = frontDir === "x-" ?  (W/2 - T/2) : -(W/2 - T/2);
@@ -607,11 +680,16 @@ export default function Scene3DCabinet({
         </Html>
       )}
 
-      {/* Countertop */}
+      {/* Countertop — polished stone / quartz look */}
       {isFloorCabinet && (
-        <mesh position={[counterOX, heightFt / 2 + COUNTER_THICK / 2, counterOZ]} castShadow>
+        <mesh position={[counterOX, heightFt / 2 + COUNTER_THICK / 2, counterOZ]} castShadow receiveShadow>
           <boxGeometry args={[counterW, COUNTER_THICK, counterD]} />
-          <meshStandardMaterial color="#b5afa8" roughness={0.10} metalness={0.10} />
+          <meshStandardMaterial
+            color="#c0b9b0"
+            roughness={0.06}
+            metalness={0.08}
+            envMapIntensity={1.4}
+          />
         </mesh>
       )}
 
@@ -625,3 +703,18 @@ export default function Scene3DCabinet({
     </group>
   );
 }
+
+// Memoize: only re-render when the cabinet's spatial props change (Feature 6 perf).
+// Door/drawer toggle state is internal; color changes flow through store subscriptions.
+const Scene3DCabinet = React.memo(Scene3DCabinetInner, (prev, next) =>
+  prev.cabinet.id        === next.cabinet.id        &&
+  prev.cabinet.position  === next.cabinet.position  &&
+  prev.cabinet.rotation  === next.cabinet.rotation  &&
+  prev.cabinet.dimensions === next.cabinet.dimensions &&
+  prev.cabinet.material  === next.cabinet.material  &&
+  prev.roomWidthFt       === next.roomWidthFt       &&
+  prev.roomLengthFt      === next.roomLengthFt      &&
+  prev.primaryColor      === next.primaryColor
+);
+
+export default Scene3DCabinet;

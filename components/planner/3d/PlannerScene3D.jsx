@@ -26,15 +26,17 @@ import Scene3DControls from "./Scene3DControls";
 export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
   const layout      = usePlannerStore((s) => s.layout);
   const dims        = usePlannerStore((s) => s.roomDimensions);
-  const scene       = usePlannerStore((s) => s.scene);
+  // Item-level selector: only re-renders when items array reference changes,
+  // not on any other scene sub-key change (Feature 6 perf optimization).
+  const sceneItems      = usePlannerStore((s) => s.scene.items);
   const setSceneGraph   = usePlannerStore((s) => s.setSceneGraph);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
 
   // Rebuild scene graph from authoritative scene.items via the 2D projection
   // selector — keeps buildSceneGraph's existing API fully unchanged.
   const sceneGraph = useMemo(
-    () => buildSceneGraph(layout, dims, selectProjectedItems(scene)),
-    [layout, dims, scene]
+    () => buildSceneGraph(layout, dims, selectProjectedItems({ items: sceneItems })),
+    [layout, dims, sceneItems]
   );
 
   // Sync derived scene graph into the store (for AI conditioning, export, etc.)
@@ -63,7 +65,7 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
       </div>
 
       {/* Drag hint — only shown when no products placed yet */}
-      {scene.items.length === 0 && (
+      {sceneItems.length === 0 && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/70 backdrop-blur-sm text-stone-200 text-xs font-medium shadow">
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -100,7 +102,7 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
           <Scene3DRoom
             room={sceneGraph.room}
             layout={sceneGraph.meta?.layoutType}
-            hasItems={scene.items.length > 0}
+            hasItems={sceneItems.length > 0}
           />
 
           {/* Contact shadows on the floor */}

@@ -9,9 +9,12 @@ import RoomDimensionForm from "./RoomDimensionForm";
 import ProductSidebar from "./ProductSidebar";
 import PlannerToolbar from "./PlannerToolbar";
 import AiPreviewPanel from "./AiPreviewPanel";
+import ProjectPanel from "./ProjectPanel";
+import { useUndoRedo } from "./useUndoRedo";
 import usePlannerStore from "@/store/plannerStore";
 import { selectProjectedItems } from "@/lib/planner/selectors";
 import { snapItem } from "@/lib/planner/snap";
+import { validateKitchenLayout } from "@/lib/planner/engine/designRules";
 
 // Dynamically import both canvases to avoid SSR issues
 const PlannerCanvas   = dynamic(() => import("./PlannerCanvas"),        { ssr: false });
@@ -59,9 +62,15 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const closeAiPanel       = usePlannerStore((s) => s.closeAiPanel);
   const setAiState         = usePlannerStore((s) => s.setAiState);
   const aiLoading          = usePlannerStore((s) => s.aiLoading);
+  const setValidationResults  = usePlannerStore((s) => s.setValidationResults);
+  const upperCabinetColor     = usePlannerStore((s) => s.upperCabinetColor);
+  const lowerCabinetColor     = usePlannerStore((s) => s.lowerCabinetColor);
 
   // Sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Project panel open state
+  const [showProjectPanel, setShowProjectPanel] = useState(false);
 
   // Ref to canvas drop resolver (set by PlannerCanvas via onDropRef)
   const canvasDropRef = useRef(null);
@@ -103,6 +112,18 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
       generateLayout();
     }
   }, [step, catalogProducts.length, generateLayout]);
+
+  // ── Keyboard undo/redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y) ─────────────────────
+  useUndoRedo();
+
+  // ── Debounced design rule validation (200ms) ──────────────────────────────────
+  // Runs after rapid drag operations settle; never blocks any action.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setValidationResults(validateKitchenLayout(scene.items, dims));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [scene.items, dims, setValidationResults]);
 
   // dnd-kit sensors — support both mouse and touch
   const sensors = useSensors(
@@ -202,10 +223,16 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           layout,
-          roomWidth:     dims.width,
-          roomLength:    dims.length,
-          ceilingHeight: dims.height,
-          items:         selectProjectedItems(scene),
+          roomWidth:          dims.width,
+          roomLength:         dims.length,
+          ceilingHeight:      dims.height,
+          items:              selectProjectedItems(scene),
+          upperCabinetColor:  upperCabinetColor
+            ? { name: upperCabinetColor.name, finishFamily: upperCabinetColor.finishFamily }
+            : null,
+          lowerCabinetColor:  lowerCabinetColor
+            ? { name: lowerCabinetColor.name, finishFamily: lowerCabinetColor.finishFamily }
+            : null,
         }),
       });
 
@@ -224,7 +251,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
         aiError:    err.message || "An error occurred. Please try again.",
       });
     }
-  }, [aiLoading, scene, layout, dims, setAiState, openAiPanel]);
+  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, setAiState, openAiPanel]);
 
   // ─── Step 1 — Layout Selection ────────────────────────────────────────────────
   if (step === 1) {
@@ -297,6 +324,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
             {/* Bottom toolbar */}
             <PlannerToolbar
               onGenerateAI={handleGenerateAI}
+              onSave={() => setShowProjectPanel(true)}
               primaryColor={primaryColor}
             />
           </CanvasDropArea>
@@ -306,6 +334,14 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
             <AiPreviewPanel
               onRegenerate={handleGenerateAI}
               onClose={closeAiPanel}
+              primaryColor={primaryColor}
+            />
+          )}
+
+          {/* Right: Project save/load panel (conditional) */}
+          {showProjectPanel && !showAiPanel && (
+            <ProjectPanel
+              onClose={() => setShowProjectPanel(false)}
               primaryColor={primaryColor}
             />
           )}

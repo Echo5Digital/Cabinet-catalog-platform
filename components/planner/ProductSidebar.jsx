@@ -61,24 +61,46 @@ const FIXTURE_ICONS = {
   ),
 };
 
-// ─── Finish code → approximate hex color for 3D preview ─────────────────────
+// ─── Finish → approximate hex color for 3D preview ───────────────────────────
 //
-// Finishes don't store a hex value in the DB, so we derive an approximation
-// from common keywords in the finish code.
+// Searches name first (most descriptive), then code, then description for
+// color keywords so that admin-defined names like "Warm White" or
+// "Espresso Brown" resolve correctly even when the code is opaque (e.g. "wb-001").
 //
-export function finishCodeToHex(code, finishFamily) {
-  const c = (code || "").toLowerCase();
-  if (c.includes("white"))                        return "#f4f2ee";
-  if (c.includes("cream") || c.includes("ivory")) return "#f0e8d0";
-  if (c.includes("gray")  || c.includes("grey"))  return "#8c8c8c";
-  if (c.includes("black") || c.includes("midnight")) return "#2a2320";
-  if (c.includes("espresso"))                     return "#3b2010";
-  if (c.includes("navy"))                         return "#1a2744";
-  if (c.includes("blue"))                         return "#3a5f8a";
-  if (c.includes("sage"))                         return "#6b7c5e";
-  if (c.includes("green"))                        return "#3a5f3a";
-  if (c.includes("beige") || c.includes("linen")) return "#d9c9a8";
-  if (c.includes("taupe"))                        return "#9e8f7c";
+function matchColorKeywords(text) {
+  const t = (text || "").toLowerCase();
+  if (t.includes("white") || t.includes("bright"))             return "#f4f2ee";
+  if (t.includes("cream") || t.includes("ivory"))              return "#f0e8d0";
+  if (t.includes("light gray") || t.includes("light grey"))    return "#c0bcb8";
+  if (t.includes("gray")  || t.includes("grey"))               return "#8c8c8c";
+  if (t.includes("charcoal") || t.includes("dark gray") || t.includes("dark grey")) return "#4a4a4a";
+  if (t.includes("black") || t.includes("midnight"))           return "#2a2320";
+  if (t.includes("espresso") || t.includes("dark brown"))      return "#3b2010";
+  if (t.includes("walnut") || t.includes("brown"))             return "#6b4226";
+  if (t.includes("navy") || t.includes("dark blue"))           return "#1a2744";
+  if (t.includes("blue"))                                       return "#3a5f8a";
+  if (t.includes("sage") || t.includes("olive"))               return "#6b7c5e";
+  if (t.includes("green") || t.includes("forest"))             return "#3a5f3a";
+  if (t.includes("beige") || t.includes("linen"))              return "#d9c9a8";
+  if (t.includes("taupe") || t.includes("greige"))             return "#9e8f7c";
+  if (t.includes("warm") && !t.includes("white"))              return "#c8b89a";
+  if (t.includes("natural") || t.includes("maple"))            return "#c8a06e";
+  if (t.includes("cherry"))                                     return "#8b2500";
+  if (t.includes("oak"))                                        return "#b8865a";
+  return null;
+}
+
+export function finishCodeToHex(code, finishFamily, name, description) {
+  // Check name first — admins set human-readable names like "Warm White"
+  const fromName = matchColorKeywords(name);
+  if (fromName) return fromName;
+  // Then check the code field
+  const fromCode = matchColorKeywords(code);
+  if (fromCode) return fromCode;
+  // Then check the description field
+  const fromDesc = matchColorKeywords(description);
+  if (fromDesc) return fromDesc;
+  // finishFamily fallback
   if ((finishFamily || "").toLowerCase() === "stained") return "#7a5c3a";
   return "#d4cfc8"; // default warm taupe
 }
@@ -151,7 +173,7 @@ function DraggableProduct({ product, onQuickAdd }) {
 // ─── Finish swatch chip ───────────────────────────────────────────────────────
 
 function FinishSwatch({ finish, isSelected, onClick }) {
-  const hex = finishCodeToHex(finish.code, finish.finishFamily);
+  const hex = finishCodeToHex(finish.code, finish.finishFamily, finish.name, finish.description);
 
   return (
     <button
@@ -214,7 +236,7 @@ function CabinetColorsSection({ finishes }) {
       code:        finish.code,
       finishFamily: finish.finishFamily,
       swatchUrl:   finish.swatchUrl,
-      hex:         finishCodeToHex(finish.code, finish.finishFamily),
+      hex:         finishCodeToHex(finish.code, finish.finishFamily, finish.name, finish.description),
     };
     if (slot === "upper") {
       setUpperCabinetColor(upperCabinetColor?.id === finish.id ? null : payload);

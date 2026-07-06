@@ -38,8 +38,10 @@ export default function PlannerCanvas({ onDropRef }) {
 
   const layout         = usePlannerStore((s) => s.layout);
   const dims           = usePlannerStore((s) => s.roomDimensions);
-  const scene          = usePlannerStore((s) => s.scene);
-  const placedItems    = useMemo(() => selectProjectedItems(scene), [scene]);
+  // Item-level selector: only re-renders when items array reference changes,
+  // not on any other scene sub-key change (Feature 6 perf optimization).
+  const sceneItems     = usePlannerStore((s) => s.scene.items);
+  const placedItems    = useMemo(() => selectProjectedItems({ items: sceneItems }), [sceneItems]);
   const selectedItemId = usePlannerStore((s) => s.selectedItemId);
   const zoomLevel      = usePlannerStore((s) => s.zoomLevel);
   const moveItem       = usePlannerStore((s) => s.moveItem);

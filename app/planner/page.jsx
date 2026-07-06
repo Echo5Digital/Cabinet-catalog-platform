@@ -104,7 +104,7 @@ async function getPlannerFinishes(tenantId, admin) {
 
     const { data: finishes } = await admin
       .from("finishes")
-      .select("id, name, code, finish_family, catalog_line_id, sort_order")
+      .select("id, name, code, description, finish_family, catalog_line_id, sort_order")
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
@@ -132,6 +132,7 @@ async function getPlannerFinishes(tenantId, admin) {
           id:           f.id,
           name:         f.name,
           code:         f.code,
+          description:  f.description  || null,
           finishFamily: f.finish_family,
           swatchUrl:    swatchMap[f.id] || null,
         });

@@ -18,6 +18,10 @@ import { generateLayout as engineGenerateLayout } from "@/lib/planner/engine/com
  * Backward-compatible wrappers (addItem / moveItem / removeItem / clearCanvas /
  * rotateItem) are preserved so PlannerShell and PlannerCanvas need only minimal
  * changes to their call sites.
+ *
+ * Feature additions:
+ *  - undoStack / redoStack  — scene-snapshot undo/redo (capped at 50 each)
+ *  - validationResults      — advisory design rule results
  */
 
 const EMPTY_SCENE = { items: [], zones: [] };
@@ -45,16 +49,29 @@ const usePlannerStore = create((set, get) => ({
   // scene.zones  = ZoneDescriptor[]   — cabinet-run zones (set by generator)
   scene: EMPTY_SCENE,
 
+  // ─── Undo / Redo stacks (scene snapshots, capped at 50 each) ─────────────────
+  undoStack: [],  // Array<scene>  — snapshots before each mutation
+  redoStack: [],  // Array<scene>  — snapshots that were undone
+
   // ─── Catalog products (stored for procedural generator access) ────────────────
   catalogProducts: [],
   setCatalogProducts: (products) => set({ catalogProducts: products ?? [] }),
 
-  // ─── Apply spatial command ────────────────────────────────────────────────────
+  // ─── Apply spatial command (with undo snapshot) ───────────────────────────────
   // All item mutations go through SpatialEngine.applyCommand (pure functions).
+  // Pushes prevScene onto undoStack before mutation; clears redoStack on new action.
   applyCommand: (command) =>
-    set((state) => ({
-      scene: engineApplyCommand(state.scene, command, state.roomDimensions),
-    })),
+    set((state) => {
+      const prevScene = state.scene;
+      const newScene = engineApplyCommand(prevScene, command, state.roomDimensions);
+      // Guard: if engine returned the same scene reference (e.g. collision reject), skip snapshot
+      if (newScene === prevScene) return {};
+      return {
+        scene: newScene,
+        undoStack: [...state.undoStack.slice(-49), prevScene],
+        redoStack: [],
+      };
+    }),
 
   // ─── Procedural layout generation ────────────────────────────────────────────
   // Triggered automatically when entering step 3 with an empty scene.
@@ -66,12 +83,39 @@ const usePlannerStore = create((set, get) => ({
         state.roomDimensions,
         state.catalogProducts,
       );
+      const newScene = {
+        ...state.scene,
+        items: result.items,
+        zones: result.zones,
+      };
       return {
-        scene: {
-          ...state.scene,
-          items: result.items,
-          zones: result.zones,
-        },
+        scene: newScene,
+        undoStack: [...state.undoStack.slice(-49), state.scene],
+        redoStack: [],
+      };
+    }),
+
+  // ─── Undo ─────────────────────────────────────────────────────────────────────
+  undo: () =>
+    set((state) => {
+      if (!state.undoStack.length) return {};
+      const prev = state.undoStack[state.undoStack.length - 1];
+      return {
+        scene: prev,
+        undoStack: state.undoStack.slice(0, -1),
+        redoStack: [state.scene, ...state.redoStack.slice(0, 49)],
+      };
+    }),
+
+  // ─── Redo ─────────────────────────────────────────────────────────────────────
+  redo: () =>
+    set((state) => {
+      if (!state.redoStack.length) return {};
+      const next = state.redoStack[0];
+      return {
+        scene: next,
+        undoStack: [...state.undoStack.slice(-49), state.scene],
+        redoStack: state.redoStack.slice(1),
       };
     }),
 
@@ -169,6 +213,10 @@ const usePlannerStore = create((set, get) => ({
   // ─── Item rotation ────────────────────────────────────────────────────────────
   rotateItem: (id, yDeg) =>
     get().applyCommand({ type: COMMANDS.ROTATE_ITEM, id, yDeg }),
+
+  // ─── Validation results (design rules — advisory only, never blocks actions) ─
+  validationResults: [],
+  setValidationResults: (results) => set({ validationResults: results }),
 
   // ─── Convenience getters ──────────────────────────────────────────────────────
   getPlacedCount: () => get().scene.items.length,
