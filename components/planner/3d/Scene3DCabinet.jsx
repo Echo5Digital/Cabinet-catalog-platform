@@ -475,8 +475,8 @@ function CabinetFront({ faceW, faceH, pos, rot, doors, drawers, category, frameC
 
     return (
       <group position={pos} rotation={rot}>
-        <mesh castShadow position={[0, shelfV, BACK_D / 2]}>
-          <boxGeometry args={[usableW, SHELF_GAP - GAP * 0.5, BACK_D]} />
+        <mesh castShadow position={[0, shelfV, PANEL_T / 2]}>
+          <boxGeometry args={[usableW, SHELF_GAP - GAP * 0.5, PANEL_T]} />
           <meshStandardMaterial color={SHELF_CLR} roughness={0.60} metalness={0.0} />
         </mesh>
         <ShakerDoorRow sW={usableW} sH={lowerH} sV={lowerV} numDoors={doorsPerSection} wallStyle={false} keyPfx="tl" frameColor={frameColor} openSet={openDoors} onToggle={onDoorToggle} />
@@ -584,7 +584,15 @@ function Scene3DCabinetInner({
     <group
       position={[cx, cy, cz]}
       rotation={[0, (cabinet.rotation?.yDeg ?? 0) * (Math.PI / 180), 0]}
-      onClick={(e) => { e.stopPropagation(); setSelectedItem(cabinet.id); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedItem(cabinet.id);
+        // Close all open doors/drawers when clicking the cabinet body or interior.
+        // Door hit volumes call stopPropagation before this runs, so individual
+        // door toggles are unaffected — only carcass/interior clicks reach here.
+        if (openDoors.size > 0)   setOpenDoors(new Set());
+        if (openDrawers.size > 0) setOpenDrawers(new Set());
+      }}
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={() => setHovered(false)}
     >
