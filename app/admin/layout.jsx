@@ -181,6 +181,22 @@ function IconDesignGroup() {
   );
 }
 
+function IconPlanner() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+    </svg>
+  );
+}
+
+function IconPlannerGroup() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+    </svg>
+  );
+}
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_GROUPS = [
@@ -224,6 +240,13 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/design/new",   label: "New Design",    Icon: IconDesign },
       { href: "/admin/design/saved", label: "Saved Designs", Icon: IconDesign },
+    ],
+  },
+  {
+    label: "Planner",
+    GroupIcon: IconPlannerGroup,
+    items: [
+      { href: "/admin/planner", label: "Planner Leads", Icon: IconPlanner, badgeKey: "planner_leads" },
     ],
   },
 ];

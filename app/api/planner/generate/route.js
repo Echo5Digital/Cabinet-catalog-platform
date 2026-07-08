@@ -49,11 +49,12 @@ export async function POST(request) {
       items = [],
       upperCabinetColor = null,
       lowerCabinetColor = null,
-      doorStyleName   = null,
-      drawerStyleName = null,
-      hardwareName    = null,
-      countertopName  = null,
-      flooringName    = null,
+      doorStyleName     = null,
+      drawerStyleName   = null,
+      hardwareName      = null,
+      countertopName    = null,
+      flooringName      = null,
+      lifestyleProfile  = null,
     } = body;
 
     if (!layout) {
@@ -74,6 +75,7 @@ export async function POST(request) {
       hardwareName,
       countertopName,
       flooringName,
+      lifestyleProfile,
     });
 
     // Load OpenAI credentials (from DB ai_settings or env fallback)

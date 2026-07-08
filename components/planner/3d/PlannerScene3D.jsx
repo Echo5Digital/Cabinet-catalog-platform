@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 
@@ -8,11 +8,12 @@ import usePlannerStore from "@/store/plannerStore";
 import { buildSceneGraph } from "@/lib/planner/sceneBuilder";
 import { selectProjectedItems } from "@/lib/planner/selectors";
 
-import Scene3DRoom     from "./Scene3DRoom";
-import Scene3DCabinet  from "./Scene3DCabinet";
-import Scene3DFixture  from "./Scene3DFixture";
-import Scene3DLighting from "./Scene3DLighting";
-import Scene3DControls from "./Scene3DControls";
+import Scene3DRoom          from "./Scene3DRoom";
+import Scene3DCabinet       from "./Scene3DCabinet";
+import Scene3DFixture       from "./Scene3DFixture";
+import Scene3DLighting      from "./Scene3DLighting";
+import Scene3DControls      from "./Scene3DControls";
+import WalkthroughControls  from "./WalkthroughControls";
 
 /**
  * PlannerScene3D — React Three Fiber canvas for the kitchen planner.
@@ -31,6 +32,9 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
   const sceneItems      = usePlannerStore((s) => s.scene.items);
   const setSceneGraph   = usePlannerStore((s) => s.setSceneGraph);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
+
+  // Walkthrough mode toggle (first-person vs orbit)
+  const [walkthrough, setWalkthrough] = useState(false);
 
   // Rebuild scene graph from authoritative scene.items via the 2D projection
   // selector — keeps buildSceneGraph's existing API fully unchanged.
@@ -53,19 +57,55 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-        {layout} · {dims.width}ft × {dims.length}ft · 3D View
+        {layout} · {dims.width}ft × {dims.length}ft · {walkthrough ? "Walkthrough" : "3D View"}
       </div>
 
-      {/* Hint */}
+      {/* Walkthrough toggle button — desktop only (top-right) */}
+      <div className="absolute top-3 right-3 z-10 hidden sm:flex gap-2">
+        <button
+          onClick={() => setWalkthrough((v) => !v)}
+          title={walkthrough ? "Exit walkthrough (Escape)" : "Enter first-person walkthrough"}
+          className={[
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-sm transition-all duration-150",
+            walkthrough
+              ? "bg-stone-900 text-white border-stone-700 hover:bg-stone-700"
+              : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50 hover:border-stone-400",
+          ].join(" ")}
+        >
+          {walkthrough ? (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Exit Walkthrough
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              Walkthrough
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Hints — change based on mode */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <p className="text-[10px] text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-300 shadow-sm font-medium">
-          <span className="hidden sm:inline">Drag to orbit · Scroll to zoom · Right-click to pan</span>
-          <span className="sm:hidden">Drag to orbit · Pinch to zoom</span>
-        </p>
+        {walkthrough ? (
+          <p className="text-[10px] text-white bg-stone-900/70 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm font-medium">
+            W/A/S/D to move · Click+drag to look · Exit button to return
+          </p>
+        ) : (
+          <p className="text-[10px] text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-300 shadow-sm font-medium">
+            <span className="hidden sm:inline">Drag to orbit · Scroll to zoom · Right-click to pan</span>
+            <span className="sm:hidden">Drag to orbit · Pinch to zoom</span>
+          </p>
+        )}
       </div>
 
       {/* Drag hint — only shown when no products placed yet */}
-      {sceneItems.length === 0 && (
+      {sceneItems.length === 0 && !walkthrough && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/70 backdrop-blur-sm text-stone-200 text-xs font-medium shadow">
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -79,20 +119,30 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
       <Canvas
         shadows
         camera={{
-          fov:      55,
+          fov:      walkthrough ? 80 : 55,
           near:     0.1,
           far:      200,
           position: sceneGraph.camera.position,
         }}
         gl={{ antialias: true, alpha: false }}
-        style={{ background: "#e8e5e1", touchAction: "none" }}
+        style={{ background: "#e8e5e1", touchAction: "none", cursor: walkthrough ? "crosshair" : "grab" }}
         // raycaster.params tune: larger points/line threshold helps mobile touch
         raycaster={{ params: { Points: { threshold: 0.1 }, Line: { threshold: 0.1 } } }}
-        onPointerMissed={() => setSelectedItem(null)}
+        onPointerMissed={() => !walkthrough && setSelectedItem(null)}
       >
         <Suspense fallback={null}>
           <Scene3DLighting sceneGraph={sceneGraph} />
-          <Scene3DControls sceneGraph={sceneGraph} />
+
+          {/* Swap controls based on mode */}
+          {walkthrough ? (
+            <WalkthroughControls
+              roomWidthFt={W}
+              roomLengthFt={L}
+              active={walkthrough}
+            />
+          ) : (
+            <Scene3DControls sceneGraph={sceneGraph} />
+          )}
 
           {/* Room shell + layout placeholder runs (hidden once real items are placed) */}
           <Scene3DRoom

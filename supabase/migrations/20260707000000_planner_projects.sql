@@ -42,7 +42,7 @@ CREATE POLICY "planner_projects_owner"
   USING (
     session_token = current_setting('app.session_token', true)
     OR tenant_id IN (
-      SELECT tenant_id FROM tenant_users WHERE user_id = auth.uid()
+      SELECT tenant_id FROM tenant_users WHERE auth_user_id = auth.uid()
     )
   );
 
@@ -54,7 +54,7 @@ CREATE POLICY "planner_project_versions_owner"
       SELECT id FROM planner_projects
       WHERE session_token = current_setting('app.session_token', true)
          OR tenant_id IN (
-           SELECT tenant_id FROM tenant_users WHERE user_id = auth.uid()
+           SELECT tenant_id FROM tenant_users WHERE auth_user_id = auth.uid()
          )
     )
   );

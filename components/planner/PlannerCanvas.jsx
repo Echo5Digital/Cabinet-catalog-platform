@@ -8,6 +8,59 @@ import { snapItem } from "@/lib/planner/snap";
 import { buildLayoutRuns } from "@/lib/planner/layoutPresets";
 import { selectProjectedItems } from "@/lib/planner/selectors";
 
+// ─── Door/window wall geometry helpers ───────────────────────────────────────
+
+/**
+ * Given a doorWindow entry and the room pixel dimensions + scale,
+ * return { x, y, w, h } of the opening in room-local pixel coords.
+ * Also returns { arcX, arcY, arcR, arcStart, arcEnd } for door swing arc.
+ */
+function getDoorWindowPx(dw, roomPxW, roomPxL, scale) {
+  const wallThick = 6; // visual wall thickness in px — cosmetic only
+  const openPx    = dw.widthFt * scale;
+
+  switch (dw.wall) {
+    case "north":
+      return { x: dw.offsetFt * scale, y: -wallThick / 2, w: openPx, h: wallThick };
+    case "south":
+      return { x: dw.offsetFt * scale, y: roomPxL - wallThick / 2, w: openPx, h: wallThick };
+    case "west":
+      return { x: -wallThick / 2, y: dw.offsetFt * scale, w: wallThick, h: openPx };
+    case "east":
+      return { x: roomPxW - wallThick / 2, y: dw.offsetFt * scale, w: wallThick, h: openPx };
+    default:
+      return { x: 0, y: 0, w: openPx, h: wallThick };
+  }
+}
+
+/** Door swing arc parameters (plan view) */
+function getDoorSwingArc(dw, roomPxW, roomPxL, scale) {
+  const openPx = dw.widthFt * scale;
+  const isLeft = dw.swingDir !== "right";
+
+  // Hinge point + arc origin depend on wall and swing direction
+  switch (dw.wall) {
+    case "north": {
+      const hingeX = isLeft ? dw.offsetFt * scale : (dw.offsetFt + dw.widthFt) * scale;
+      return { cx: hingeX, cy: 0, r: openPx, startAngle: 0, endAngle: Math.PI / 2 * (isLeft ? 1 : -1) };
+    }
+    case "south": {
+      const hingeX = isLeft ? dw.offsetFt * scale : (dw.offsetFt + dw.widthFt) * scale;
+      return { cx: hingeX, cy: roomPxL, r: openPx, startAngle: Math.PI, endAngle: Math.PI - Math.PI / 2 * (isLeft ? 1 : -1) };
+    }
+    case "west": {
+      const hingeY = isLeft ? dw.offsetFt * scale : (dw.offsetFt + dw.widthFt) * scale;
+      return { cx: 0, cy: hingeY, r: openPx, startAngle: -Math.PI / 2 * (isLeft ? 1 : -1), endAngle: 0 };
+    }
+    case "east": {
+      const hingeY = isLeft ? dw.offsetFt * scale : (dw.offsetFt + dw.widthFt) * scale;
+      return { cx: roomPxW, cy: hingeY, r: openPx, startAngle: Math.PI + Math.PI / 2 * (isLeft ? 1 : -1), endAngle: Math.PI };
+    }
+    default:
+      return null;
+  }
+}
+
 /** Color mapping by cabinet category */
 const CATEGORY_COLORS = {
   "Base Cabinets":  { fill: "#d6d3d1", stroke: "#78716c", label: "#57534e" },
@@ -49,8 +102,10 @@ export default function PlannerCanvas({ onDropRef }) {
   const rotateItem     = usePlannerStore((s) => s.rotateItem);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
   const setZoom        = usePlannerStore((s) => s.setZoom);
-  const planLayer      = usePlannerStore((s) => s.planLayer);
-  const setPlanLayer   = usePlannerStore((s) => s.setPlanLayer);
+  const planLayer        = usePlannerStore((s) => s.planLayer);
+  const setPlanLayer     = usePlannerStore((s) => s.setPlanLayer);
+  const doorWindows      = usePlannerStore((s) => s.doorWindows);
+  const removeDoorWindow = usePlannerStore((s) => s.removeDoorWindow);
 
   // Currently-selected item (for rotation value)
   const selectedItem = useMemo(
@@ -59,7 +114,9 @@ export default function PlannerCanvas({ onDropRef }) {
   );
 
   // Filter to the active plan layer for 2D display only
+  // "openings" layer shows only door/window symbols — no cabinets
   const visibleItems = useMemo(() => {
+    if (planLayer === "openings") return [];
     if (planLayer === "upper") {
       return placedItems.filter((item) => item.category === "Wall Cabinets");
     }
@@ -264,9 +321,13 @@ export default function PlannerCanvas({ onDropRef }) {
             {layout} · {roomW}ft × {roomL}ft
           </div>
         )}
-        {/* Lower / Upper plan layer toggle */}
+        {/* Plan layer toggle: Lower / Upper / Doors & Windows */}
         <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-white border border-stone-200 shadow-sm">
-          {["lower", "upper"].map((id) => (
+          {[
+            { id: "lower",   label: "Lower"   },
+            { id: "upper",   label: "Upper"   },
+            { id: "openings", label: "Openings" },
+          ].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setPlanLayer(id)}
@@ -277,7 +338,7 @@ export default function PlannerCanvas({ onDropRef }) {
                   : "text-stone-500 hover:text-stone-700",
               ].join(" ")}
             >
-              {id === "lower" ? "Lower" : "Upper"}
+              {label}
             </button>
           ))}
         </div>
@@ -298,7 +359,7 @@ export default function PlannerCanvas({ onDropRef }) {
       </div>
 
       {/* Empty state */}
-      {visibleItems.length === 0 && (
+      {planLayer !== "openings" && visibleItems.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="flex flex-col items-center gap-2 text-stone-400">
             <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -309,6 +370,16 @@ export default function PlannerCanvas({ onDropRef }) {
                 ? "No wall cabinets placed — drag from the sidebar"
                 : "Drag cabinets from the sidebar to place them"}
             </p>
+          </div>
+        </div>
+      )}
+      {planLayer === "openings" && doorWindows.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="flex flex-col items-center gap-2 text-stone-400">
+            <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <p className="text-sm font-medium opacity-60">No openings yet — add doors &amp; windows in the sidebar</p>
           </div>
         </div>
       )}
@@ -382,7 +453,82 @@ export default function PlannerCanvas({ onDropRef }) {
               );
             })}
 
-            {/* Placed items (filtered to active plan layer) */}
+            {/* Door/window openings — visible on all layers (faint) or highlighted on "openings" layer */}
+            {doorWindows.map((dw) => {
+              const { x, y, w, h } = getDoorWindowPx(dw, roomPxW, roomPxL, scale);
+              const isOpeningsLayer = planLayer === "openings";
+              const isDoor   = dw.type === "door";
+              const fillColor   = isDoor ? "#fef3c7" : "#e0f2fe";
+              const strokeColor = isDoor ? "#f59e0b" : "#0ea5e9";
+              const opacity     = isOpeningsLayer ? 1 : 0.55;
+
+              // Door swing arc — only show on openings layer
+              const swing = (isDoor && isOpeningsLayer) ? getDoorSwingArc(dw, roomPxW, roomPxL, scale) : null;
+
+              return (
+                <Group
+                  key={dw.id}
+                  opacity={opacity}
+                  onClick={(e) => { if (isOpeningsLayer) { e.cancelBubble = true; removeDoorWindow(dw.id); } }}
+                  onTap={(e) => { if (isOpeningsLayer) { e.cancelBubble = true; removeDoorWindow(dw.id); } }}
+                  listening={isOpeningsLayer}
+                  style={isOpeningsLayer ? { cursor: "pointer" } : undefined}
+                >
+                  {/* Opening gap — white fill to "cut" the wall visually */}
+                  <Rect
+                    x={x - 1} y={y - 1}
+                    width={w + 2} height={h + 2}
+                    fill="white"
+                    listening={false}
+                  />
+                  {/* Coloured opening symbol */}
+                  <Rect
+                    x={x} y={y}
+                    width={w} height={h}
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={isOpeningsLayer ? 2 : 1}
+                    dash={isDoor ? undefined : [4, 3]}
+                    cornerRadius={1}
+                    listening={false}
+                  />
+                  {/* Door swing arc (quarter circle in plan view) */}
+                  {swing && (
+                    <Line
+                      points={(() => {
+                        // Approximate arc with polyline (Konva has no Arc in Layer easily)
+                        const pts = [];
+                        const steps = 16;
+                        const { cx, cy, r, startAngle, endAngle } = swing;
+                        for (let i = 0; i <= steps; i++) {
+                          const a = startAngle + (endAngle - startAngle) * (i / steps);
+                          pts.push(cx + r * Math.cos(a), cy + r * Math.sin(a));
+                        }
+                        return pts;
+                      })()}
+                      stroke={strokeColor}
+                      strokeWidth={1}
+                      dash={[3, 3]}
+                      listening={false}
+                    />
+                  )}
+                  {/* Label */}
+                  {isOpeningsLayer && (
+                    <Text
+                      x={x + 2}
+                      y={y + (h > 10 ? (h - 9) / 2 : -10)}
+                      text={isDoor ? "D" : "W"}
+                      fontSize={9}
+                      fontStyle="bold"
+                      fill={strokeColor}
+                      listening={false}
+                    />
+                  )}
+                </Group>
+              );
+            })}
+
+            {/* Placed items (filtered to active plan layer; empty on "openings" layer) */}
             {visibleItems.map((item) => {
               const colors   = getColors(item.category);
               const isSelected = selectedItemId === item.id;
@@ -497,8 +643,18 @@ export default function PlannerCanvas({ onDropRef }) {
         </Layer>
       </Stage>
 
+      {/* Openings layer hint */}
+      {planLayer === "openings" && doorWindows.length > 0 && (
+        <div className="absolute bottom-20 sm:bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-700/80 backdrop-blur-sm text-white text-xs font-medium shadow pointer-events-none">
+          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Click an opening to remove it · Add more in the sidebar
+        </div>
+      )}
+
       {/* Selected item hint + rotate button */}
-      {selectedItemId && (
+      {selectedItemId && planLayer !== "openings" && (
         <div className="absolute bottom-20 sm:bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-800/80 backdrop-blur-sm text-white text-xs font-medium shadow">
           <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

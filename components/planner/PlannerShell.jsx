@@ -70,6 +70,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const selectedHardware      = usePlannerStore((s) => s.selectedHardware);
   const selectedCountertop    = usePlannerStore((s) => s.selectedCountertop);
   const selectedFlooring      = usePlannerStore((s) => s.selectedFlooring);
+  const lifestyleProfile      = usePlannerStore((s) => s.lifestyleProfile);
 
   // Sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -238,11 +239,12 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
           lowerCabinetColor:  lowerCabinetColor
             ? { name: lowerCabinetColor.name, finishFamily: lowerCabinetColor.finishFamily }
             : null,
-          doorStyleName:   selectedDoorStyle?.name   ?? null,
-          drawerStyleName: selectedDrawerStyle?.name ?? null,
-          hardwareName:    selectedHardware?.name    ?? null,
-          countertopName:  selectedCountertop?.name  ?? null,
-          flooringName:    selectedFlooring?.name    ?? null,
+          doorStyleName:    selectedDoorStyle?.name    ?? null,
+          drawerStyleName:  selectedDrawerStyle?.name ?? null,
+          hardwareName:     selectedHardware?.name    ?? null,
+          countertopName:   selectedCountertop?.name  ?? null,
+          flooringName:     selectedFlooring?.name    ?? null,
+          lifestyleProfile: lifestyleProfile           ?? null,
         }),
       });
 
@@ -261,14 +263,14 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
         aiError:    err.message || "An error occurred. Please try again.",
       });
     }
-  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, selectedDoorStyle, selectedDrawerStyle, selectedHardware, selectedCountertop, selectedFlooring, setAiState, openAiPanel]);
+  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, selectedDoorStyle, selectedDrawerStyle, selectedHardware, selectedCountertop, selectedFlooring, lifestyleProfile, setAiState, openAiPanel]);
 
   // ─── Step 1 — Layout Selection ────────────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="min-h-screen flex flex-col">
         <PlannerHeader tenant={tenant} />
-        <div className="flex-1 pt-[64px] sm:pt-[76px]">
+        <div className="flex-1 pt-[60px] sm:pt-[68px]">
           <LayoutSelector primaryColor={primaryColor} structures={initialStructures} />
         </div>
       </div>
@@ -280,7 +282,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
     return (
       <div className="min-h-screen flex flex-col">
         <PlannerHeader tenant={tenant} />
-        <div className="flex-1 pt-[64px] sm:pt-[76px]">
+        <div className="flex-1 pt-[60px] sm:pt-[68px]">
           <RoomDimensionForm primaryColor={primaryColor} />
         </div>
       </div>
@@ -293,7 +295,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
       <PlannerHeader tenant={tenant} />
 
       {/* Main body below fixed header */}
-      <div className="flex-1 flex overflow-hidden pt-[64px] sm:pt-[76px]">
+      <div className="flex-1 flex overflow-hidden pt-[60px] sm:pt-[68px]">
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}

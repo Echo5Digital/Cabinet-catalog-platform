@@ -23,6 +23,9 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
   const setSelectedHardware    = usePlannerStore((s) => s.setSelectedHardware);
   const setSelectedCountertop  = usePlannerStore((s) => s.setSelectedCountertop);
   const setSelectedFlooring    = usePlannerStore((s) => s.setSelectedFlooring);
+  const setLifestyleProfile    = usePlannerStore((s) => s.setLifestyleProfile);
+  const clearDoorWindows       = usePlannerStore((s) => s.clearDoorWindows);
+  const addDoorWindow          = usePlannerStore((s) => s.addDoorWindow);
 
   const {
     currentProjectId,
@@ -75,6 +78,11 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
     if (project.settings?.selectedHardware)    setSelectedHardware(project.settings.selectedHardware);
     if (project.settings?.selectedCountertop)  setSelectedCountertop(project.settings.selectedCountertop);
     if (project.settings?.selectedFlooring)    setSelectedFlooring(project.settings.selectedFlooring);
+    if (project.settings?.lifestyleProfile)    setLifestyleProfile(project.settings.lifestyleProfile);
+    clearDoorWindows();
+    if (Array.isArray(project.settings?.doorWindows)) {
+      project.settings.doorWindows.forEach((dw) => addDoorWindow(dw));
+    }
     if (project.scene) {
       applyCommand({
         type:  COMMANDS.SET_ITEMS,

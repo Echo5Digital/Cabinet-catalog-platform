@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import usePlannerStore from "@/store/plannerStore";
+import KitchenHealthScore from "./KitchenHealthScore";
+import CostEstimator from "./CostEstimator";
+import StorageAnalytics from "./StorageAnalytics";
+import DesignRecommendations from "./DesignRecommendations";
+import MoodBoard from "./MoodBoard";
+import ProposalGenerator from "./ProposalGenerator";
+import DoorWindowPanel from "./DoorWindowPanel";
 
 const CATEGORY_ORDER = [
   "Base Cabinets",
@@ -759,7 +766,7 @@ function FlooringSection({ floorColors }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function ProductSidebar({ products = [], finishes = [], structures = [], countertops = [], floorColors = [], isOpen, onToggle, onQuickAdd }) {
+export default function ProductSidebar({ products = [], finishes = [], structures = [], countertops = [], floorColors = [], isOpen, onToggle, onQuickAdd, primaryColor = "#1C1917" }) {
   // Categories present in CATEGORY_ORDER (in defined order)
   const orderedPresent = CATEGORY_ORDER.filter((cat) =>
     products.some((p) => normalizeCategory(p.category) === cat)
@@ -807,6 +814,7 @@ export default function ProductSidebar({ products = [], finishes = [], structure
             openCategories={openCategories}
             toggleCategory={toggleCategory}
             onQuickAdd={onQuickAdd}
+            primaryColor={primaryColor}
           />
         )}
       </div>
@@ -853,6 +861,7 @@ export default function ProductSidebar({ products = [], finishes = [], structure
                 openCategories={openCategories}
                 toggleCategory={toggleCategory}
                 onQuickAdd={onQuickAdd}
+                primaryColor={primaryColor}
               />
             </div>
           </div>
@@ -872,6 +881,7 @@ function SidebarContent({
   openCategories,
   toggleCategory,
   onQuickAdd,
+  primaryColor = "#1C1917",
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -963,6 +973,30 @@ function SidebarContent({
           <div className="space-y-1.5">
             {FIXTURES.map((f) => <DraggableProduct key={f.id} product={f} onQuickAdd={onQuickAdd} />)}
           </div>
+        </div>
+
+        {/* ── Doors & Windows ───────────────────────────────────────────── */}
+        <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">
+          <DoorWindowPanel primaryColor={primaryColor} />
+        </div>
+
+        {/* ── Analytics & Intelligence Panels ──────────────────────────── */}
+        <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-3 px-1">
+            Kitchen Intelligence
+          </p>
+          <div className="flex flex-col gap-2">
+            <MoodBoard primaryColor={primaryColor} />
+            <KitchenHealthScore primaryColor={primaryColor} />
+            <CostEstimator primaryColor={primaryColor} />
+            <StorageAnalytics />
+            <ProposalGenerator primaryColor={primaryColor} />
+          </div>
+        </div>
+
+        {/* ── Design Recommendations ─────────────────────────────────────── */}
+        <div className="px-3 pt-3 pb-4 border-t border-stone-100 mt-1">
+          <DesignRecommendations />
         </div>
 
         {/* Tip */}

@@ -214,6 +214,26 @@ const usePlannerStore = create((set, get) => ({
   selectedFlooring:    null,
   setSelectedFlooring: (fl) => set({ selectedFlooring: fl }),
 
+  // ─── Lifestyle profile ────────────────────────────────────────────────────────
+  // Value: "solo" | "couple" | "family" | "entertainer" | "professional" | null
+  lifestyleProfile:    null,
+  setLifestyleProfile: (profile) => set({ lifestyleProfile: profile }),
+
+  // ─── Door / Window openings ───────────────────────────────────────────────────
+  // Each entry: { id, type: "door"|"window", wall: "north"|"south"|"east"|"west",
+  //               offsetFt: number, widthFt: number, heightFt: number,
+  //               swingDir?: "left"|"right" (doors only) }
+  doorWindows: [],
+  addDoorWindow: (entry) =>
+    set((state) => ({ doorWindows: [...state.doorWindows, { ...entry, id: entry.id ?? crypto.randomUUID() }] })),
+  updateDoorWindow: (id, patch) =>
+    set((state) => ({
+      doorWindows: state.doorWindows.map((dw) => (dw.id === id ? { ...dw, ...patch } : dw)),
+    })),
+  removeDoorWindow: (id) =>
+    set((state) => ({ doorWindows: state.doorWindows.filter((dw) => dw.id !== id) })),
+  clearDoorWindows: () => set({ doorWindows: [] }),
+
   // ─── Scene graph (derived — synced by PlannerScene3D for AI/export use) ──────
   // Rebuilt from scene.items by PlannerScene3D via selectProjectedItems().
   sceneGraph: null,

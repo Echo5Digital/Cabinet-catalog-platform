@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import usePlannerStore from "@/store/plannerStore";
+import DesignWizard from "./DesignWizard";
 
 const LAYOUTS = [
   {
@@ -118,6 +120,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
   const cabinetStyle    = usePlannerStore((s) => s.cabinetStyle);
   const setCabinetStyle = usePlannerStore((s) => s.setCabinetStyle);
   const setStep         = usePlannerStore((s) => s.setStep);
+  const [showWizard, setShowWizard] = useState(false);
 
   const canContinue = !!layout && !!cabinetStyle;
 
@@ -126,7 +129,12 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-76px)] bg-[#FAFAF9] flex flex-col">
+    <div className="min-h-[calc(100vh-60px)] sm:min-h-[calc(100vh-68px)] bg-[#FAFAF9] flex flex-col">
+      {/* Design Wizard overlay */}
+      {showWizard && (
+        <DesignWizard onClose={() => setShowWizard(false)} primaryColor={primaryColor} />
+      )}
+
       {/* Hero section */}
       <div
         className="py-12 sm:py-16 px-4 text-center"
@@ -148,6 +156,16 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
           <p className="text-stone-400 text-base max-w-lg mx-auto">
             Select the layout that best matches your kitchen space. You can adjust dimensions in the next step.
           </p>
+          {/* Wizard CTA */}
+          <button
+            onClick={() => setShowWizard(true)}
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-white/15 text-white ring-1 ring-white/30 hover:bg-white/25 transition backdrop-blur-sm"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            Not sure? Try the Design Wizard
+          </button>
         </div>
       </div>
 
