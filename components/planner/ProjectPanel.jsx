@@ -16,8 +16,13 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
   const setLayout          = usePlannerStore((s) => s.setLayout);
   const setCabinetStyle    = usePlannerStore((s) => s.setCabinetStyle);
   const setDimensions      = usePlannerStore((s) => s.setDimensions);
-  const setUpperCabinetColor = usePlannerStore((s) => s.setUpperCabinetColor);
-  const setLowerCabinetColor = usePlannerStore((s) => s.setLowerCabinetColor);
+  const setUpperCabinetColor   = usePlannerStore((s) => s.setUpperCabinetColor);
+  const setLowerCabinetColor   = usePlannerStore((s) => s.setLowerCabinetColor);
+  const setSelectedDoorStyle   = usePlannerStore((s) => s.setSelectedDoorStyle);
+  const setSelectedDrawerStyle = usePlannerStore((s) => s.setSelectedDrawerStyle);
+  const setSelectedHardware    = usePlannerStore((s) => s.setSelectedHardware);
+  const setSelectedCountertop  = usePlannerStore((s) => s.setSelectedCountertop);
+  const setSelectedFlooring    = usePlannerStore((s) => s.setSelectedFlooring);
 
   const {
     currentProjectId,
@@ -63,8 +68,13 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
     if (project.layout)      setLayout(project.layout);
     if (project.cabinet_style) setCabinetStyle(project.cabinet_style);
     if (project.room_dimensions) setDimensions(project.room_dimensions);
-    if (project.settings?.upperCabinetColor) setUpperCabinetColor(project.settings.upperCabinetColor);
-    if (project.settings?.lowerCabinetColor) setLowerCabinetColor(project.settings.lowerCabinetColor);
+    if (project.settings?.upperCabinetColor)   setUpperCabinetColor(project.settings.upperCabinetColor);
+    if (project.settings?.lowerCabinetColor)   setLowerCabinetColor(project.settings.lowerCabinetColor);
+    if (project.settings?.selectedDoorStyle)   setSelectedDoorStyle(project.settings.selectedDoorStyle);
+    if (project.settings?.selectedDrawerStyle) setSelectedDrawerStyle(project.settings.selectedDrawerStyle);
+    if (project.settings?.selectedHardware)    setSelectedHardware(project.settings.selectedHardware);
+    if (project.settings?.selectedCountertop)  setSelectedCountertop(project.settings.selectedCountertop);
+    if (project.settings?.selectedFlooring)    setSelectedFlooring(project.settings.selectedFlooring);
     if (project.scene) {
       applyCommand({
         type:  COMMANDS.SET_ITEMS,

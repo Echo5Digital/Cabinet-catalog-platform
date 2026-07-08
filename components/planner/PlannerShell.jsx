@@ -44,7 +44,7 @@ function newId() {
   return `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function PlannerShell({ tenant, initialProducts = [], initialStructures = [], initialFinishes = [] }) {
+export default function PlannerShell({ tenant, initialProducts = [], initialStructures = [], initialFinishes = [], initialCountertops = [], initialFloorColors = [] }) {
   const primaryColor = tenant?.primary_color || "#1C1917";
 
   const step               = usePlannerStore((s) => s.step);
@@ -65,6 +65,11 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const setValidationResults  = usePlannerStore((s) => s.setValidationResults);
   const upperCabinetColor     = usePlannerStore((s) => s.upperCabinetColor);
   const lowerCabinetColor     = usePlannerStore((s) => s.lowerCabinetColor);
+  const selectedDoorStyle     = usePlannerStore((s) => s.selectedDoorStyle);
+  const selectedDrawerStyle   = usePlannerStore((s) => s.selectedDrawerStyle);
+  const selectedHardware      = usePlannerStore((s) => s.selectedHardware);
+  const selectedCountertop    = usePlannerStore((s) => s.selectedCountertop);
+  const selectedFlooring      = usePlannerStore((s) => s.selectedFlooring);
 
   // Sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -233,6 +238,11 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
           lowerCabinetColor:  lowerCabinetColor
             ? { name: lowerCabinetColor.name, finishFamily: lowerCabinetColor.finishFamily }
             : null,
+          doorStyleName:   selectedDoorStyle?.name   ?? null,
+          drawerStyleName: selectedDrawerStyle?.name ?? null,
+          hardwareName:    selectedHardware?.name    ?? null,
+          countertopName:  selectedCountertop?.name  ?? null,
+          flooringName:    selectedFlooring?.name    ?? null,
         }),
       });
 
@@ -251,7 +261,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
         aiError:    err.message || "An error occurred. Please try again.",
       });
     }
-  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, setAiState, openAiPanel]);
+  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, selectedDoorStyle, selectedDrawerStyle, selectedHardware, selectedCountertop, selectedFlooring, setAiState, openAiPanel]);
 
   // ─── Step 1 — Layout Selection ────────────────────────────────────────────────
   if (step === 1) {
@@ -293,6 +303,9 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
           <ProductSidebar
             products={filteredProducts}
             finishes={filteredFinishes}
+            structures={initialStructures}
+            countertops={initialCountertops}
+            floorColors={initialFloorColors}
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen((v) => !v)}
             onQuickAdd={handleQuickAdd}

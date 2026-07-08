@@ -41,7 +41,20 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { layout, roomWidth, roomLength, ceilingHeight, items = [], upperCabinetColor = null, lowerCabinetColor = null } = body;
+    const {
+      layout,
+      roomWidth,
+      roomLength,
+      ceilingHeight,
+      items = [],
+      upperCabinetColor = null,
+      lowerCabinetColor = null,
+      doorStyleName   = null,
+      drawerStyleName = null,
+      hardwareName    = null,
+      countertopName  = null,
+      flooringName    = null,
+    } = body;
 
     if (!layout) {
       return NextResponse.json({ error: "Layout is required." }, { status: 400 });
@@ -50,12 +63,17 @@ export async function POST(request) {
     // Build the descriptive image prompt from planner data
     const prompt = buildPlannerPrompt({
       layout,
-      roomWidth:          parseFloat(roomWidth) || 14,
-      roomLength:         parseFloat(roomLength) || 11,
-      ceilingHeight:      ceilingHeight ? parseFloat(ceilingHeight) : null,
+      roomWidth:     parseFloat(roomWidth) || 14,
+      roomLength:    parseFloat(roomLength) || 11,
+      ceilingHeight: ceilingHeight ? parseFloat(ceilingHeight) : null,
       items,
       upperCabinetColor,
       lowerCabinetColor,
+      doorStyleName,
+      drawerStyleName,
+      hardwareName,
+      countertopName,
+      flooringName,
     });
 
     // Load OpenAI credentials (from DB ai_settings or env fallback)

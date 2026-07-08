@@ -70,153 +70,295 @@ function getFrontGeom(faceDir, widthFt, depthFt, heightFt) {
 }
 
 // ─── Sink geometry ─────────────────────────────────────────────────────────────
+//
+// Premium undermount single-bowl stainless steel sink with:
+//  • Thick brushed stainless rim + basin walls (16-gauge gauge look)
+//  • Deep basin with visible bottom, angled walls, rolled drain
+//  • Basket strainer drain with crosshair grill + collar ring
+//  • Slender high-arc gooseneck faucet (smooth 12-sided tube)
+//  • Deck-mounted side-lever hot/cold handles with proper lever geometry
+//  • Single-hole spout base with decorative ring collar
+//  • Spray head spout tip cylinder at faucet end
+//  • Direction-aware: works on z+, x+, x- cabinet orientations
 
 function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+" }) {
-  const bodyColor    = hovered ? "#bfdbfe" : "#d4cfc8";  // blue highlight on hover
-  const counterColor = "#b5afa8";   // exactly matches Scene3DCabinet countertop color
-  const basinColor   = "#8c9fa5";   // brushed stainless steel
-  const faucetColor  = "#9eaeb6";   // brushed chrome
+  // ── Color palette ────────────────────────────────────────────────────────────
+  const bodyColor    = hovered ? "#cce0fc" : "#e2ddd8";
+  // Countertop matches updated Scene3DCabinet default countertop
+  const counterColor = "#c8c0b4";
+  // Brushed stainless — warm silver, not blue-grey
+  const STEEL_CLR    = "#b0b8bc";
+  const STEEL_DARK   = "#7a8488";   // basin interior — deeper/darker for depth
+  const BASIN_FLOOR  = "#5a6468";   // basin floor — darkest, recessed appearance
+  const DRAIN_CLR    = "#383c3e";   // drain fitting — near-black stainless
+  const FAUCET_CLR   = "#c4ccd0";   // polished chrome/nickel faucet body
+  const FAUCET_DARK  = "#9aa4a8";   // faucet spout underside / shadow tones
 
-  // Undermount basin — top flush with stone bottom (heightFt/2), recessed downward
-  const basinW  = widthFt  * 0.70;
-  const basinD  = depthFt  * 0.58;
-  const basinH  = 0.28;
-  const basinCy = heightFt / 2 - basinH / 2;
+  // ── Basin dimensions ─────────────────────────────────────────────────────────
+  // Premium single-bowl: 60% width, 60% depth, 9" deep (~0.75 ft)
+  const basinW     = widthFt  * 0.62;
+  const basinD     = depthFt  * 0.60;
+  const basinH     = 0.74;            // deep 9" bowl — proper premium sink depth
+  const rimThick   = 0.025;           // 16-gauge rim wall thickness
+  const wallThick  = 0.018;           // basin side wall thickness
+  // Basin top flush with underside of countertop (undermount)
+  const basinTopY  = heightFt / 2;
+  const basinBotY  = basinTopY - basinH;
+  const basinCtrY  = basinTopY - basinH / 2;
 
-  // Gooseneck faucet arc — direction-aware: starts from the wall side, arcs toward front
+  // ── Faucet geometry (direction-aware CatmullRom curve) ───────────────────────
+  // High-arc gooseneck: rises 14" from deck, graceful forward arc
   const faucetGeo = useMemo(() => {
-    const by = heightFt / 2 + COUNTER_THICK + 0.02;  // just above stone top surface
+    const by  = heightFt / 2 + COUNTER_THICK + 0.012;   // deck surface + tiny gap
+    const rH  = 0.38;   // rise height (≈14" — premium tall arc)
+    const fwd = 0.22;   // forward reach toward basin
     let curve;
 
     if (faceDir === "x+") {
-      // West wall cabinet — wall is at x-, front is x+
-      const bx = -widthFt * 0.30;
+      const bx = -widthFt * 0.28;
       curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(bx,        by,        0),
-        new THREE.Vector3(bx,        by + 0.18, 0),
-        new THREE.Vector3(bx + 0.09, by + 0.26, 0),
-        new THREE.Vector3(bx + 0.20, by + 0.20, 0),
-        new THREE.Vector3(bx + 0.28, by + 0.12, 0),
+        new THREE.Vector3(bx,          by,          0),
+        new THREE.Vector3(bx,          by + 0.08,   0),
+        new THREE.Vector3(bx,          by + rH,     0),
+        new THREE.Vector3(bx + fwd * 0.6, by + rH + 0.04, 0),
+        new THREE.Vector3(bx + fwd,    by + rH - 0.02, 0),
+        new THREE.Vector3(bx + fwd + 0.06, by + rH - 0.10, 0),
       ]);
     } else if (faceDir === "x-") {
-      // East wall cabinet — wall is at x+, front is x-
-      const bx = widthFt * 0.30;
+      const bx = widthFt * 0.28;
       curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(bx,        by,        0),
-        new THREE.Vector3(bx,        by + 0.18, 0),
-        new THREE.Vector3(bx - 0.09, by + 0.26, 0),
-        new THREE.Vector3(bx - 0.20, by + 0.20, 0),
-        new THREE.Vector3(bx - 0.28, by + 0.12, 0),
+        new THREE.Vector3(bx,             by,          0),
+        new THREE.Vector3(bx,             by + 0.08,   0),
+        new THREE.Vector3(bx,             by + rH,     0),
+        new THREE.Vector3(bx - fwd * 0.6, by + rH + 0.04, 0),
+        new THREE.Vector3(bx - fwd,       by + rH - 0.02, 0),
+        new THREE.Vector3(bx - fwd - 0.06, by + rH - 0.10, 0),
       ]);
     } else {
-      // "z+" — back wall (base-north): wall is at z-, front is z+
-      const bz = -depthFt * 0.30;
+      // "z+" default — back wall, faucet rises from wall side toward basin
+      const bz = -depthFt * 0.28;
       curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, by,        bz),
-        new THREE.Vector3(0, by + 0.18, bz),
-        new THREE.Vector3(0, by + 0.26, bz + 0.09),
-        new THREE.Vector3(0, by + 0.20, bz + 0.20),
-        new THREE.Vector3(0, by + 0.12, bz + 0.28),
+        new THREE.Vector3(0, by,          bz),
+        new THREE.Vector3(0, by + 0.08,   bz),
+        new THREE.Vector3(0, by + rH,     bz),
+        new THREE.Vector3(0, by + rH + 0.04, bz + fwd * 0.6),
+        new THREE.Vector3(0, by + rH - 0.02, bz + fwd),
+        new THREE.Vector3(0, by + rH - 0.10, bz + fwd + 0.06),
       ]);
     }
-    return new THREE.TubeGeometry(curve, 16, 0.016, 8, false);
+    // Slender 12-sided tube — smooth polished chrome look
+    return new THREE.TubeGeometry(curve, 24, 0.011, 12, false);
   }, [heightFt, depthFt, widthFt, faceDir]);
+
+  // Spout tip position — end of faucet curve
+  const spoutTip = useMemo(() => {
+    const by  = heightFt / 2 + COUNTER_THICK + 0.012;
+    const rH  = 0.38;
+    const fwd = 0.22;
+    if (faceDir === "x+") {
+      const bx = -widthFt * 0.28;
+      return [bx + fwd + 0.06, by + rH - 0.10, 0];
+    } else if (faceDir === "x-") {
+      const bx = widthFt * 0.28;
+      return [bx - fwd - 0.06, by + rH - 0.10, 0];
+    }
+    const bz = -depthFt * 0.28;
+    return [0, by + rH - 0.10, bz + fwd + 0.06];
+  }, [heightFt, depthFt, widthFt, faceDir]);
+
+  // ── Deck fittings (base, handles) — direction-aware ──────────────────────────
+  const mountY  = heightFt / 2 + COUNTER_THICK;
+  const isNS    = faceDir === "z+" || faceDir === "z-";
+  // Faucet base position — toward wall (same side as faucet foot)
+  const fbx = faceDir === "x+" ? -widthFt * 0.28
+            : faceDir === "x-" ?  widthFt * 0.28 : 0;
+  const fbz = isNS ? -depthFt * 0.28 : 0;
+  // Handle offsets — perpendicular to faucet axis
+  const hOX = isNS ? 0.115 : 0;
+  const hOZ = isNS ? 0     : 0.115;
 
   return (
     <>
-      {/* Cabinet body — semi-gloss painted finish */}
+      {/* ── Cabinet carcass body ──────────────────────────────────────────── */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[widthFt, heightFt, depthFt]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.50} metalness={0.01} />
+        <meshStandardMaterial color={bodyColor} roughness={0.28} metalness={0.02} envMapIntensity={0.8} />
       </mesh>
 
-      {/* Stone countertop — direction-aware overhang (matches Scene3DCabinet fix):
-          extend only toward the front face so adjacent countertop seams never overlap. */}
+      {/* ── Countertop stone slab — direction-aware front overhang ─────────── */}
       {(() => {
-        const OV = 0.12;
-        const isNS = faceDir === "z+" || faceDir === "z-";
+        const OV   = 0.12;
         const sign = (faceDir === "z+" || faceDir === "x+") ? 1 : -1;
         const ctW  = isNS ? widthFt : widthFt + OV;
         const ctD  = isNS ? depthFt + OV : depthFt;
         const ctOX = isNS ? 0 : sign * OV / 2;
         const ctOZ = isNS ? sign * OV / 2 : 0;
         return (
-          <mesh castShadow position={[ctOX, heightFt / 2 + COUNTER_THICK / 2, ctOZ]}>
-            <boxGeometry args={[ctW, COUNTER_THICK, ctD]} />
-            <meshStandardMaterial color={counterColor} roughness={0.10} metalness={0.10} />
-          </mesh>
-        );
-      })()}
-
-      {/* Undermount basin outer shell — brushed stainless */}
-      <mesh castShadow position={[0, basinCy, 0]}>
-        <boxGeometry args={[basinW, basinH, basinD]} />
-        <meshStandardMaterial color={basinColor} roughness={0.22} metalness={0.82} />
-      </mesh>
-
-      {/* Inner basin — slightly smaller, darker; gives illusion of basin walls + depth */}
-      <mesh position={[0, basinCy, 0]}>
-        <boxGeometry args={[basinW - 0.05, basinH, basinD - 0.05]} />
-        <meshStandardMaterial color="#4e6268" roughness={0.28} metalness={0.70} />
-      </mesh>
-
-      {/* Drain disk at basin floor */}
-      <mesh position={[0, heightFt / 2 - basinH + 0.008, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 0.016, 8]} />
-        <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
-      </mesh>
-
-      {/* Drain crosshair — strainer grill bars */}
-      <mesh position={[0, heightFt / 2 - basinH + 0.010, 0]}>
-        <boxGeometry args={[0.065, 0.004, 0.011]} />
-        <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
-      </mesh>
-      <mesh position={[0, heightFt / 2 - basinH + 0.010, 0]}>
-        <boxGeometry args={[0.011, 0.004, 0.065]} />
-        <meshStandardMaterial color="#1e1a17" roughness={0.5} metalness={0.8} />
-      </mesh>
-
-      {/* Gooseneck faucet arc */}
-      <mesh castShadow geometry={faucetGeo}>
-        <meshStandardMaterial color={faucetColor} roughness={0.08} metalness={0.88} />
-      </mesh>
-
-      {/* Faucet mounting disc + hot/cold valve handles — direction-aware */}
-      {(() => {
-        const mountY = heightFt / 2 + COUNTER_THICK;
-        // Base position mirrors faucet curve start point
-        const bx = faceDir === "x+" ? -widthFt * 0.30
-                 : faceDir === "x-" ?  widthFt * 0.30 : 0;
-        const bz = (faceDir === "z+" || faceDir === "z-") ? -depthFt * 0.30 : 0;
-        // Valve offset direction: perpendicular to the faucet axis
-        const isNS = faceDir === "z+" || faceDir === "z-";
-        const vOX  = isNS ? 0.09 : 0;   // offset along X for NS walls
-        const vOZ  = isNS ? 0   : 0.09; // offset along Z for EW walls
-        return (
           <>
-            {/* Faucet base disc */}
-            <mesh position={[bx, mountY, bz]}>
-              <cylinderGeometry args={[0.048, 0.052, 0.022, 12]} />
-              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.90} />
+            <mesh castShadow receiveShadow position={[ctOX, heightFt / 2 + COUNTER_THICK / 2, ctOZ]}>
+              <boxGeometry args={[ctW, COUNTER_THICK, ctD]} />
+              <meshStandardMaterial color={counterColor} roughness={0.12} metalness={0.06} envMapIntensity={1.8} />
             </mesh>
-            {/* Hot handle (left/front) */}
-            <mesh position={[bx - vOX, mountY + 0.04, bz - vOZ]}>
-              <cylinderGeometry args={[0.012, 0.012, 0.06, 8]} />
-              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.88} />
-            </mesh>
-            {/* Cold handle (right/back) */}
-            <mesh position={[bx + vOX, mountY + 0.04, bz + vOZ]}>
-              <cylinderGeometry args={[0.012, 0.012, 0.06, 8]} />
-              <meshStandardMaterial color={faucetColor} roughness={0.06} metalness={0.88} />
+            {/* Front edge waterfall detail */}
+            <mesh position={[ctOX, heightFt / 2 + COUNTER_THICK / 2, ctOZ + ctD / 2 - 0.005]}>
+              <boxGeometry args={[ctW, COUNTER_THICK * 0.92, 0.012]} />
+              <meshStandardMaterial color={counterColor} roughness={0.08} metalness={0.07} envMapIntensity={2.0} />
             </mesh>
           </>
         );
       })()}
 
-      {/* Toe kick — recessed 0.03 ft from body front face to prevent z-fighting */}
-      <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.06]}>
-        <boxGeometry args={[widthFt - 0.01, 0.13, 0.06]} />
-        <meshStandardMaterial color="#252220" roughness={0.9} metalness={0} />
+      {/* ── Undermount basin — 5-panel hollow shell ───────────────────────── */}
+      {/* Rim — stainless steel collar visible through cutout in stone */}
+      <mesh castShadow position={[0, basinTopY - rimThick / 2, 0]}>
+        <boxGeometry args={[basinW, rimThick, basinD]} />
+        <meshStandardMaterial color={STEEL_CLR} roughness={0.18} metalness={0.90} envMapIntensity={1.6} />
+      </mesh>
+
+      {/* Basin floor — polished stainless, darker */}
+      <mesh receiveShadow position={[0, basinBotY + wallThick / 2, 0]}>
+        <boxGeometry args={[basinW - wallThick * 2, wallThick, basinD - wallThick * 2]} />
+        <meshStandardMaterial color={BASIN_FLOOR} roughness={0.25} metalness={0.88} envMapIntensity={1.0} />
+      </mesh>
+
+      {/* Basin left wall */}
+      <mesh position={[-(basinW / 2 - wallThick / 2), basinCtrY, 0]}>
+        <boxGeometry args={[wallThick, basinH - wallThick, basinD - wallThick * 2]} />
+        <meshStandardMaterial color={STEEL_DARK} roughness={0.22} metalness={0.88} envMapIntensity={1.2} />
+      </mesh>
+      {/* Basin right wall */}
+      <mesh position={[(basinW / 2 - wallThick / 2), basinCtrY, 0]}>
+        <boxGeometry args={[wallThick, basinH - wallThick, basinD - wallThick * 2]} />
+        <meshStandardMaterial color={STEEL_DARK} roughness={0.22} metalness={0.88} envMapIntensity={1.2} />
+      </mesh>
+      {/* Basin back wall (toward room wall) */}
+      <mesh position={[0, basinCtrY, -(basinD / 2 - wallThick / 2)]}>
+        <boxGeometry args={[basinW - wallThick * 2, basinH - wallThick, wallThick]} />
+        <meshStandardMaterial color={STEEL_DARK} roughness={0.22} metalness={0.88} envMapIntensity={1.2} />
+      </mesh>
+      {/* Basin front wall (toward cabinet front) */}
+      <mesh position={[0, basinCtrY, (basinD / 2 - wallThick / 2)]}>
+        <boxGeometry args={[basinW - wallThick * 2, basinH - wallThick, wallThick]} />
+        <meshStandardMaterial color={STEEL_DARK} roughness={0.22} metalness={0.88} envMapIntensity={1.2} />
+      </mesh>
+
+      {/* ── Basket strainer drain ─────────────────────────────────────────── */}
+      {/* Drain body — recessed flange ring */}
+      <mesh position={[0, basinBotY + wallThick + 0.010, 0]}>
+        <cylinderGeometry args={[0.052, 0.052, 0.020, 20]} />
+        <meshStandardMaterial color={DRAIN_CLR} roughness={0.30} metalness={0.85} envMapIntensity={1.0} />
+      </mesh>
+      {/* Inner drain bowl — darker recess */}
+      <mesh position={[0, basinBotY + wallThick + 0.006, 0]}>
+        <cylinderGeometry args={[0.038, 0.038, 0.012, 20]} />
+        <meshStandardMaterial color="#1c2022" roughness={0.40} metalness={0.80} />
+      </mesh>
+      {/* Strainer basket rim ring */}
+      <mesh position={[0, basinBotY + wallThick + 0.018, 0]}>
+        <torusGeometry args={[0.042, 0.006, 8, 20]} />
+        <meshStandardMaterial color={STEEL_DARK} roughness={0.20} metalness={0.90} envMapIntensity={1.2} />
+      </mesh>
+      {/* Crosshair grill bars — 3 bars in each direction for realistic strainer */}
+      {[-0.014, 0, 0.014].map((off, k) => (
+        <mesh key={`gx-${k}`} position={[off, basinBotY + wallThick + 0.019, 0]}>
+          <boxGeometry args={[0.004, 0.003, 0.072]} />
+          <meshStandardMaterial color={DRAIN_CLR} roughness={0.25} metalness={0.88} />
+        </mesh>
+      ))}
+      {[-0.014, 0, 0.014].map((off, k) => (
+        <mesh key={`gz-${k}`} position={[0, basinBotY + wallThick + 0.019, off]}>
+          <boxGeometry args={[0.072, 0.003, 0.004]} />
+          <meshStandardMaterial color={DRAIN_CLR} roughness={0.25} metalness={0.88} />
+        </mesh>
+      ))}
+
+      {/* ── Gooseneck faucet tube ──────────────────────────────────────────── */}
+      <mesh castShadow geometry={faucetGeo}>
+        <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={2.0} />
+      </mesh>
+
+      {/* Spout tip — cylindrical aerator head at faucet end */}
+      <mesh castShadow position={spoutTip}>
+        <cylinderGeometry args={[0.015, 0.018, 0.030, 14]} />
+        <meshStandardMaterial color={FAUCET_DARK} roughness={0.15} metalness={0.92} envMapIntensity={1.4} />
+      </mesh>
+      {/* Aerator face disc */}
+      <mesh position={[spoutTip[0], spoutTip[1] - 0.016, spoutTip[2]]}>
+        <cylinderGeometry args={[0.013, 0.013, 0.004, 14]} />
+        <meshStandardMaterial color="#2a2e30" roughness={0.45} metalness={0.75} />
+      </mesh>
+
+      {/* ── Faucet deck base — single-hole mounting ───────────────────────── */}
+      {/* Escutcheon plate */}
+      <mesh position={[fbx, mountY + 0.004, fbz]}>
+        <cylinderGeometry args={[0.036, 0.040, 0.008, 18]} />
+        <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={1.8} />
+      </mesh>
+      {/* Decorative collar ring above plate */}
+      <mesh position={[fbx, mountY + 0.012, fbz]}>
+        <torusGeometry args={[0.026, 0.005, 8, 18]} />
+        <meshStandardMaterial color={FAUCET_DARK} roughness={0.10} metalness={0.94} envMapIntensity={1.6} />
+      </mesh>
+      {/* Base column rising to gooseneck */}
+      <mesh position={[fbx, mountY + 0.038, fbz]}>
+        <cylinderGeometry args={[0.018, 0.022, 0.060, 14]} />
+        <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={2.0} />
+      </mesh>
+
+      {/* ── Side-lever handles — hot (left) and cold (right) ─────────────── */}
+      {[
+        { side: -1, label: "hot" },
+        { side:  1, label: "cold" },
+      ].map(({ side }) => {
+        const hbx = fbx + side * hOX;
+        const hbz = fbz + side * hOZ;
+        return (
+          <group key={side} position={[hbx, mountY, hbz]}>
+            {/* Handle base escutcheon */}
+            <mesh position={[0, 0.004, 0]}>
+              <cylinderGeometry args={[0.018, 0.020, 0.008, 14]} />
+              <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={1.8} />
+            </mesh>
+            {/* Vertical stem */}
+            <mesh position={[0, 0.022, 0]}>
+              <cylinderGeometry args={[0.010, 0.013, 0.028, 12]} />
+              <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={1.8} />
+            </mesh>
+            {/* Lever arm — horizontal bar extending toward front */}
+            {(() => {
+              const leverLen = 0.080;
+              // Lever points toward cabinet front (perpendicular to faucet axis)
+              const lRot = isNS ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0];
+              const lPos = isNS
+                ? [0, 0.036, leverLen / 2 * side]
+                : [leverLen / 2 * side, 0.036, 0];
+              return (
+                <mesh position={lPos} rotation={lRot}>
+                  <cylinderGeometry args={[0.006, 0.009, leverLen, 10]} />
+                  <meshStandardMaterial color={FAUCET_CLR} roughness={0.06} metalness={0.96} envMapIntensity={1.8} />
+                </mesh>
+              );
+            })()}
+            {/* Lever knob cap at tip */}
+            {(() => {
+              const lPos = isNS
+                ? [0, 0.036, (0.040 + 0.010) * side]
+                : [(0.040 + 0.010) * side, 0.036, 0];
+              return (
+                <mesh position={lPos}>
+                  <sphereGeometry args={[0.010, 10, 10]} />
+                  <meshStandardMaterial color={FAUCET_DARK} roughness={0.10} metalness={0.94} envMapIntensity={1.6} />
+                </mesh>
+              );
+            })()}
+          </group>
+        );
+      })}
+
+      {/* ── Toe kick ─────────────────────────────────────────────────────────── */}
+      <mesh position={[0, -heightFt / 2 + 0.065, depthFt / 2 - 0.033]}>
+        <boxGeometry args={[widthFt - 0.01, 0.13, 0.066]} />
+        <meshStandardMaterial color="#141210" roughness={0.95} metalness={0} />
       </mesh>
     </>
   );

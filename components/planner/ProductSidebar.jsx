@@ -61,12 +61,90 @@ const FIXTURE_ICONS = {
   ),
 };
 
+// ─── Cabinet door / drawer styles (hardcoded — 4 canonical types) ────────────
+const DOOR_STYLE_OPTIONS = [
+  {
+    id: "Shaker",
+    name: "Shaker",
+    icon: (
+      <svg viewBox="0 0 48 48" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="4" y="4" width="40" height="40" rx="1.5" />
+        <rect x="10" y="10" width="28" height="28" rx="1" strokeWidth={1.5} />
+      </svg>
+    ),
+  },
+  {
+    id: "Slab",
+    name: "Slab / Flat",
+    icon: (
+      <svg viewBox="0 0 48 48" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="4" y="4" width="40" height="40" rx="1.5" />
+        <line x1="19" y1="43" x2="29" y2="43" strokeWidth={2} strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "Raised Panel",
+    name: "Raised Panel",
+    icon: (
+      <svg viewBox="0 0 48 48" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="4" y="4" width="40" height="40" rx="1.5" />
+        <rect x="10" y="10" width="28" height="28" rx="1" strokeWidth={1.5} />
+        <rect x="15" y="15" width="18" height="18" rx="0.5" strokeWidth={1} fill="currentColor" fillOpacity={0.12} />
+      </svg>
+    ),
+  },
+  {
+    id: "Glass-Front",
+    name: "Glass-Front",
+    icon: (
+      <svg viewBox="0 0 48 48" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2}>
+        <rect x="4" y="4" width="40" height="40" rx="1.5" />
+        <rect x="10" y="10" width="28" height="28" rx="1" strokeWidth={1.5} />
+        <line x1="10" y1="10" x2="38" y2="38" strokeWidth={1} opacity={0.4} />
+        <line x1="10" y1="38" x2="38" y2="10" strokeWidth={1} opacity={0.4} />
+      </svg>
+    ),
+  },
+];
+
+// ─── Hardware styles (hardcoded — no DB table needed) ─────────────────────────
+const HARDWARE_STYLES = [
+  { id: "hw-bar",    name: "Bar Pull",   type: "bar"    },
+  { id: "hw-knob",   name: "Knob",       type: "knob"   },
+  { id: "hw-cup",    name: "Cup Pull",   type: "cup"    },
+  { id: "hw-hidden", name: "Integrated", type: "hidden" },
+];
+
+// Hardware icon SVGs
+const HARDWARE_ICONS = {
+  bar: (
+    <svg viewBox="0 0 32 32" className="w-6 h-6 text-stone-500" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
+      <line x1="6" y1="16" x2="26" y2="16"/>
+      <circle cx="8" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+      <circle cx="24" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+    </svg>
+  ),
+  knob: (
+    <svg viewBox="0 0 32 32" className="w-6 h-6 text-stone-500" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="16" cy="16" r="6"/>
+      <circle cx="16" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+    </svg>
+  ),
+  cup: (
+    <svg viewBox="0 0 32 32" className="w-6 h-6 text-stone-500" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
+      <path d="M6 12 Q6 22 16 22 Q26 22 26 12"/>
+      <line x1="6" y1="12" x2="26" y2="12"/>
+    </svg>
+  ),
+  hidden: (
+    <svg viewBox="0 0 32 32" className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" strokeWidth={2} strokeDasharray="3 2">
+      <rect x="6" y="13" width="20" height="6" rx="1"/>
+    </svg>
+  ),
+};
+
 // ─── Finish → approximate hex color for 3D preview ───────────────────────────
-//
-// Searches name first (most descriptive), then code, then description for
-// color keywords so that admin-defined names like "Warm White" or
-// "Espresso Brown" resolve correctly even when the code is opaque (e.g. "wb-001").
-//
 function matchColorKeywords(text) {
   const t = (text || "").toLowerCase();
   if (t.includes("white") || t.includes("bright"))             return "#f4f2ee";
@@ -87,6 +165,19 @@ function matchColorKeywords(text) {
   if (t.includes("natural") || t.includes("maple"))            return "#c8a06e";
   if (t.includes("cherry"))                                     return "#8b2500";
   if (t.includes("oak"))                                        return "#b8865a";
+  // Countertop-specific keywords
+  if (t.includes("quartz"))                                     return "#e8e4de";
+  if (t.includes("marble"))                                     return "#f0ede8";
+  if (t.includes("granite"))                                    return "#9a9088";
+  if (t.includes("concrete"))                                   return "#9a9898";
+  if (t.includes("soapstone"))                                  return "#6a7070";
+  if (t.includes("butcher") || t.includes("wood"))             return "#b8905a";
+  // Flooring-specific keywords
+  if (t.includes("hardwood") || t.includes("plank"))           return "#c09a6a";
+  if (t.includes("tile") || t.includes("ceramic") || t.includes("porcelain")) return "#d0cdc8";
+  if (t.includes("slate"))                                      return "#7a7870";
+  if (t.includes("limestone"))                                  return "#d4cfc0";
+  if (t.includes("terracotta"))                                 return "#c8785a";
   return null;
 }
 
@@ -103,6 +194,102 @@ export function finishCodeToHex(code, finishFamily, name, description) {
   // finishFamily fallback
   if ((finishFamily || "").toLowerCase() === "stained") return "#7a5c3a";
   return "#d4cfc8"; // default warm taupe
+}
+
+// ─── Shared UI building blocks ────────────────────────────────────────────────
+
+/**
+ * Reusable accordion section wrapper used by all 5 new design sections.
+ */
+function SidebarSection({ label, selected, isOpen, onToggle, children }) {
+  return (
+    <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-1 py-2 group"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 group-hover:text-stone-600 transition-colors">
+            {label}
+          </p>
+          {selected && (
+            <span className="text-[9px] text-stone-400 truncate hidden sm:inline">
+              — {selected}
+            </span>
+          )}
+        </div>
+        <svg
+          className={[
+            "w-3.5 h-3.5 text-stone-400 transition-transform shrink-0",
+            isOpen ? "rotate-90" : "",
+          ].join(" ")}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      {isOpen && children}
+    </div>
+  );
+}
+
+/**
+ * Reusable swatch chip — renders image if swatchUrl, solid color if hex, neutral stone otherwise.
+ */
+function SwatchButton({ item, isSelected, onClick }) {
+  return (
+    <button
+      type="button"
+      title={item.name}
+      onClick={() => onClick(item)}
+      className={[
+        "relative w-10 h-10 rounded-lg overflow-hidden border-2 transition-all duration-100 shrink-0 focus:outline-none",
+        isSelected
+          ? "border-blue-500 shadow-md scale-105"
+          : "border-stone-200 hover:border-stone-400 hover:scale-105",
+      ].join(" ")}
+    >
+      {item.swatchUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.swatchUrl}
+          alt={item.name}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+      ) : item.hex ? (
+        <span className="block w-full h-full" style={{ backgroundColor: item.hex }} />
+      ) : (
+        <span className="block w-full h-full bg-stone-200" />
+      )}
+
+      {isSelected && (
+        <span className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
+          <svg className="w-3.5 h-3.5 text-blue-600 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * Shared dashed clear-selection chip.
+ */
+function ClearButton({ onClear }) {
+  return (
+    <button
+      type="button"
+      title="Clear selection"
+      onClick={onClear}
+      className="w-10 h-10 rounded-lg border-2 border-dashed border-stone-300 text-stone-400 flex items-center justify-center hover:border-stone-500 hover:text-stone-600 transition shrink-0"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  );
 }
 
 // ─── Individual draggable product card ────────────────────────────────────────
@@ -170,7 +357,7 @@ function DraggableProduct({ product, onQuickAdd }) {
   );
 }
 
-// ─── Finish swatch chip ───────────────────────────────────────────────────────
+// ─── Finish swatch chip (existing — for cabinet colors) ───────────────────────
 
 function FinishSwatch({ finish, isSelected, onClick }) {
   const hex = finishCodeToHex(finish.code, finish.finishFamily, finish.name, finish.description);
@@ -199,7 +386,6 @@ function FinishSwatch({ finish, isSelected, onClick }) {
         <span className="block w-full h-full" style={{ backgroundColor: hex }} />
       )}
 
-      {/* Selected checkmark overlay */}
       {isSelected && (
         <span className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
           <svg className="w-3.5 h-3.5 text-blue-600 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -211,6 +397,158 @@ function FinishSwatch({ finish, isSelected, onClick }) {
   );
 }
 
+// ─── Door Style section ───────────────────────────────────────────────────────
+
+function DoorStyleSection() {
+  const selectedDoorStyle    = usePlannerStore((s) => s.selectedDoorStyle);
+  const setSelectedDoorStyle = usePlannerStore((s) => s.setSelectedDoorStyle);
+  const [isOpen, setIsOpen]  = useState(true);
+
+  const handleSelect = (opt) => {
+    const payload = { id: opt.id, name: opt.name };
+    setSelectedDoorStyle(selectedDoorStyle?.id === opt.id ? null : payload);
+  };
+
+  return (
+    <SidebarSection
+      label="Door Style"
+      selected={selectedDoorStyle?.name}
+      isOpen={isOpen}
+      onToggle={() => setIsOpen((v) => !v)}
+    >
+      <div className="grid grid-cols-4 gap-1.5 pb-3 px-1">
+        {DOOR_STYLE_OPTIONS.map((opt) => {
+          const sel = selectedDoorStyle?.id === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              title={opt.name}
+              onClick={() => handleSelect(opt)}
+              className={[
+                "flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-2 transition-all duration-100 focus:outline-none",
+                sel
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50",
+              ].join(" ")}
+            >
+              <span className={["block w-8 h-8", sel ? "text-blue-600" : "text-stone-500"].join(" ")}>
+                {opt.icon}
+              </span>
+              <span className={["text-[9px] font-medium leading-tight text-center", sel ? "text-blue-700" : "text-stone-500"].join(" ")}>
+                {opt.name}
+              </span>
+            </button>
+          );
+        })}
+        {selectedDoorStyle && <ClearButton onClear={() => setSelectedDoorStyle(null)} />}
+      </div>
+    </SidebarSection>
+  );
+}
+
+// ─── Drawer Style section ─────────────────────────────────────────────────────
+
+function DrawerStyleSection() {
+  const selectedDrawerStyle    = usePlannerStore((s) => s.selectedDrawerStyle);
+  const setSelectedDrawerStyle = usePlannerStore((s) => s.setSelectedDrawerStyle);
+  const [isOpen, setIsOpen]    = useState(false);
+
+  const handleSelect = (opt) => {
+    const payload = { id: opt.id, name: opt.name };
+    setSelectedDrawerStyle(selectedDrawerStyle?.id === opt.id ? null : payload);
+  };
+
+  return (
+    <SidebarSection
+      label="Drawer Style"
+      selected={selectedDrawerStyle?.name}
+      isOpen={isOpen}
+      onToggle={() => setIsOpen((v) => !v)}
+    >
+      <div className="grid grid-cols-4 gap-1.5 pb-3 px-1">
+        {DOOR_STYLE_OPTIONS.map((opt) => {
+          const sel = selectedDrawerStyle?.id === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              title={opt.name}
+              onClick={() => handleSelect(opt)}
+              className={[
+                "flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-2 transition-all duration-100 focus:outline-none",
+                sel
+                  ? "border-blue-500 bg-blue-50 shadow-sm"
+                  : "border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50",
+              ].join(" ")}
+            >
+              <span className={["block w-8 h-8", sel ? "text-blue-600" : "text-stone-500"].join(" ")}>
+                {opt.icon}
+              </span>
+              <span className={["text-[9px] font-medium leading-tight text-center", sel ? "text-blue-700" : "text-stone-500"].join(" ")}>
+                {opt.name}
+              </span>
+            </button>
+          );
+        })}
+        {selectedDrawerStyle && <ClearButton onClear={() => setSelectedDrawerStyle(null)} />}
+      </div>
+    </SidebarSection>
+  );
+}
+
+// ─── Hardware section ─────────────────────────────────────────────────────────
+
+function HardwareTile({ hw, isSelected, onClick }) {
+  return (
+    <button
+      type="button"
+      title={hw.name}
+      onClick={() => onClick(hw)}
+      className={[
+        "flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-2 transition-all duration-100 focus:outline-none",
+        isSelected
+          ? "border-blue-500 bg-blue-50 shadow-sm"
+          : "border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50",
+      ].join(" ")}
+    >
+      {HARDWARE_ICONS[hw.type]}
+      <span className={["text-[9px] font-medium leading-tight text-center", isSelected ? "text-blue-700" : "text-stone-500"].join(" ")}>
+        {hw.name}
+      </span>
+    </button>
+  );
+}
+
+function HardwareSection() {
+  const selectedHardware    = usePlannerStore((s) => s.selectedHardware);
+  const setSelectedHardware = usePlannerStore((s) => s.setSelectedHardware);
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handleSelect = (hw) =>
+    setSelectedHardware(selectedHardware?.id === hw.id ? null : hw);
+
+  return (
+    <SidebarSection
+      label="Hardware"
+      selected={selectedHardware?.name}
+      isOpen={isOpen}
+      onToggle={() => setIsOpen((v) => !v)}
+    >
+      <div className="grid grid-cols-4 gap-1.5 pb-3 px-1">
+        {HARDWARE_STYLES.map((hw) => (
+          <HardwareTile
+            key={hw.id}
+            hw={hw}
+            isSelected={selectedHardware?.id === hw.id}
+            onClick={handleSelect}
+          />
+        ))}
+      </div>
+    </SidebarSection>
+  );
+}
+
 // ─── Cabinet Colors section ────────────────────────────────────────────────────
 
 function CabinetColorsSection({ finishes }) {
@@ -219,7 +557,6 @@ function CabinetColorsSection({ finishes }) {
   const setUpperCabinetColor = usePlannerStore((s) => s.setUpperCabinetColor);
   const setLowerCabinetColor = usePlannerStore((s) => s.setLowerCabinetColor);
 
-  // Which color sub-rows are expanded (both open by default)
   const [openRows, setOpenRows] = useState(() => new Set(["upper", "lower"]));
 
   const toggleRow = (key) =>
@@ -252,7 +589,6 @@ function CabinetColorsSection({ finishes }) {
 
   return (
     <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">
-      {/* Section label */}
       <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1 px-1">
         Cabinet Colors
       </p>
@@ -266,13 +602,11 @@ function CabinetColorsSection({ finishes }) {
           const isOpen = openRows.has(row.key);
           return (
             <div key={row.key}>
-              {/* Sub-row accordion header */}
               <button
                 onClick={() => toggleRow(row.key)}
                 className="w-full flex items-center justify-between px-1 py-2 group"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {/* Color preview dot */}
                   <span
                     className="w-3 h-3 rounded-full border border-stone-300 shrink-0 transition-all"
                     style={
@@ -307,7 +641,6 @@ function CabinetColorsSection({ finishes }) {
                 </svg>
               </button>
 
-              {/* Swatch grid */}
               {isOpen && (
                 <div className="flex flex-wrap gap-2 pb-3 px-1">
                   {finishes.map((finish) => (
@@ -318,7 +651,6 @@ function CabinetColorsSection({ finishes }) {
                       onClick={(f) => handleSelect(row.key, f)}
                     />
                   ))}
-                  {/* Clear chip — only when a color is selected */}
                   {row.selected && (
                     <button
                       type="button"
@@ -345,9 +677,89 @@ function CabinetColorsSection({ finishes }) {
   );
 }
 
+// ─── Countertop section ───────────────────────────────────────────────────────
+
+function CountertopSection({ countertops }) {
+  const selectedCountertop    = usePlannerStore((s) => s.selectedCountertop);
+  const setSelectedCountertop = usePlannerStore((s) => s.setSelectedCountertop);
+  const [isOpen, setIsOpen]   = useState(true);
+
+  if (!countertops || countertops.length === 0) return null;
+
+  const handleSelect = (c) => {
+    const hex = finishCodeToHex(c.code, null, c.name, c.description);
+    const payload = { id: c.id, name: c.name, code: c.code, description: c.description, swatchUrl: c.swatchUrl, hex };
+    setSelectedCountertop(selectedCountertop?.id === c.id ? null : payload);
+  };
+
+  return (
+    <SidebarSection
+      label="Countertop"
+      selected={selectedCountertop?.name}
+      isOpen={isOpen}
+      onToggle={() => setIsOpen((v) => !v)}
+    >
+      <div className="flex flex-wrap gap-2 pb-3 px-1">
+        {countertops.map((c) => {
+          const hex = finishCodeToHex(c.code, null, c.name, c.description);
+          return (
+            <SwatchButton
+              key={c.id}
+              item={{ id: c.id, name: c.name, swatchUrl: c.swatchUrl, hex }}
+              isSelected={selectedCountertop?.id === c.id}
+              onClick={() => handleSelect(c)}
+            />
+          );
+        })}
+        {selectedCountertop && <ClearButton onClear={() => setSelectedCountertop(null)} />}
+      </div>
+    </SidebarSection>
+  );
+}
+
+// ─── Flooring section ─────────────────────────────────────────────────────────
+
+function FlooringSection({ floorColors }) {
+  const selectedFlooring    = usePlannerStore((s) => s.selectedFlooring);
+  const setSelectedFlooring = usePlannerStore((s) => s.setSelectedFlooring);
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!floorColors || floorColors.length === 0) return null;
+
+  const handleSelect = (c) => {
+    const hex = finishCodeToHex(c.code, null, c.name, c.description);
+    const payload = { id: c.id, name: c.name, code: c.code, description: c.description, swatchUrl: c.swatchUrl, hex };
+    setSelectedFlooring(selectedFlooring?.id === c.id ? null : payload);
+  };
+
+  return (
+    <SidebarSection
+      label="Flooring"
+      selected={selectedFlooring?.name}
+      isOpen={isOpen}
+      onToggle={() => setIsOpen((v) => !v)}
+    >
+      <div className="flex flex-wrap gap-2 pb-3 px-1">
+        {floorColors.map((c) => {
+          const hex = finishCodeToHex(c.code, null, c.name, c.description);
+          return (
+            <SwatchButton
+              key={c.id}
+              item={{ id: c.id, name: c.name, swatchUrl: c.swatchUrl, hex }}
+              isSelected={selectedFlooring?.id === c.id}
+              onClick={() => handleSelect(c)}
+            />
+          );
+        })}
+        {selectedFlooring && <ClearButton onClear={() => setSelectedFlooring(null)} />}
+      </div>
+    </SidebarSection>
+  );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function ProductSidebar({ products = [], finishes = [], isOpen, onToggle, onQuickAdd }) {
+export default function ProductSidebar({ products = [], finishes = [], structures = [], countertops = [], floorColors = [], isOpen, onToggle, onQuickAdd }) {
   // Categories present in CATEGORY_ORDER (in defined order)
   const orderedPresent = CATEGORY_ORDER.filter((cat) =>
     products.some((p) => normalizeCategory(p.category) === cat)
@@ -388,6 +800,8 @@ export default function ProductSidebar({ products = [], finishes = [], isOpen, o
           <SidebarContent
             products={products}
             finishes={finishes}
+            countertops={countertops}
+            floorColors={floorColors}
             grouped={grouped}
             presentCategories={presentCategories}
             openCategories={openCategories}
@@ -408,7 +822,7 @@ export default function ProductSidebar({ products = [], finishes = [], isOpen, o
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
-            Products
+            Design
           </button>
         </div>
 
@@ -418,7 +832,7 @@ export default function ProductSidebar({ products = [], finishes = [], isOpen, o
             <div className="absolute inset-0 bg-black/40" onClick={onToggle} />
             <div className="relative ml-auto w-[min(288px,90vw)] h-full bg-white shadow-xl flex flex-col">
               <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
-                <p className="text-sm font-semibold text-stone-900">Products & Colors</p>
+                <p className="text-sm font-semibold text-stone-900">Design Options</p>
                 <button
                   onClick={onToggle}
                   className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-100 transition text-stone-500"
@@ -431,6 +845,9 @@ export default function ProductSidebar({ products = [], finishes = [], isOpen, o
               <SidebarContent
                 products={products}
                 finishes={finishes}
+                structures={structures}
+                countertops={countertops}
+                floorColors={floorColors}
                 grouped={grouped}
                 presentCategories={presentCategories}
                 openCategories={openCategories}
@@ -448,6 +865,8 @@ export default function ProductSidebar({ products = [], finishes = [], isOpen, o
 function SidebarContent({
   products,
   finishes,
+  countertops,
+  floorColors,
   grouped,
   presentCategories,
   openCategories,
@@ -463,7 +882,7 @@ function SidebarContent({
         </p>
       </div>
 
-      {/* Scrollable body — products + colors + fixtures */}
+      {/* Scrollable body — products + design sections + fixtures */}
       <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" }}>
 
         {/* ── Product list — accordion by category ─────────────────────────── */}
@@ -518,8 +937,23 @@ function SidebarContent({
           )}
         </div>
 
+        {/* ── Door Style ────────────────────────────────────────────────────── */}
+        <DoorStyleSection />
+
+        {/* ── Drawer Style ──────────────────────────────────────────────────── */}
+        <DrawerStyleSection />
+
+        {/* ── Hardware ──────────────────────────────────────────────────────── */}
+        <HardwareSection />
+
         {/* ── Cabinet Colors ────────────────────────────────────────────────── */}
         <CabinetColorsSection finishes={finishes} />
+
+        {/* ── Countertop ───────────────────────────────────────────────────── */}
+        <CountertopSection countertops={countertops} />
+
+        {/* ── Flooring ─────────────────────────────────────────────────────── */}
+        <FlooringSection floorColors={floorColors} />
 
         {/* ── Kitchen Fixtures ──────────────────────────────────────────────── */}
         <div className="px-3 pt-3 pb-1 border-t border-stone-100 mt-1">

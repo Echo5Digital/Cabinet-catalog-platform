@@ -189,6 +189,31 @@ const usePlannerStore = create((set, get) => ({
   setUpperCabinetColor: (color) => set({ upperCabinetColor: color }),
   setLowerCabinetColor: (color) => set({ lowerCabinetColor: color }),
 
+  // ─── Door style selection ─────────────────────────────────────────────────────
+  // Value: { id, name, code, swatchUrl } | null  (from structures table)
+  selectedDoorStyle:    null,
+  setSelectedDoorStyle: (style) => set({ selectedDoorStyle: style }),
+
+  // ─── Drawer style selection ───────────────────────────────────────────────────
+  // Same structures list, stored independently so door ≠ drawer choices are separate
+  selectedDrawerStyle:    null,
+  setSelectedDrawerStyle: (style) => set({ selectedDrawerStyle: style }),
+
+  // ─── Hardware / pull style selection ─────────────────────────────────────────
+  // Value: { id, name, type } | null  (hardcoded in-memory list — no DB table needed)
+  selectedHardware:    null,
+  setSelectedHardware: (hw) => set({ selectedHardware: hw }),
+
+  // ─── Countertop selection ─────────────────────────────────────────────────────
+  // Value: { id, name, code, description, swatchUrl, hex } | null  (from colors table)
+  selectedCountertop:    null,
+  setSelectedCountertop: (ct) => set({ selectedCountertop: ct }),
+
+  // ─── Flooring selection ───────────────────────────────────────────────────────
+  // Value: { id, name, code, description, swatchUrl, hex } | null  (from colors table)
+  selectedFlooring:    null,
+  setSelectedFlooring: (fl) => set({ selectedFlooring: fl }),
+
   // ─── Scene graph (derived — synced by PlannerScene3D for AI/export use) ──────
   // Rebuilt from scene.items by PlannerScene3D via selectProjectedItems().
   sceneGraph: null,

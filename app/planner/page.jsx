@@ -146,6 +146,83 @@ async function getPlannerFinishes(tenantId, admin) {
 }
 
 /**
+ * Fetch active countertop colors for the planner sidebar.
+ * Same two-query pattern as getLayoutStructures.
+ */
+async function getPlannerCountertops(tenantId, admin) {
+  try {
+    const { data: colors } = await admin
+      .from("colors")
+      .select("id, name, code, description, sort_order")
+      .eq("tenant_id", tenantId)
+      .eq("color_type", "countertop")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (!colors || colors.length === 0) return [];
+
+    const colorIds = colors.map((c) => c.id);
+    const { data: swatches } = await admin
+      .from("assets")
+      .select("color_id, public_url")
+      .in("color_id", colorIds)
+      .eq("asset_type", "color_swatch")
+      .eq("status", "confirmed");
+
+    const swatchMap = {};
+    for (const s of swatches || []) swatchMap[s.color_id] = s.public_url;
+
+    return colors.map((c) => ({
+      id:          c.id,
+      name:        c.name,
+      code:        c.code,
+      description: c.description || null,
+      swatchUrl:   swatchMap[c.id] || null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch active floor colors for the planner sidebar.
+ */
+async function getPlannerFloorColors(tenantId, admin) {
+  try {
+    const { data: colors } = await admin
+      .from("colors")
+      .select("id, name, code, description, sort_order")
+      .eq("tenant_id", tenantId)
+      .eq("color_type", "floor")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (!colors || colors.length === 0) return [];
+
+    const colorIds = colors.map((c) => c.id);
+    const { data: swatches } = await admin
+      .from("assets")
+      .select("color_id, public_url")
+      .in("color_id", colorIds)
+      .eq("asset_type", "color_swatch")
+      .eq("status", "confirmed");
+
+    const swatchMap = {};
+    for (const s of swatches || []) swatchMap[s.color_id] = s.public_url;
+
+    return colors.map((c) => ({
+      id:          c.id,
+      name:        c.name,
+      code:        c.code,
+      description: c.description || null,
+      swatchUrl:   swatchMap[c.id] || null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch active layout structures with their swatch image URLs.
  * Uses two separate queries (same pattern as /app/catalog/structures/page.jsx)
  * to avoid Supabase join tenant-filter limitations.
@@ -195,17 +272,22 @@ export default async function PlannerPage() {
   let initialProducts    = [];
   let initialStructures  = [];
   let initialFinishes    = [];
+  let initialCountertops = [];
+  let initialFloorColors = [];
 
   try {
     const tenantId = await resolveTenantId();
     if (tenantId) {
       const admin = createAdminClient();
-      [tenant, initialProducts, initialStructures, initialFinishes] = await Promise.all([
-        getTenant(tenantId, admin),
-        getPlannerProducts(tenantId, admin),
-        getLayoutStructures(tenantId, admin),
-        getPlannerFinishes(tenantId, admin),
-      ]);
+      [tenant, initialProducts, initialStructures, initialFinishes, initialCountertops, initialFloorColors] =
+        await Promise.all([
+          getTenant(tenantId, admin),
+          getPlannerProducts(tenantId, admin),
+          getLayoutStructures(tenantId, admin),
+          getPlannerFinishes(tenantId, admin),
+          getPlannerCountertops(tenantId, admin),
+          getPlannerFloorColors(tenantId, admin),
+        ]);
     }
   } catch {
     // Planner still renders without data — sidebar shows empty state
@@ -217,6 +299,8 @@ export default async function PlannerPage() {
       initialProducts={initialProducts}
       initialStructures={initialStructures}
       initialFinishes={initialFinishes}
+      initialCountertops={initialCountertops}
+      initialFloorColors={initialFloorColors}
     />
   );
 }

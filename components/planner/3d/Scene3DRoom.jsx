@@ -3,24 +3,20 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { buildLayoutRuns, COUNTER_THICK } from "@/lib/planner/layoutPresets";
+import usePlannerStore from "@/store/plannerStore";
 
 /**
- * Scene3DRoom — renders the room shell (floor, ceiling, walls) AND the
- * rough layout cabinet runs (placeholder boxes + countertops) so the
- * customer immediately sees their chosen layout upon entering Step 3.
- *
+ * Scene3DRoom — room shell (floor, ceiling, walls) + layout placeholder runs.
  * All dimensions in feet (1 Three.js unit = 1 foot).
- *
- * Props:
- *   room   — room object from sceneGraph.room
- *   layout — layout id string (e.g. "L-Shape") from sceneGraph.meta.layoutType
  */
 export default function Scene3DRoom({ room, layout, hasItems = false }) {
-  // Hooks must run unconditionally — derive safe defaults when room is null
   const W = room?.widthFt  ?? 0;
   const L = room?.lengthFt ?? 0;
   const H = room?.heightFt ?? 0;
   const walls = room?.walls ?? [];
+
+  const selectedFlooring = usePlannerStore((s) => s.selectedFlooring);
+  const floorHex = selectedFlooring?.hex ?? "#c8bfae";   // richer warm oak default
 
   const runs = useMemo(
     () => (layout && room ? buildLayoutRuns(layout, { width: W, length: L }) : []),
@@ -31,31 +27,29 @@ export default function Scene3DRoom({ room, layout, hasItems = false }) {
 
   return (
     <group name="room">
-      {/* ── Floor ─────────────────────────────────────────────────────────── */}
-      <mesh
-        position={[W / 2, 0, L / 2]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
-      >
+      {/* ── Floor — warm engineered wood / stone tile ──────────────────────── */}
+      <mesh position={[W / 2, 0, L / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[W, L]} />
-        <meshStandardMaterial color="#d4c9b8" roughness={0.75} metalness={0} />
+        <meshStandardMaterial
+          color={floorHex}
+          roughness={0.55}
+          metalness={0.02}
+          envMapIntensity={0.6}
+        />
       </mesh>
 
-      {/* Floor grid — 1 ft cells (lighter tones so grid doesn't overpower the floor) */}
+      {/* Subtle 1 ft grid overlay — only faint lines, doesn't compete with floor */}
       <gridHelper
-        args={[Math.max(W, L) * 2, Math.max(W, L) * 2, "#d8d4d0", "#eae6e2"]}
+        args={[Math.max(W, L) * 2, Math.max(W, L) * 2, "#c0bab2", "#ddd8d2"]}
         position={[W / 2, 0.001, L / 2]}
       />
 
-      {/* ── Ceiling ───────────────────────────────────────────────────────── */}
-      <mesh
-        position={[W / 2, H, L / 2]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
+      {/* ── Ceiling — bright white plaster ────────────────────────────────── */}
+      <mesh position={[W / 2, H, L / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[W, L]} />
         <meshStandardMaterial
-          color="#f5f4f2"
-          roughness={1}
+          color="#f8f6f4"
+          roughness={0.95}
           metalness={0}
           side={THREE.BackSide}
         />
@@ -69,7 +63,7 @@ export default function Scene3DRoom({ room, layout, hasItems = false }) {
       {/* ── Room boundary edges ───────────────────────────────────────────── */}
       <RoomEdges W={W} L={L} H={H} />
 
-      {/* ── Layout cabinet run placeholders — hidden once real items are placed */}
+      {/* ── Layout placeholder runs — hidden once real items are placed ─────── */}
       {!hasItems && runs.map((run) => (
         <LayoutRun key={run.id} run={run} />
       ))}
@@ -77,7 +71,7 @@ export default function Scene3DRoom({ room, layout, hasItems = false }) {
   );
 }
 
-// ─── Individual wall segment ──────────────────────────────────────────────────
+// ─── Wall segment ─────────────────────────────────────────────────────────────
 
 function WallSegment({ wall, roomHeight: H }) {
   const [sx, sz] = wall.startFt;
@@ -89,22 +83,15 @@ function WallSegment({ wall, roomHeight: H }) {
   const angle = Math.atan2(ex - sx, ez - sz);
 
   return (
-    <mesh
-      position={[cx, H / 2, cz]}
-      rotation={[0, angle, 0]}
-      receiveShadow
-      castShadow
-    >
+    <mesh position={[cx, H / 2, cz]} rotation={[0, angle, 0]} receiveShadow castShadow>
       <boxGeometry args={[wall.thicknessFt ?? 0.5, H, len]} />
-      <meshStandardMaterial color="#f0ece8" roughness={0.9} metalness={0} />
+      {/* Warm white plaster with very slight warm cast */}
+      <meshStandardMaterial color="#f2eee8" roughness={0.88} metalness={0} envMapIntensity={0.2} />
     </mesh>
   );
 }
 
-// ─── Cabinet run placeholder ──────────────────────────────────────────────────
-//
-// Visual-only placeholder showing where cabinet runs sit in this layout.
-// Renders: carcass box + countertop slab + edge lines + toe-kick.
+// ─── Layout cabinet run placeholder ──────────────────────────────────────────
 
 function LayoutRun({ run }) {
   const { x2d, y2d, widthFt, depthFt, heightFt, elevFt = 0, type } = run;
@@ -113,12 +100,13 @@ function LayoutRun({ run }) {
   const isIsland    = type === "island";
   const isPeninsula = type === "peninsula";
 
-  // Box centre: x2d → Three.js X, y2d → Three.js Z
   const cx = x2d + widthFt / 2;
   const cy = elevFt + heightFt / 2;
   const cz = y2d  + depthFt  / 2;
 
-  const bodyColor = isUpper ? "#eeece8" : "#f2ede7";
+  // Upper cabs: lighter, slightly transparent. Lower: warm stone, slightly opaque.
+  const bodyColor   = isUpper ? "#f0ede8" : "#ede8e2";
+  const bodyOpacity = isUpper ? 0.88 : 0.94;
 
   const edgesGeo = useMemo(
     () => new THREE.EdgesGeometry(new THREE.BoxGeometry(widthFt, heightFt, depthFt)),
@@ -132,16 +120,17 @@ function LayoutRun({ run }) {
         <boxGeometry args={[widthFt, heightFt, depthFt]} />
         <meshStandardMaterial
           color={bodyColor}
-          roughness={0.68}
+          roughness={0.32}
           metalness={0.02}
+          envMapIntensity={0.6}
           transparent
-          opacity={0.92}
+          opacity={bodyOpacity}
         />
       </mesh>
 
-      {/* Cabinet panel / door edge lines */}
+      {/* Edge lines — warm grey, semi-transparent */}
       <lineSegments geometry={edgesGeo} position={[cx, cy, cz]}>
-        <lineBasicMaterial color="#cdc8c1" transparent opacity={0.55} />
+        <lineBasicMaterial color="#c0b8b0" transparent opacity={0.50} />
       </lineSegments>
 
       {/* Countertop slab — base + island/peninsula only */}
@@ -156,7 +145,7 @@ function LayoutRun({ run }) {
         />
       )}
 
-      {/* Toe-kick strip at floor level */}
+      {/* Toe-kick */}
       {!isUpper && (
         <ToeKick cx={cx} cz={cz} widthFt={widthFt} depthFt={depthFt} />
       )}
@@ -164,33 +153,34 @@ function LayoutRun({ run }) {
   );
 }
 
-// Countertop slab with slight overhang
+// Countertop slab on placeholder cabinet run
 function CountertopSlab({ cx, topY, cz, widthFt, depthFt, isIsland }) {
   const thick    = COUNTER_THICK;
-  const overhang = isIsland ? 0.1 : 0.08;
+  const overhang = isIsland ? 0.10 : 0.08;
 
   return (
     <mesh position={[cx, topY + thick / 2, cz + overhang / 2]} castShadow>
       <boxGeometry args={[widthFt + 0.04, thick, depthFt + overhang]} />
       <meshStandardMaterial
-        color="#dbd5cd"
-        roughness={0.22}
-        metalness={0.06}
+        color="#d8d0c4"
+        roughness={0.18}
+        metalness={0.05}
+        envMapIntensity={0.8}
       />
     </mesh>
   );
 }
 
-// Toe-kick strip at the base of each run
+// Toe-kick strip at base of each placeholder run
 function ToeKick({ cx, cz, widthFt, depthFt }) {
   const tkH    = 0.13;
-  const tkD    = 0.06;
+  const tkD    = 0.066;
   const frontZ = cz + depthFt / 2 - tkD / 2;
 
   return (
     <mesh position={[cx, tkH / 2, frontZ]}>
       <boxGeometry args={[widthFt, tkH, tkD]} />
-      <meshStandardMaterial color="#c4bfb9" roughness={0.8} metalness={0} />
+      <meshStandardMaterial color="#1a1714" roughness={0.95} metalness={0} />
     </mesh>
   );
 }
@@ -217,7 +207,7 @@ function RoomEdges({ W, L, H }) {
 
   return (
     <line geometry={geometry}>
-      <lineBasicMaterial color="#b8b0a8" opacity={0.45} transparent />
+      <lineBasicMaterial color="#a8a098" opacity={0.40} transparent />
     </line>
   );
 }
