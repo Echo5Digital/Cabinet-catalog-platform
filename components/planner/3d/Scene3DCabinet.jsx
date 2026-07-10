@@ -618,7 +618,9 @@ function CabinetFront({ faceW, faceH, pos, rot, doors, drawers, category, frameC
 
   // ── BASE CABINET ──────────────────────────────────────────────────────────
   const numDoors   = doors   != null ? Math.max(0, doors)   : Math.max(1, Math.round(faceW / 1.5));
-  const numDrawers = drawers != null ? Math.max(0, drawers) : 0;
+  // Default to 1 drawer rail when the database has no drawer_count value —
+  // virtually all base cabinets have at least one top drawer.
+  const numDrawers = drawers != null ? Math.max(0, drawers) : 1;
 
   if (numDoors === 0 && numDrawers === 0) return null;
 
@@ -715,6 +717,7 @@ function Scene3DCabinetInner({
       onClick={(e) => {
         e.stopPropagation();
         setSelectedItem(cabinet.id);
+        // Clicking the cabinet body (not a door/drawer) closes any open panels
         if (openDoors.size > 0)   setOpenDoors(new Set());
         if (openDrawers.size > 0) setOpenDrawers(new Set());
       }}
@@ -722,17 +725,9 @@ function Scene3DCabinetInner({
       onPointerOut={() => setHovered(false)}
     >
       {/* ── Cabinet carcass shell ──────────────────────────────────────────── */}
-      {openDoors.size === 0 ? (
-        <mesh ref={meshRef} castShadow receiveShadow>
-          <boxGeometry args={[widthFt, heightFt, depthFt]} />
-          <meshStandardMaterial
-            color={fillColor}
-            roughness={BODY_ROUGH}
-            metalness={BODY_METAL}
-            envMapIntensity={BODY_ENV}
-          />
-        </mesh>
-      ) : (() => {
+      {/* Always render as open-front 5-panel box so door/drawer hit volumes
+          on the front face are never occluded by a solid carcass mesh. */}
+      {(() => {
         const mat = { color: fillColor, roughness: BODY_ROUGH, metalness: BODY_METAL, envMapIntensity: BODY_ENV };
         const W = widthFt; const H = heightFt; const D = depthFt; const T = PANEL_T;
         const backZ  = frontDir === "z-" ?  (D/2 - T/2) : -(D/2 - T/2);

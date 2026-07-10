@@ -14,7 +14,7 @@ import { useUndoRedo } from "./useUndoRedo";
 import usePlannerStore from "@/store/plannerStore";
 import { selectProjectedItems } from "@/lib/planner/selectors";
 import { snapItem } from "@/lib/planner/snap";
-import { validateKitchenLayout } from "@/lib/planner/engine/designRules";
+import { usePlannerValidation } from "@/lib/planner/hooks/usePlannerValidation";
 
 // Dynamically import both canvases to avoid SSR issues
 const PlannerCanvas   = dynamic(() => import("./PlannerCanvas"),        { ssr: false });
@@ -62,7 +62,6 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const closeAiPanel       = usePlannerStore((s) => s.closeAiPanel);
   const setAiState         = usePlannerStore((s) => s.setAiState);
   const aiLoading          = usePlannerStore((s) => s.aiLoading);
-  const setValidationResults  = usePlannerStore((s) => s.setValidationResults);
   const upperCabinetColor     = usePlannerStore((s) => s.upperCabinetColor);
   const lowerCabinetColor     = usePlannerStore((s) => s.lowerCabinetColor);
   const selectedDoorStyle     = usePlannerStore((s) => s.selectedDoorStyle);
@@ -72,8 +71,10 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const selectedFlooring      = usePlannerStore((s) => s.selectedFlooring);
   const lifestyleProfile      = usePlannerStore((s) => s.lifestyleProfile);
 
-  // Sidebar open state
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Sidebar open state — start closed on mobile (md: breakpoint) to show canvas first
+  const [sidebarOpen, setSidebarOpen] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
 
   // Project panel open state
   const [showProjectPanel, setShowProjectPanel] = useState(false);
@@ -122,14 +123,11 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   // ── Keyboard undo/redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y) ─────────────────────
   useUndoRedo();
 
-  // ── Debounced design rule validation (200ms) ──────────────────────────────────
-  // Runs after rapid drag operations settle; never blocks any action.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setValidationResults(validateKitchenLayout(scene.items, dims));
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [scene.items, dims, setValidationResults]);
+  // ── Enhanced validation (replaces inline validateKitchenLayout useEffect) ─────
+  // usePlannerValidation runs all 10 engine phases, writes backward-compatible
+  // validationResults to the store (debounced 200ms), and returns a full report.
+  // ValidationBanner continues to read validationResults unchanged.
+  const validationReport = usePlannerValidation();
 
   // dnd-kit sensors — support both mouse and touch
   const sensors = useSensors(

@@ -66,30 +66,37 @@ export default function PlannerHeader({ tenant = {} }) {
                 <button
                   onClick={() => isEnabled && setStep(s.num)}
                   disabled={!isEnabled && !isActive}
+                  title={isDone ? `Back to ${s.label}` : s.label}
                   className={[
-                    "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0",
+                    "group flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0",
                     isActive
                       ? "text-white shadow-sm"
                       : isDone
-                        ? "text-stone-600 hover:bg-stone-100"
+                        ? "text-stone-600 hover:bg-stone-100 hover:text-stone-900 cursor-pointer"
                         : "text-stone-400 cursor-default",
                   ].join(" ")}
                   style={isActive ? { backgroundColor: primaryColor } : {}}
                   aria-current={isActive ? "step" : undefined}
                 >
-                  {/* Step number / check */}
+                  {/* Step number / check mark */}
                   <span
                     className={[
-                      "flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold shrink-0",
+                      "flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold shrink-0 transition-colors",
                       isActive  ? "bg-white/25 text-white"
-                        : isDone  ? "bg-emerald-100 text-emerald-700"
+                        : isDone  ? "bg-emerald-100 text-emerald-700 group-hover:bg-stone-200 group-hover:text-stone-600"
                         : "bg-stone-200 text-stone-400",
                     ].join(" ")}
                   >
                     {isDone ? (
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
+                      <>
+                        {/* Default: green check. On hover: back arrow */}
+                        <svg className="w-2.5 h-2.5 group-hover:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <svg className="w-2.5 h-2.5 hidden group-hover:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                      </>
                     ) : s.num}
                   </span>
                   <span className="hidden sm:inline">{s.label}</span>
@@ -99,7 +106,7 @@ export default function PlannerHeader({ tenant = {} }) {
                 {idx < STEPS.length - 1 && (
                   <div
                     className={[
-                      "w-6 sm:w-8 h-px mx-0.5 shrink-0 transition-colors duration-300",
+                      "w-5 sm:w-7 h-px mx-0.5 shrink-0 transition-colors duration-300",
                       step > s.num ? "bg-emerald-300" : "bg-stone-200",
                     ].join(" ")}
                   />

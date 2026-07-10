@@ -20,6 +20,7 @@ export default function PlannerToolbar({ onGenerateAI, onSave, primaryColor = "#
   const redo        = usePlannerStore((s) => s.redo);
   const canUndo     = usePlannerStore((s) => s.undoStack.length > 0);
   const canRedo     = usePlannerStore((s) => s.redoStack.length > 0);
+  const setStep     = usePlannerStore((s) => s.setStep);
 
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -35,10 +36,27 @@ export default function PlannerToolbar({ onGenerateAI, onSave, primaryColor = "#
   }
 
   return (
-    <div className="h-14 shrink-0 flex items-center justify-between px-3 sm:px-5 gap-2 bg-white/95 backdrop-blur-sm border-t border-stone-200/80 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+    <div
+      className="shrink-0 flex items-center justify-between px-3 sm:px-5 gap-2 bg-white/95 backdrop-blur-sm border-t border-stone-200/80 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+      style={{ height: "calc(3.5rem + env(safe-area-inset-bottom, 0px))", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
 
-      {/* ── LEFT: Item counter ──────────────────────────────────────────── */}
+      {/* ── LEFT: Back + Item counter ────────────────────────────────── */}
       <div className="flex items-center gap-2 shrink-0">
+
+        {/* Back to Dimensions button */}
+        <button
+          onClick={() => setStep(2)}
+          title="Back to Dimensions"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-500 bg-white border border-stone-200 hover:border-stone-300 hover:text-stone-800 hover:bg-stone-50 transition-all shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+          <span className="hidden sm:inline">Back</span>
+        </button>
+
+        {/* Item counter */}
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200">
           <span
             className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"

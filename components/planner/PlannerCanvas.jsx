@@ -69,6 +69,7 @@ const CATEGORY_COLORS = {
   Appliances:       { fill: "#fde68a", stroke: "#f59e0b", label: "#92400e" },
   Sink:             { fill: "#bae6fd", stroke: "#0284c7", label: "#075985" },
   Range:            { fill: "#fed7aa", stroke: "#ea580c", label: "#9a3412" },
+  Refrigerator:     { fill: "#dbeafe", stroke: "#6366f1", label: "#3730a3" },
   default:          { fill: "#e7e5e4", stroke: "#a8a29e", label: "#57534e" },
 };
 
@@ -634,6 +635,23 @@ export default function PlannerCanvas({ onDropRef }) {
                           listening={false}
                         />
                       ))}
+                    </>
+                  )}
+                  {/* Refrigerator: center split line + horizontal freezer divider */}
+                  {item.category === "Refrigerator" && itemPxW > 20 && itemPxH > 20 && (
+                    <>
+                      {/* Center vertical split (French door) */}
+                      <Rect
+                        x={itemPxW / 2 - 0.5} y={itemPxH * 0.05}
+                        width={1} height={itemPxH * 0.68}
+                        fill={colors.stroke} listening={false}
+                      />
+                      {/* Freezer horizontal divider */}
+                      <Rect
+                        x={itemPxW * 0.05} y={itemPxH * 0.73}
+                        width={itemPxW * 0.90} height={1}
+                        fill={colors.stroke} listening={false}
+                      />
                     </>
                   )}
                 </Group>

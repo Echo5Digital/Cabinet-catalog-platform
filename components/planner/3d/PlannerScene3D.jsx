@@ -164,7 +164,7 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
 
           {/* All placed cabinets and fixtures */}
           {sceneGraph.cabinets.map((cab) =>
-            cab.category === "Sink" || cab.category === "Range"
+            cab.category === "Sink" || cab.category === "Range" || cab.category === "Refrigerator"
               ? <Scene3DFixture key={cab.id} fixture={cab} primaryColor={primaryColor} />
               : <Scene3DCabinet
                   key={cab.id}
