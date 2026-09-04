@@ -83,6 +83,14 @@ function IconAssets() {
   );
 }
 
+function IconGallery() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><path d="M3 15l4.5-4.5a2 2 0 0 1 2.8 0L15 15" /><path d="M14 14l1.5-1.5a2 2 0 0 1 2.8 0L21 15" /><circle cx="8" cy="8" r="1.5" />
+    </svg>
+  );
+}
+
 function IconLeads() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -223,7 +231,8 @@ const NAV_GROUPS = [
     label: "Assets",
     GroupIcon: IconAssetsGroup,
     items: [
-      { href: "/admin/assets", label: "Asset Review", Icon: IconAssets, badgeKey: "pending" },
+      { href: "/admin/assets",  label: "Asset Review", Icon: IconAssets,  badgeKey: "pending" },
+      { href: "/admin/gallery", label: "Gallery",       Icon: IconGallery },
     ],
   },
   {

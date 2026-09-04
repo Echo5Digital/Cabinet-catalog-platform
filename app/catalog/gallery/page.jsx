@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
+import GalleryGrid from "@/components/catalog/GalleryLightbox";
 
 export const dynamic = "force-dynamic";
 
@@ -8,55 +9,45 @@ export const metadata = {
   title: "Design Gallery — Cabinet Catalog",
 };
 
+const CATEGORIES = [
+  { id: "american", name: "American" },
+  { id: "euro", name: "Euro" },
+  { id: "general", name: "General" },
+];
+
 async function getData() {
   try {
     const tenantId = await resolveTenantId();
     const admin = createAdminClient();
-    const [{ data: images }, { data: lines }] = await Promise.all([
-      admin
-        .from("assets")
-        .select("id, public_url, alt_text, catalog_line_id, parsed_sequence")
-        .eq("tenant_id", tenantId)
-        .eq("asset_type", "lifestyle")
-        .eq("status", "confirmed")
-        .not("public_url", "is", null)
-        .order("catalog_line_id", { ascending: true })
-        .order("parsed_sequence", { ascending: true }),
-      admin
-        .from("catalog_lines")
-        .select("id, name, slug")
-        .eq("tenant_id", tenantId)
-        .eq("status", "published")
-        .order("sort_order", { ascending: true }),
-    ]);
+    const { data: images } = await admin
+      .from("assets")
+      .select("id, public_url, alt_text, gallery_category, parsed_sequence")
+      .eq("tenant_id", tenantId)
+      .eq("asset_type", "lifestyle")
+      .eq("status", "confirmed")
+      .not("public_url", "is", null)
+      .not("gallery_category", "is", null)
+      .order("gallery_category", { ascending: true })
+      .order("parsed_sequence", { ascending: true });
 
-    return { images: images || [], lines: lines || [] };
+    return { images: images || [] };
   } catch {
-    return { images: [], lines: [] };
+    return { images: [] };
   }
 }
 
 export default async function GalleryPage() {
-  const { images, lines } = await getData();
+  const { images } = await getData();
 
-  // Map line id → line info
-  const lineMap = {};
-  for (const l of lines) lineMap[l.id] = l;
-
-  // Group images by catalog_line_id
-  const lineGroups = {};
-  const ungrouped = [];
+  // Group images by gallery_category
+  const categoryGroups = {};
   for (const img of images) {
-    if (img.catalog_line_id && lineMap[img.catalog_line_id]) {
-      if (!lineGroups[img.catalog_line_id]) lineGroups[img.catalog_line_id] = [];
-      lineGroups[img.catalog_line_id].push(img);
-    } else {
-      ungrouped.push(img);
-    }
+    if (!categoryGroups[img.gallery_category]) categoryGroups[img.gallery_category] = [];
+    categoryGroups[img.gallery_category].push(img);
   }
 
-  // Ordered by catalog_lines sort_order
-  const orderedLineIds = lines.map((l) => l.id).filter((id) => lineGroups[id]);
+  // Ordered by fixed CATEGORIES order, only categories that have photos
+  const activeCategories = CATEGORIES.filter((c) => categoryGroups[c.id]?.length > 0);
 
   const totalImages = images.length;
 
@@ -90,8 +81,8 @@ export default async function GalleryPage() {
         </div>
       </div>
 
-      {/* Filter tabs by line */}
-      {lines.length > 1 && orderedLineIds.length > 0 && (
+      {/* Filter tabs by category */}
+      {activeCategories.length > 1 && (
         <div className="border-b border-stone-200 bg-[#F8F6F3] sticky top-16 z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
@@ -101,13 +92,13 @@ export default async function GalleryPage() {
               >
                 All Photos
               </a>
-              {orderedLineIds.map((lineId) => (
+              {activeCategories.map((cat) => (
                 <a
-                  key={lineId}
-                  href={`#line-${lineId}`}
+                  key={cat.id}
+                  href={`#cat-${cat.id}`}
                   className="px-4 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900 transition whitespace-nowrap shrink-0"
                 >
-                  {lineMap[lineId].name}
+                  {cat.name}
                 </a>
               ))}
             </div>
@@ -132,44 +123,23 @@ export default async function GalleryPage() {
         ) : (
           <div className="space-y-16">
 
-            {/* Grouped by line */}
-            {orderedLineIds.map((lineId) => (
-              <div key={lineId} id={`line-${lineId}`}>
+            {/* Grouped by category */}
+            {activeCategories.map((cat) => (
+              <div key={cat.id} id={`cat-${cat.id}`}>
                 <div className="flex items-center justify-between mb-6 section-band">
                   <div className="flex items-center gap-3">
                     <h2
                       className="text-xl font-bold text-stone-900"
                       style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                     >
-                      {lineMap[lineId].name}
+                      {cat.name}
                     </h2>
-                    <span className="count-badge">{lineGroups[lineId].length}</span>
+                    <span className="count-badge">{categoryGroups[cat.id].length}</span>
                   </div>
-                  <Link
-                    href={`/catalog/${lineMap[lineId].slug}`}
-                    className="text-sm text-stone-500 hover:text-stone-800 transition shrink-0"
-                  >
-                    Browse {lineMap[lineId].name} →
-                  </Link>
                 </div>
-                <GalleryGrid images={lineGroups[lineId]} />
+                <GalleryGrid images={categoryGroups[cat.id]} />
               </div>
             ))}
-
-            {/* Ungrouped images (no line association) */}
-            {ungrouped.length > 0 && (
-              <div>
-                {orderedLineIds.length > 0 && (
-                  <h2
-                    className="text-xl font-bold text-stone-900 mb-6"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                  >
-                    More Inspiration
-                  </h2>
-                )}
-                <GalleryGrid images={ungrouped} />
-              </div>
-            )}
 
           </div>
         )}
@@ -189,41 +159,6 @@ export default async function GalleryPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function GalleryGrid({ images }) {
-  if (!images || images.length === 0) return null;
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-      {images.map((img, idx) => (
-        <div
-          key={img.id || idx}
-          className={`group relative overflow-hidden rounded-xl bg-stone-100 shimmer-card ${
-            idx === 0 ? "col-span-2 row-span-2 sm:col-span-2 sm:row-span-2" : ""
-          }`}
-          style={{ animationName: 'fade-in-up-sm', animationDuration: '0.45s', animationFillMode: 'both', animationTimingFunction: 'ease', animationDelay: `${idx * 0.05}s` }}
-        >
-          <div className={`${idx === 0 ? "aspect-square" : "aspect-[4/3]"} overflow-hidden`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={img.public_url}
-              alt={img.alt_text || "Kitchen design inspiration"}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              loading={idx < 4 ? "eager" : "lazy"}
-            />
-          </div>
-          {img.alt_text && (
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-end">
-              <p className="text-white text-xs p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 leading-relaxed">
-                {img.alt_text}
-              </p>
-            </div>
-          )}
-        </div>
-      ))}
     </div>
   );
 }

@@ -32,6 +32,12 @@ export default function HomeHeader({ tenant, primaryColor, name }) {
           >
             Catalog
           </Link>
+          <Link
+            href="/catalog/gallery"
+            className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 transition uppercase tracking-wide"
+          >
+            Gallery
+          </Link>
           <a
             href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
             className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 transition uppercase tracking-wide"
@@ -92,6 +98,13 @@ export default function HomeHeader({ tenant, primaryColor, name }) {
               className="block px-4 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 rounded-full transition uppercase tracking-wide"
             >
               Catalog
+            </Link>
+            <Link
+              href="/catalog/gallery"
+              onClick={() => setMenuOpen(false)}
+              className="block px-4 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100/80 rounded-full transition uppercase tracking-wide"
+            >
+              Gallery
             </Link>
             <a
               href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}

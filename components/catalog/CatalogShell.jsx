@@ -98,6 +98,15 @@ function Header({ tenant, lines }) {
             </div>
           </div>
 
+          <Link
+            href="/catalog/gallery"
+            className={`px-4 py-1.5 rounded-full text-sm font-medium hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide ${
+              pathname.startsWith("/catalog/gallery") ? "text-stone-900" : "text-stone-600"
+            }`}
+          >
+            Gallery
+          </Link>
+
           <a
             href={tenant.contact_email ? `mailto:${tenant.contact_email}` : "#"}
             className="px-4 py-1.5 rounded-full text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition uppercase tracking-wide"
@@ -176,6 +185,15 @@ function Header({ tenant, lines }) {
             >
               Structures
             </Link>
+            <div className="border-t border-stone-100 pt-2 mt-2">
+              <Link
+                href="/catalog/gallery"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-full transition uppercase tracking-wide"
+              >
+                Gallery
+              </Link>
+            </div>
             <div className="border-t border-stone-100 pt-2 mt-2 space-y-1">
               <Link
                 href="/catalog/design"
