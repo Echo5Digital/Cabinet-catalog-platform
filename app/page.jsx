@@ -12,7 +12,7 @@ async function getData() {
     const [{ data: tenant }, { data: lines }] = await Promise.all([
       admin
         .from("tenants")
-        .select("name, logo_url, primary_color, accent_color, contact_email, contact_phone")
+        .select("name, logo_url, primary_color, accent_color, contact_email, contact_phone, website_url")
         .eq("id", tenantId)
         .single(),
       admin

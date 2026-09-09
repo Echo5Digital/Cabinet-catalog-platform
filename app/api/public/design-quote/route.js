@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTenantIdFromRequest } from "@/lib/utils/tenant-context";
+import { sendStaffQuoteNotification } from "@/lib/email";
 
 const BEFORE_PHOTO_BUCKET = "before-photos";
 const BEFORE_PHOTO_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -133,6 +134,23 @@ export async function POST(request) {
           }
         }
       }
+    }
+
+    // ── Notify sales team ──────────────────────────────────────────────────────
+    try {
+      await sendStaffQuoteNotification({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone?.trim() || null,
+        address: address?.trim() || null,
+        projectDescription: project_description?.trim() || null,
+        notes: notes?.trim() || null,
+        products,
+        beforePhotoUrl: before_image_url,
+      });
+    } catch (emailErr) {
+      console.error("[design-quote] staff notification email failed:", emailErr);
+      // Don't fail the request; the lead was already saved
     }
 
     return NextResponse.json(

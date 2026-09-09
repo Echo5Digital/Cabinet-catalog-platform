@@ -33,7 +33,7 @@ values (
   '#3B82F6',
   'sales@cabinetdepot.com',
   '(555) 867-5309',
-  'https://cabinetdepot.com',
+  'https://www.cabinetsandremodelingdepot.com/',
   'active',
   '{ "ai_enabled": true, "max_users": 5 }'
 )
