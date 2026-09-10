@@ -16,7 +16,7 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasRole(ctx, "manager")) return forbidden();
 
     const formData = await request.formData();
     const file = formData.get("file");
@@ -96,7 +96,7 @@ export async function DELETE(_request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasRole(ctx, "manager")) return forbidden();
 
     const admin = createAdminClient();
     await admin

@@ -184,18 +184,37 @@ export default function AdminDashboard() {
     new_leads: null,
     total_leads: null,
   });
+  const [role, setRole] = useState(null);
+
+  // The restricted "admin" role has no access to Assets/Catalog/Setup —
+  // it only sees Leads, Design, and Planner (see app/admin/layout.jsx).
+  const isRestrictedAdmin = role === "admin";
+
+  useEffect(() => {
+    async function loadRole() {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          setRole(data.user?.role ?? null);
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+    loadRole();
+  }, []);
 
   useEffect(() => {
     async function load() {
       try {
-        const [assetRes, leadRes] = await Promise.all([
-          fetch("/api/assets/stats"),
-          fetch("/api/leads/stats"),
-        ]);
-        const assetData = assetRes.ok ? await assetRes.json() : {};
+        const requests = [fetch("/api/leads/stats")];
+        if (!isRestrictedAdmin) requests.push(fetch("/api/assets/stats"));
+        const [leadRes, assetRes] = await Promise.all(requests);
         const leadData = leadRes.ok ? await leadRes.json() : {};
+        const assetData = assetRes && assetRes.ok ? await assetRes.json() : {};
         setStats({
-          pending_assets: assetData.by_status?.pending_review ?? 0,
+          pending_assets: isRestrictedAdmin ? null : (assetData.by_status?.pending_review ?? 0),
           new_leads: leadData.by_status?.new ?? 0,
           total_leads: leadData.total ?? 0,
         });
@@ -204,9 +223,9 @@ export default function AdminDashboard() {
       }
     }
     load();
-  }, []);
+  }, [isRestrictedAdmin]);
 
-  const hasAlerts = stats.pending_assets > 0 || stats.new_leads > 0;
+  const hasAlerts = (!isRestrictedAdmin && stats.pending_assets > 0) || stats.new_leads > 0;
 
   return (
     <div className="p-6 sm:p-8 max-w-5xl mx-auto space-y-8">
@@ -220,7 +239,7 @@ export default function AdminDashboard() {
       {/* Alert banners */}
       {hasAlerts && (
         <div className="space-y-2">
-          {stats.pending_assets > 0 && (
+          {!isRestrictedAdmin && stats.pending_assets > 0 && (
             <AlertBanner
               href="/admin/assets"
               Icon={IconImage}
@@ -245,14 +264,16 @@ export default function AdminDashboard() {
       <div>
         <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-4">Overview</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard
-            href="/admin/assets"
-            Icon={IconImage}
-            label="Pending Review"
-            value={stats.pending_assets}
-            sub="Assets awaiting confirmation"
-            accent={stats.pending_assets > 0 ? "amber" : "default"}
-          />
+          {!isRestrictedAdmin && (
+            <StatCard
+              href="/admin/assets"
+              Icon={IconImage}
+              label="Pending Review"
+              value={stats.pending_assets}
+              sub="Assets awaiting confirmation"
+              accent={stats.pending_assets > 0 ? "amber" : "default"}
+            />
+          )}
           <StatCard
             href="/admin/leads"
             Icon={IconInbox}
@@ -273,35 +294,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Access section */}
-      <div>
-        <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-4">Quick Access</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <QuickCard
-            href="/admin/catalog/lines"
-            Icon={IconLayers}
-            label="Catalog Lines"
-            description="Manage product lines"
-          />
-          <QuickCard
-            href="/admin/catalog/products"
-            Icon={IconBox}
-            label="Products"
-            description="Browse & edit SKUs"
-          />
-          <QuickCard
-            href="/admin/catalog/finishes"
-            Icon={IconPalette}
-            label="Finishes"
-            description="Colors & materials"
-          />
-          <QuickCard
-            href="/admin/settings"
-            Icon={IconSettings}
-            label="Settings"
-            description="Branding & config"
-          />
+      {!isRestrictedAdmin && (
+        <div>
+          <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-4">Quick Access</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <QuickCard
+              href="/admin/catalog/lines"
+              Icon={IconLayers}
+              label="Catalog Lines"
+              description="Manage product lines"
+            />
+            <QuickCard
+              href="/admin/catalog/products"
+              Icon={IconBox}
+              label="Products"
+              description="Browse & edit SKUs"
+            />
+            <QuickCard
+              href="/admin/catalog/finishes"
+              Icon={IconPalette}
+              label="Finishes"
+              description="Colors & materials"
+            />
+            <QuickCard
+              href="/admin/settings"
+              Icon={IconSettings}
+              label="Settings"
+              description="Branding & config"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

@@ -20,7 +20,10 @@ export async function POST() {
       }
     );
 
-    await supabase.auth.signOut();
+    // "local" clears the session cookie immediately without waiting on a
+    // network round-trip to Supabase to revoke the refresh token globally —
+    // that round-trip was making sign-out feel slow.
+    await supabase.auth.signOut({ scope: "local" });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });

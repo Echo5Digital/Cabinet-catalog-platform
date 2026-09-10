@@ -205,7 +205,18 @@ function IconPlannerGroup() {
   );
 }
 
+function IconUsers() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
+
+// Sections the restricted "admin" role may see/access. Every other role sees everything.
+const RESTRICTED_ADMIN_GROUPS = new Set(["Leads", "Design", "Planner"]);
 
 const NAV_GROUPS = [
   {
@@ -258,11 +269,39 @@ const NAV_GROUPS = [
       { href: "/admin/planner", label: "Planner Leads", Icon: IconPlanner, badgeKey: "planner_leads" },
     ],
   },
+  {
+    label: "Users",
+    GroupIcon: IconUsers,
+    ownerOnly: true,
+    items: [
+      { href: "/admin/users", label: "Manage Users", Icon: IconUsers },
+    ],
+  },
 ];
+
+// ─── Role-based nav visibility ─────────────────────────────────────────────────
+
+// Roles with full Super Admin access (everything, including User management).
+const SUPER_ADMIN_ROLES = new Set(["owner", "super_admin"]);
+
+/**
+ * Returns the NAV_GROUPS visible to a given role.
+ * - "admin" (restricted): only Leads/Design/Planner.
+ * - Super Admin ("owner" or "super_admin"): everything, including the Users group.
+ * - everyone else (manager/editor/viewer): everything except the Super-Admin-only Users group.
+ */
+function visibleNavGroups(role) {
+  if (role === "admin") {
+    return NAV_GROUPS.filter((g) => RESTRICTED_ADMIN_GROUPS.has(g.label));
+  }
+  return NAV_GROUPS.filter((g) => !g.ownerOnly || SUPER_ADMIN_ROLES.has(role));
+}
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
+function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut, role }) {
+  const navGroups = visibleNavGroups(role);
+
   function isActive(href) {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
@@ -271,7 +310,7 @@ function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
   // Initialise: auto-open any group that has an active item
   const [openGroups, setOpenGroups] = useState(() =>
     Object.fromEntries(
-      NAV_GROUPS.map((g) => [
+      navGroups.map((g) => [
         g.label,
         g.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/")),
       ])
@@ -280,12 +319,12 @@ function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
 
   // When navigating to a new section, auto-open its group
   useEffect(() => {
-    NAV_GROUPS.forEach((g) => {
+    navGroups.forEach((g) => {
       if (g.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))) {
         setOpenGroups((prev) => ({ ...prev, [g.label]: true }));
       }
     });
-  }, [pathname]);
+  }, [pathname, navGroups]);
 
   function toggleGroup(label) {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -329,7 +368,7 @@ function Sidebar({ tenantName, badges, signingOut, pathname, onSignOut }) {
         </Link>
 
         {/* Collapsible groups */}
-        {NAV_GROUPS.map((group) => {
+        {navGroups.map((group) => {
           const isOpen   = !!openGroups[group.label];
           const hasActive = group.items.some((item) => isActive(item.href));
           const totalBadge = group.items.reduce((s, item) => s + (item.badgeKey ? (badges[item.badgeKey] || 0) : 0), 0);
@@ -432,6 +471,8 @@ export default function AdminLayout({ children }) {
   const [tenantName,  setTenantName]  = useState("Cabinet Catalog");
   const [signingOut,  setSigningOut]  = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [role,        setRole]        = useState(null);
+  const [roleLoaded,  setRoleLoaded]  = useState(false);
 
   const loadBadges = useCallback(async () => {
     try {
@@ -464,18 +505,41 @@ export default function AdminLayout({ children }) {
         // Non-critical
       }
     }
+    async function loadRole() {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          setRole(data.user?.role ?? null);
+        }
+      } catch {
+        // Non-critical
+      } finally {
+        setRoleLoaded(true);
+      }
+    }
     loadTenant();
+    loadRole();
     loadBadges();
   }, [loadBadges]);
 
-  async function handleSignOut() {
+  // Redirect the restricted "admin" role away from sections it cannot access
+  // (e.g. deep-linking to /admin/catalog). The API routes are the real
+  // enforcement boundary — this only keeps the UI consistent with them.
+  useEffect(() => {
+    if (!roleLoaded || role !== "admin") return;
+    const allowed = visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.href));
+    const onAllowedPage = pathname === "/admin" || allowed.some((href) => pathname === href || pathname.startsWith(href + "/"));
+    if (!onAllowedPage) router.replace("/admin");
+  }, [roleLoaded, role, pathname, router]);
+
+  function handleSignOut() {
     setSigningOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
-    } catch {
-      setSigningOut(false);
-    }
+    // Fire-and-forget: clearing the cookie server-side doesn't need to block
+    // navigation — the middleware treats a missing/invalid session as logged
+    // out regardless, so waiting here only added perceived latency.
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.push("/login");
   }
 
   function isActive(href) {
@@ -494,7 +558,7 @@ export default function AdminLayout({ children }) {
     return "Dashboard";
   })();
 
-  const sidebarProps = { tenantName, badges, signingOut, pathname, onSignOut: handleSignOut };
+  const sidebarProps = { tenantName, badges, signingOut, pathname, onSignOut: handleSignOut, role };
 
   return (
     <div className="min-h-screen flex bg-gray-50">

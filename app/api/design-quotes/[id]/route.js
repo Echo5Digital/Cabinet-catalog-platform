@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/api-auth";
+import { getAuthContext, hasSectionAccess, unauthorized, forbidden } from "@/lib/utils/api-auth";
 
 export async function GET(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasSectionAccess(ctx, "design", "editor")) return forbidden();
 
     const admin = createAdminClient();
     const { data, error } = await admin
@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasSectionAccess(ctx, "design", "editor")) return forbidden();
 
     let body;
     try {
@@ -59,7 +59,7 @@ export async function DELETE(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasSectionAccess(ctx, "design", "editor")) return forbidden();
 
     const admin = createAdminClient();
     const { error } = await admin

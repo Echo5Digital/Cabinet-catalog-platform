@@ -31,7 +31,7 @@ export async function DELETE(_request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasRole(ctx, "manager")) return forbidden();
 
     const admin = createAdminClient();
 

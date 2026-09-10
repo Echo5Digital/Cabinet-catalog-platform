@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/api-auth";
+import { getAuthContext, hasSectionAccess, unauthorized, forbidden } from "@/lib/utils/api-auth";
 import { sendDesignQuoteEmail } from "@/lib/email";
 
 const PW = 960;
@@ -688,7 +688,7 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "admin")) return forbidden();
+    if (!hasSectionAccess(ctx, "design", "editor")) return forbidden();
 
     let body;
     try {

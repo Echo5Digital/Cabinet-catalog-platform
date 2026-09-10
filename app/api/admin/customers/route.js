@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/api-auth";
+import { getAuthContext, hasSectionAccess, unauthorized, forbidden } from "@/lib/utils/api-auth";
 
 export async function GET() {
   const ctx = await getAuthContext();
   if (!ctx.user) return unauthorized();
-  if (!hasRole(ctx, "admin")) return forbidden();
+  if (!hasSectionAccess(ctx, "leads", "manager")) return forbidden();
 
   const admin = createAdminClient();
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthContext, hasRole } from "@/lib/utils/api-auth";
+import { getAuthContext, hasSectionAccess } from "@/lib/utils/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function GET(request) {
   try {
     const ctx = await getAuthContext(request);
     if (!ctx.user)           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!hasRole(ctx, "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
+    if (!hasSectionAccess(ctx, "planner", "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
 
     const { searchParams } = new URL(request.url);
     const page   = Math.max(1, parseInt(searchParams.get("page")  || "1"));
@@ -63,7 +63,7 @@ export async function PATCH(request) {
   try {
     const ctx = await getAuthContext(request);
     if (!ctx.user)           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!hasRole(ctx, "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
+    if (!hasSectionAccess(ctx, "planner", "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
 
     const { id, status } = await request.json();
     if (!id || !status) return NextResponse.json({ error: "id and status are required." }, { status: 400 });
