@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user)           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (!hasRole(ctx, "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
 
@@ -61,7 +61,7 @@ export async function GET(request) {
 
 export async function PATCH(request) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user)           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (!hasRole(ctx, "editor")) return NextResponse.json({ error: "Forbidden" },    { status: 403 });
 

@@ -37,119 +37,125 @@ export default function PlannerToolbar({ onGenerateAI, onSave, primaryColor = "#
 
   return (
     <div
-      className="shrink-0 flex items-center justify-between px-3 sm:px-5 gap-2 bg-white/95 backdrop-blur-sm border-t border-stone-200/80 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+      className="shrink-0 flex items-center gap-2 bg-white/95 backdrop-blur-sm border-t border-stone-200/80 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pl-3 pr-3 sm:pl-5 sm:pr-5"
       style={{ height: "calc(3.5rem + env(safe-area-inset-bottom, 0px))", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
 
-      {/* ── LEFT: Back + Item counter ────────────────────────────────── */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* ── Scrollable region: Back, item counter, spatial controls, validation ──
+          Scrolls horizontally on narrow screens so it never pushes the primary
+          Save/Visualize actions on the right out of view. */}
+      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto overflow-y-hidden">
 
-        {/* Back to Dimensions button */}
-        <button
-          onClick={() => setStep(2)}
-          title="Back to Dimensions"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-500 bg-white border border-stone-200 hover:border-stone-300 hover:text-stone-800 hover:bg-stone-50 transition-all shrink-0"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
-          </svg>
-          <span className="hidden sm:inline">Back</span>
-        </button>
+        {/* LEFT: Back + Item counter */}
+        <div className="flex items-center gap-2 shrink-0">
 
-        {/* Item counter */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200">
-          <span
-            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-            style={{ backgroundColor: count > 0 ? primaryColor : "#a8a29e" }}
-          >
-            {count > 99 ? "99+" : count}
-          </span>
-          <span className="text-xs text-stone-500 hidden sm:inline leading-none">
-            {count === 0 ? "Empty" : count === 1 ? "1 item" : `${count} items`}
-          </span>
-        </div>
-      </div>
-
-      {/* ── CENTER: Spatial controls + validation ───────────────────────── */}
-      <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0">
-
-        {/* Undo / Redo group */}
-        <div className="flex items-center gap-0.5 bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+          {/* Back to Dimensions button */}
           <button
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-            aria-label="Undo"
-            className={[
-              "flex items-center justify-center w-7 h-7 rounded-md transition",
-              canUndo
-                ? "text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-sm"
-                : "text-stone-300 cursor-not-allowed",
-            ].join(" ")}
+            onClick={() => setStep(2)}
+            title="Back to Dimensions"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-500 bg-white border border-stone-200 hover:border-stone-300 hover:text-stone-800 hover:bg-stone-50 transition-all shrink-0"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
+            <span className="hidden sm:inline">Back</span>
           </button>
-          <button
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo (Ctrl+Shift+Z)"
-            aria-label="Redo"
-            className={[
-              "flex items-center justify-center w-7 h-7 rounded-md transition",
-              canRedo
-                ? "text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-sm"
-                : "text-stone-300 cursor-not-allowed",
-            ].join(" ")}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
-            </svg>
-          </button>
+
+          {/* Item counter */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 shrink-0">
+            <span
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+              style={{ backgroundColor: count > 0 ? primaryColor : "#a8a29e" }}
+            >
+              {count > 99 ? "99+" : count}
+            </span>
+            <span className="text-xs text-stone-500 hidden sm:inline leading-none">
+              {count === 0 ? "Empty" : count === 1 ? "1 item" : `${count} items`}
+            </span>
+          </div>
         </div>
 
-        {/* Separator */}
-        <div className="w-px h-5 bg-stone-200 shrink-0" />
+        {/* CENTER: Spatial controls + validation */}
+        <div className="flex items-center gap-1.5 shrink-0">
 
-        {/* View toggle */}
-        <ViewModeToggle primaryColor={primaryColor} />
+          {/* Undo / Redo group */}
+          <div className="flex items-center gap-0.5 bg-stone-100 rounded-lg p-0.5 border border-stone-200 shrink-0">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+              className={[
+                "flex items-center justify-center w-7 h-7 rounded-md transition",
+                canUndo
+                  ? "text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-sm"
+                  : "text-stone-300 cursor-not-allowed",
+              ].join(" ")}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+              className={[
+                "flex items-center justify-center w-7 h-7 rounded-md transition",
+                canRedo
+                  ? "text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-sm"
+                  : "text-stone-300 cursor-not-allowed",
+              ].join(" ")}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+              </svg>
+            </button>
+          </div>
 
-        {/* Separator + Clear — desktop only */}
-        <div className="hidden sm:flex items-center gap-1.5">
+          {/* Separator */}
           <div className="w-px h-5 bg-stone-200 shrink-0" />
-          <button
-            onClick={handleClearClick}
-            disabled={count === 0}
-            className={[
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition",
-              count === 0
-                ? "text-stone-300 cursor-not-allowed"
-                : confirmClear
-                  ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-                  : "text-stone-500 hover:text-stone-700 hover:bg-stone-100",
-            ].join(" ")}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            {confirmClear ? "Confirm?" : "Clear"}
-          </button>
-        </div>
 
-        {/* Validation */}
-        <ValidationBanner />
+          {/* View toggle */}
+          <ViewModeToggle primaryColor={primaryColor} />
+
+          {/* Separator + Clear — desktop only */}
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+            <div className="w-px h-5 bg-stone-200 shrink-0" />
+            <button
+              onClick={handleClearClick}
+              disabled={count === 0}
+              className={[
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition",
+                count === 0
+                  ? "text-stone-300 cursor-not-allowed"
+                  : confirmClear
+                    ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                    : "text-stone-500 hover:text-stone-700 hover:bg-stone-100",
+              ].join(" ")}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              {confirmClear ? "Confirm?" : "Clear"}
+            </button>
+          </div>
+
+          {/* Validation */}
+          <ValidationBanner />
+        </div>
       </div>
 
-      {/* ── RIGHT: Save + Generate AI ────────────────────────────────────── */}
+      {/* ── RIGHT: Save + Generate AI — always visible, never scrolls away ── */}
       <div className="flex items-center gap-2 shrink-0">
 
-        {/* Save button */}
+        {/* Save and Get Quote button */}
         {onSave && (
           <button
             onClick={onSave}
             disabled={count === 0}
-            title="Save project"
+            title="Save your design and request a quote"
             className={[
               "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition",
               count === 0
@@ -161,7 +167,7 @@ export default function PlannerToolbar({ onGenerateAI, onSave, primaryColor = "#
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 21V13h8v8M8 5v4h6" />
             </svg>
-            Save
+            Save and Get Quote
           </button>
         )}
 
@@ -170,7 +176,7 @@ export default function PlannerToolbar({ onGenerateAI, onSave, primaryColor = "#
           <button
             onClick={onSave}
             disabled={count === 0}
-            title="Save project"
+            title="Save your design and request a quote"
             className={[
               "sm:hidden flex items-center justify-center w-8 h-8 rounded-lg border transition",
               count === 0

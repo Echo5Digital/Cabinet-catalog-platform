@@ -94,6 +94,20 @@ function norm(s) {
   return (s || "").toLowerCase().replace(/[\s_-]+/g, "-").trim();
 }
 
+// Defined outside the component so it has a stable identity across renders —
+// otherwise every keystroke (which re-renders LayoutSelector) would remount
+// the input and drop focus after a single character.
+function Field({ label, required, children }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold text-stone-500 uppercase tracking-wide mb-1">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 function findStructureImage(layoutId, structures) {
   const keys = (STRUCTURE_KEY_MAP[layoutId] || []).map(norm);
 
@@ -120,13 +134,44 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
   const cabinetStyle    = usePlannerStore((s) => s.cabinetStyle);
   const setCabinetStyle = usePlannerStore((s) => s.setCabinetStyle);
   const setStep         = usePlannerStore((s) => s.setStep);
+  const customerName    = usePlannerStore((s) => s.customerName);
+  const customerEmail   = usePlannerStore((s) => s.customerEmail);
+  const customerPhone   = usePlannerStore((s) => s.customerPhone);
+  const customerAddress = usePlannerStore((s) => s.customerAddress);
+  const setCustomerInfo = usePlannerStore((s) => s.setCustomerInfo);
   const [showWizard, setShowWizard] = useState(false);
 
-  const canContinue = !!layout && !!cabinetStyle;
+  // Local, editable copies — committed to the store on Continue so partial
+  // typing doesn't prematurely mark contact info as "complete".
+  const [name,    setName]    = useState(customerName);
+  const [email,   setEmail]   = useState(customerEmail);
+  const [phone,   setPhone]   = useState(customerPhone);
+  const [address, setAddress] = useState(customerAddress);
+  const [contactError, setContactError] = useState(null);
+
+  const hasContactInfo = !!(name.trim() && email.trim() && phone.trim() && address.trim());
+  const canContinue = hasContactInfo && !!layout && !!cabinetStyle;
 
   function handleContinue() {
-    if (canContinue) setStep(2);
+    if (!name.trim())    return setContactError("Please enter your name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      return setContactError("Please enter a valid email address.");
+    if (!phone.trim())   return setContactError("Please enter your phone number.");
+    if (!address.trim()) return setContactError("Please enter your address.");
+    if (!layout || !cabinetStyle) return;
+
+    setContactError(null);
+    setCustomerInfo({
+      name:    name.trim(),
+      email:   email.trim(),
+      phone:   phone.trim(),
+      address: address.trim(),
+    });
+    setStep(2);
   }
+
+  const inputClass =
+    "w-full px-3 py-2.5 rounded-lg border border-stone-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-300 placeholder:text-stone-300";
 
   return (
     <div className="min-h-[calc(100vh-60px)] sm:min-h-[calc(100vh-68px)] bg-[#FAFAF9] flex flex-col">
@@ -151,10 +196,10 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
             className="text-3xl sm:text-4xl font-bold text-white mb-3"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
-            Choose Your Kitchen Layout
+            Let&apos;s Design Your Kitchen
           </h1>
           <p className="text-stone-400 text-base max-w-lg mx-auto">
-            Select the layout that best matches your kitchen space. You can adjust dimensions in the next step.
+            Tell us about yourself and choose the layout that best matches your kitchen space. You can adjust dimensions in the next step.
           </p>
           {/* Wizard CTA */}
           <button
@@ -171,6 +216,59 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
 
       {/* Body — centred flex column */}
       <div className="flex-1 w-full px-4 sm:px-6 py-10 flex flex-col items-center">
+
+        {/* Contact info section */}
+        <div className="w-full max-w-5xl mb-8 pb-8 border-b border-stone-200">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-5 text-center"
+            style={{ color: primaryColor }}
+          >
+            Your Contact Info
+          </p>
+          <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Field label="Full Name" required>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Jane Smith"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Email Address" required>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. jane@email.com"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Phone Number" required>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. +1 555 000 0000"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Address" required>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. 123 Main St, Springfield, IL"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          {contactError && (
+            <p className="max-w-2xl mx-auto mt-3 text-[11px] text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+              {contactError}
+            </p>
+          )}
+        </div>{/* /contact info section */}
 
         {/* Layout section */}
         <div className="w-full max-w-5xl">

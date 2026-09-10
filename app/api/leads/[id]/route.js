@@ -4,7 +4,7 @@ import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/ap
 
 export async function GET(request, { params }) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user) return unauthorized();
     if (!hasRole(ctx, "editor")) return forbidden();
 
@@ -72,7 +72,7 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user) return unauthorized();
     if (!hasRole(ctx, "editor")) return forbidden();
 
@@ -112,7 +112,7 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user) return unauthorized();
     if (!hasRole(ctx, "admin")) return forbidden();
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ function fmtDim(w, l, h) {
 
 // ─── Lead detail drawer ───────────────────────────────────────────────────────
 
-function LeadDrawer({ lead, onClose, onStatusChange }) {
+function LeadDrawer({ lead, onClose, onStatusChange, onViewDesign }) {
   const [status,   setStatus]   = useState(lead.status);
   const [saving,   setSaving]   = useState(false);
   const [saveErr,  setSaveErr]  = useState(null);
@@ -71,12 +72,15 @@ function LeadDrawer({ lead, onClose, onStatusChange }) {
   }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      {/* Centered modal */}
+      <div
+        className="w-full max-w-lg max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div>
@@ -104,6 +108,7 @@ function LeadDrawer({ lead, onClose, onStatusChange }) {
                 { label: "Name",    value: lead.customer_name  },
                 { label: "Email",   value: lead.customer_email },
                 { label: "Phone",   value: lead.customer_phone || "—" },
+                { label: "Address", value: lead.customer_address || "—" },
                 { label: "Project", value: lead.project_name   || "—" },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-gray-50 rounded-lg px-3 py-2.5">
@@ -215,11 +220,22 @@ function LeadDrawer({ lead, onClose, onStatusChange }) {
           )}
         </div>
 
-        {/* Footer action */}
-        <div className="px-5 py-4 border-t border-gray-100 shrink-0">
+        {/* Footer actions */}
+        <div className="px-5 py-4 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row gap-2">
+          {lead.scene_json && (
+            <button
+              onClick={() => onViewDesign(lead.id)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-indigo-700 border border-indigo-200 text-sm font-semibold hover:bg-indigo-50 transition"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+              View 2D/3D Design
+            </button>
+          )}
           <a
             href={`mailto:${lead.customer_email}`}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -228,13 +244,14 @@ function LeadDrawer({ lead, onClose, onStatusChange }) {
           </a>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PlannerLeadsPage() {
+  const router = useRouter();
   const [leads,       setLeads]       = useState([]);
   const [total,       setTotal]       = useState(0);
   const [page,        setPage]        = useState(1);
@@ -279,6 +296,10 @@ export default function PlannerLeadsPage() {
     if (selected?.id === id) setSelected((s) => ({ ...s, status: newStatus }));
   }
 
+  function handleViewDesign(id) {
+    router.push(`/admin/planner/${id}`);
+  }
+
   // Stats
   const byStatus = { new: 0, contacted: 0, closed: 0 };
   for (const l of leads) if (byStatus[l.status] !== undefined) byStatus[l.status]++;
@@ -290,7 +311,7 @@ export default function PlannerLeadsPage() {
       <div className="mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Planner Leads</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Contacts who verified their email and downloaded a kitchen proposal PDF.
+          Customers who saved a kitchen design and requested a quote from the planner.
         </p>
       </div>
 
@@ -322,7 +343,7 @@ export default function PlannerLeadsPage() {
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition shrink-0"
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition shrink-0"
           >
             Search
           </button>
@@ -386,7 +407,7 @@ export default function PlannerLeadsPage() {
               </svg>
             </div>
             <p className="text-sm font-semibold text-gray-700">No planner leads yet</p>
-            <p className="text-xs text-gray-400 mt-1">Leads appear here when users verify their email and download a proposal.</p>
+            <p className="text-xs text-gray-400 mt-1">Leads appear here when customers save a design and request a quote.</p>
           </div>
         )}
 
@@ -455,6 +476,7 @@ export default function PlannerLeadsPage() {
           lead={selected}
           onClose={() => setSelected(null)}
           onStatusChange={handleStatusChange}
+          onViewDesign={handleViewDesign}
         />
       )}
     </div>

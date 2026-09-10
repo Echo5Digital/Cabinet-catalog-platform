@@ -20,7 +20,7 @@ export default function ValidationBanner() {
   const warnings = results.filter((r) => r.severity === "warning");
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       {/* Compact trigger pill */}
       <button
         onClick={() => setExpanded((v) => !v)}

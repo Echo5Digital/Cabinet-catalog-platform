@@ -31,6 +31,20 @@ const usePlannerStore = create((set, get) => ({
   step: 1,                  // 1 = layout selector, 2 = room dims, 3 = canvas+AI
   setStep: (step) => set({ step }),
 
+  // ─── Customer contact info ────────────────────────────────────────────────────
+  // Collected up-front on Step 1 (before layout selection). Auto-fills the
+  // Step 3 "Save and Get Quote" form — those fields are read-only there.
+  customerName:    "",
+  customerEmail:   "",
+  customerPhone:   "",
+  customerAddress: "",
+  setCustomerInfo: (info) => set((state) => ({
+    customerName:    info.name    ?? state.customerName,
+    customerEmail:   info.email   ?? state.customerEmail,
+    customerPhone:   info.phone   ?? state.customerPhone,
+    customerAddress: info.address ?? state.customerAddress,
+  })),
+
   // ─── Layout selection ─────────────────────────────────────────────────────────
   layout: null,             // "Straight" | "L-Shape" | "U-Shape" | "Parallel" | "Island" | "G-Shape"
   setLayout: (layout) => set({ layout }),

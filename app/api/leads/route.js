@@ -4,7 +4,7 @@ import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/ap
 
 export async function GET(request) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getAuthContext(request);
     if (!ctx.user) return unauthorized();
     if (!hasRole(ctx, "editor")) return forbidden();
 

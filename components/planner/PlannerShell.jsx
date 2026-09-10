@@ -9,7 +9,7 @@ import RoomDimensionForm from "./RoomDimensionForm";
 import ProductSidebar from "./ProductSidebar";
 import PlannerToolbar from "./PlannerToolbar";
 import AiPreviewPanel from "./AiPreviewPanel";
-import ProjectPanel from "./ProjectPanel";
+import SaveQuoteModal from "./SaveQuoteModal";
 import { useUndoRedo } from "./useUndoRedo";
 import usePlannerStore from "@/store/plannerStore";
 import { selectProjectedItems } from "@/lib/planner/selectors";
@@ -76,8 +76,8 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
     typeof window !== "undefined" ? window.innerWidth >= 768 : true
   );
 
-  // Project panel open state
-  const [showProjectPanel, setShowProjectPanel] = useState(false);
+  // Save-and-get-quote modal open state
+  const [showSaveQuote, setShowSaveQuote] = useState(false);
 
   // Ref to canvas drop resolver (set by PlannerCanvas via onDropRef)
   const canvasDropRef = useRef(null);
@@ -337,7 +337,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
             {/* Bottom toolbar */}
             <PlannerToolbar
               onGenerateAI={handleGenerateAI}
-              onSave={() => setShowProjectPanel(true)}
+              onSave={() => setShowSaveQuote(true)}
               primaryColor={primaryColor}
             />
           </CanvasDropArea>
@@ -351,10 +351,10 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
             />
           )}
 
-          {/* Right: Project save/load panel (conditional) */}
-          {showProjectPanel && !showAiPanel && (
-            <ProjectPanel
-              onClose={() => setShowProjectPanel(false)}
+          {/* Save and Get Quote modal (conditional) */}
+          {showSaveQuote && (
+            <SaveQuoteModal
+              onClose={() => setShowSaveQuote(false)}
               primaryColor={primaryColor}
             />
           )}
