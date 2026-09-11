@@ -6,7 +6,7 @@ export async function GET(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");

@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const admin = createAdminClient();
 

@@ -6,7 +6,7 @@ export async function GET(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const admin = createAdminClient();
     const { data, error } = await admin
@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const body = await request.json();
     // Admin can correct parsed metadata and resolved FKs before confirming
@@ -90,7 +90,7 @@ export async function DELETE(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const admin = createAdminClient();
     // Fetch first to get storage_path for cleanup

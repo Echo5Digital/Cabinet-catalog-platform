@@ -51,7 +51,7 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const {
       catalog_line_id, category_id, sku, name, description,

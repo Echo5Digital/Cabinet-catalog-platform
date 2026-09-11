@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthContext, hasRole, unauthorized, forbidden } from "@/lib/utils/api-auth";
+import { getAuthContext, canManageUsers, unauthorized, forbidden } from "@/lib/utils/api-auth";
 
 export async function GET() {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "owner")) return forbidden();
+    if (!canManageUsers(ctx)) return forbidden();
 
     const admin = createAdminClient();
-    const { data, error } = await admin
+    let query = admin
       .from("tenant_users")
       .select("id, email, full_name, role, is_active, last_login_at, created_at")
       .eq("tenant_id", ctx.tenantId)
       .order("created_at", { ascending: true });
+
+    // Restricted Admin viewers never see Super Admin accounts at all.
+    if (ctx.role !== "owner") query = query.neq("role", "owner");
+
+    const { data, error } = await query;
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ users: data });
@@ -26,17 +31,20 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "owner")) return forbidden();
+    if (!canManageUsers(ctx)) return forbidden();
 
-    const { email, full_name, role = "editor", password } = await request.json();
+    const { email, full_name, role = "staff", password } = await request.json();
     if (!email) return NextResponse.json({ error: "Email is required." }, { status: 400 });
     if (!password || password.length < 8) {
       return NextResponse.json({ error: "Password is required and must be at least 8 characters." }, { status: 400 });
     }
 
-    const validRoles = ["viewer", "editor", "admin", "manager", "owner"];
+    const validRoles = ["staff", "admin", "owner"];
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: `Invalid role. Must be one of: ${validRoles.join(", ")}` }, { status: 400 });
+    }
+    if (role === "owner" && ctx.role !== "owner") {
+      return NextResponse.json({ error: "Only a Super Admin can create another Super Admin." }, { status: 403 });
     }
 
     const admin = createAdminClient();

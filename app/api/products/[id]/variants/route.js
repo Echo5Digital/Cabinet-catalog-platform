@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { variant_key, label, sku_suffix, is_default = false, sort_order = 0 } = await request.json();
     if (!variant_key || !label) {

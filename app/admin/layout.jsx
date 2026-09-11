@@ -215,8 +215,8 @@ function IconUsers() {
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
-// Sections the restricted "admin" role may see/access. Every other role sees everything.
-const RESTRICTED_ADMIN_GROUPS = new Set(["Leads", "Design", "Planner"]);
+// Sections the restricted "admin" and "staff" roles may see/access. "owner" sees everything.
+const RESTRICTED_SECTION_GROUPS = new Set(["Leads", "Design", "Planner"]);
 
 const NAV_GROUPS = [
   {
@@ -281,20 +281,20 @@ const NAV_GROUPS = [
 
 // ─── Role-based nav visibility ─────────────────────────────────────────────────
 
-// Roles with full Super Admin access (everything, including User management).
-const SUPER_ADMIN_ROLES = new Set(["owner", "super_admin"]);
-
 /**
  * Returns the NAV_GROUPS visible to a given role.
- * - "admin" (restricted): only Leads/Design/Planner.
- * - Super Admin ("owner" or "super_admin"): everything, including the Users group.
- * - everyone else (manager/editor/viewer): everything except the Super-Admin-only Users group.
+ * - "owner": everything, including Setup/Catalog/Assets and Users.
+ * - "admin": Leads/Design/Planner + Users (cannot see Setup/Catalog/Assets,
+ *   and cannot see/manage owner accounts — enforced in app/admin/users/page.jsx
+ *   and the API routes, not here).
+ * - "staff": Leads/Design/Planner only, no Users.
  */
 function visibleNavGroups(role) {
+  if (role === "owner") return NAV_GROUPS;
   if (role === "admin") {
-    return NAV_GROUPS.filter((g) => RESTRICTED_ADMIN_GROUPS.has(g.label));
+    return NAV_GROUPS.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label) || g.label === "Users");
   }
-  return NAV_GROUPS.filter((g) => !g.ownerOnly || SUPER_ADMIN_ROLES.has(role));
+  return NAV_GROUPS.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label));
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -523,11 +523,11 @@ export default function AdminLayout({ children }) {
     loadBadges();
   }, [loadBadges]);
 
-  // Redirect the restricted "admin" role away from sections it cannot access
-  // (e.g. deep-linking to /admin/catalog). The API routes are the real
-  // enforcement boundary — this only keeps the UI consistent with them.
+  // Redirect the restricted "admin" and "staff" roles away from sections they
+  // cannot access (e.g. deep-linking to /admin/catalog). The API routes are
+  // the real enforcement boundary — this only keeps the UI consistent with them.
   useEffect(() => {
-    if (!roleLoaded || role !== "admin") return;
+    if (!roleLoaded || (role !== "admin" && role !== "staff")) return;
     const allowed = visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.href));
     const onAllowedPage = pathname === "/admin" || allowed.some((href) => pathname === href || pathname.startsWith(href + "/"));
     if (!onAllowedPage) router.replace("/admin");

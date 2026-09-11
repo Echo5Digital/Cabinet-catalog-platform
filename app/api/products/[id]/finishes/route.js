@@ -28,7 +28,7 @@ export async function POST(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { finish_id, is_default = false, sort_order = 0 } = await request.json();
     if (!finish_id) return NextResponse.json({ error: "finish_id is required." }, { status: 400 });

@@ -28,7 +28,7 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { name, slug, description, manufacturer_id, sort_order = 0 } = await request.json();
     if (!name || !slug) {

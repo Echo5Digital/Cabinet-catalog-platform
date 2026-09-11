@@ -186,9 +186,10 @@ export default function AdminDashboard() {
   });
   const [role, setRole] = useState(null);
 
-  // The restricted "admin" role has no access to Assets/Catalog/Setup —
-  // it only sees Leads, Design, and Planner (see app/admin/layout.jsx).
-  const isRestrictedAdmin = role === "admin";
+  // The restricted "admin" and "staff" roles have no access to
+  // Assets/Catalog/Setup — they only see Leads, Design, and Planner
+  // (see app/admin/layout.jsx).
+  const isRestrictedAdmin = role === "admin" || role === "staff";
 
   useEffect(() => {
     async function loadRole() {

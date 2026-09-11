@@ -6,7 +6,7 @@ export async function PATCH(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const body = await request.json();
     const allowed = ["name", "code", "description", "sort_order", "is_active"];
@@ -34,7 +34,7 @@ export async function DELETE(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const admin = createAdminClient();
     const { error } = await admin

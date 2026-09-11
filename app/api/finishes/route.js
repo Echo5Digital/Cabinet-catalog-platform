@@ -44,7 +44,7 @@ export async function POST(request) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "editor")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { name, code, catalog_line_id, description, finish_family, sort_order = 0 } = await request.json();
     if (!name || !code) {

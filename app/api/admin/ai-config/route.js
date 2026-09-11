@@ -17,7 +17,7 @@ function maskValue(val) {
 export async function GET() {
   const ctx = await getAuthContext();
   if (!ctx.user) return unauthorized();
-  if (!hasRole(ctx, "manager")) return forbidden();
+  if (!hasRole(ctx, "owner")) return forbidden();
 
   const admin = createAdminClient();
   const { data } = await admin
@@ -43,7 +43,7 @@ export async function GET() {
 export async function POST(request) {
   const ctx = await getAuthContext();
   if (!ctx.user) return unauthorized();
-  if (!hasRole(ctx, "manager")) return forbidden();
+  if (!hasRole(ctx, "owner")) return forbidden();
 
   let body;
   try {
@@ -88,7 +88,7 @@ export async function POST(request) {
 export async function DELETE() {
   const ctx = await getAuthContext();
   if (!ctx.user) return unauthorized();
-  if (!hasRole(ctx, "manager")) return forbidden();
+  if (!hasRole(ctx, "owner")) return forbidden();
 
   const admin = createAdminClient();
   const { error } = await admin

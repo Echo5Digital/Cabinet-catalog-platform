@@ -13,7 +13,7 @@ export async function POST(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const admin = createAdminClient();
 

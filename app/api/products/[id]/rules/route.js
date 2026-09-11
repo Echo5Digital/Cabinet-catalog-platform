@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { rule_type, rule_value, label } = await request.json();
     if (!rule_type || !rule_value || !label) {
@@ -63,7 +63,7 @@ export async function DELETE(request, { params }) {
   try {
     const ctx = await getAuthContext();
     if (!ctx.user) return unauthorized();
-    if (!hasRole(ctx, "manager")) return forbidden();
+    if (!hasRole(ctx, "owner")) return forbidden();
 
     const { searchParams } = new URL(request.url);
     const ruleId = searchParams.get("rule_id");

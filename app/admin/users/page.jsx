@@ -2,18 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-// Roles selectable when inviting/editing a user. "super_admin" is a legacy
-// value some existing accounts may still carry — it's recognized for display
-// but not offered as a choice going forward; use "owner" for new Super Admins.
+// Roles selectable when inviting/editing a user.
 const ROLES = [
-  { value: "owner",   label: "Super Admin", hint: "Full access to everything, including User management." },
-  { value: "manager", label: "Manager",     hint: "Full access to Catalog, Assets, Setup, Leads, Design, and Planner." },
-  { value: "admin",   label: "Admin",       hint: "Access limited to Leads, Design, and Planner only." },
-  { value: "editor",  label: "Editor",      hint: "Can edit most content, cannot publish or manage settings." },
-  { value: "viewer",  label: "Viewer",      hint: "Read-only access." },
+  { value: "owner", label: "Super Admin", hint: "Full access to everything, including User management." },
+  { value: "admin", label: "Admin",       hint: "Dashboard, Leads, Design, and Planner, plus User management. Cannot see or manage Super Admins." },
+  { value: "staff", label: "Staff",       hint: "Dashboard, Leads, Design, and Planner only. No User management." },
 ];
-
-const SUPER_ADMIN_ROLES = new Set(["owner", "super_admin"]);
 
 function generatePassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
@@ -23,21 +17,17 @@ function generatePassword() {
 }
 
 function roleLabel(value) {
-  if (value === "super_admin") return "Super Admin";
   return ROLES.find((r) => r.value === value)?.label || value;
 }
 
 function RoleBadge({ role }) {
   const styles = {
-    owner:       "bg-indigo-50 text-indigo-700 border-indigo-200",
-    super_admin: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    manager:     "bg-blue-50 text-blue-700 border-blue-200",
-    admin:       "bg-amber-50 text-amber-700 border-amber-200",
-    editor:      "bg-gray-50 text-gray-600 border-gray-200",
-    viewer:      "bg-gray-50 text-gray-500 border-gray-200",
+    owner: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    admin: "bg-amber-50 text-amber-700 border-amber-200",
+    staff: "bg-gray-50 text-gray-600 border-gray-200",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[role] || styles.viewer}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[role] || styles.staff}`}>
       {roleLabel(role)}
     </span>
   );
@@ -50,7 +40,7 @@ export default function UsersPage() {
   const [error, setError] = useState("");
 
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", full_name: "", role: "admin", password: "" });
+  const [inviteForm, setInviteForm] = useState({ email: "", full_name: "", role: "staff", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
@@ -96,7 +86,7 @@ export default function UsersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create user");
       setUsers((prev) => [...prev, data.user]);
-      setInviteForm({ email: "", full_name: "", role: "admin", password: "" });
+      setInviteForm({ email: "", full_name: "", role: "staff", password: "" });
       setShowPassword(false);
       setShowInvite(false);
     } catch (e) {
@@ -165,15 +155,20 @@ export default function UsersPage() {
     );
   }
 
-  if (me && !SUPER_ADMIN_ROLES.has(me.role)) {
+  if (me && me.role !== "owner" && me.role !== "admin") {
     return (
       <div className="p-6 sm:p-8 max-w-3xl mx-auto">
         <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-          Only Super Admins can manage users.
+          Only Super Admins and Admins can manage users.
         </div>
       </div>
     );
   }
+
+  const isOwner = me?.role === "owner";
+  // Admin viewers never see Super Admin rows — mirrors the API's own
+  // filtering (defense in depth against a stale client-side cache).
+  const visibleUsers = isOwner ? users : users.filter((u) => u.role !== "owner");
 
   return (
     <div className="p-6 sm:p-8 max-w-5xl mx-auto">
@@ -315,8 +310,11 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {users.map((u) => {
+              {visibleUsers.map((u) => {
                 const isSelf = me && u.email?.toLowerCase() === me.email?.toLowerCase();
+                // An Admin viewer can't promote anyone to Super Admin — only
+                // an Owner can grant that role.
+                const assignableRoles = isOwner ? ROLES : ROLES.filter((r) => r.value !== "owner");
                 return (
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-4 font-medium text-gray-900 whitespace-nowrap">
@@ -325,7 +323,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-5 py-4 text-gray-600">{u.email}</td>
                     <td className="px-5 py-4">
-                      {isSelf || u.role === "super_admin" ? (
+                      {isSelf || u.role === "owner" ? (
                         <RoleBadge role={u.role} />
                       ) : (
                         <select
@@ -334,7 +332,7 @@ export default function UsersPage() {
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
                           className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                         >
-                          {ROLES.map((r) => (
+                          {assignableRoles.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
                           ))}
                         </select>
