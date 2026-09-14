@@ -192,13 +192,13 @@ export default async function HomePage() {
                 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.1] mb-4"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: primaryColor }}
               >
-                AI Kitchen<br />
+                AI<br />
                 <span className="text-stone-900">Designer.</span>
               </h2>
 
               {/* Description */}
               <p className="text-stone-500 text-base leading-relaxed mb-8 max-w-sm">
-                Describe your style, choose your colors, and generate professional kitchen renders — with matching catalog products.
+                Describe your style, choose your colors, and generate professional kitchen or bathroom renders — with matching catalog products.
               </p>
 
               {/* Feature list */}
@@ -222,20 +222,29 @@ export default async function HomePage() {
                 ))}
               </ul>
 
-              {/* CTA */}
-              <Link
-                href="/catalog/design"
-                className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-full text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-                Try AI Kitchen Designer
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-3">
+                <Link
+                  href="/catalog/design"
+                  className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-full text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  Try Kitchen Designer
+                </Link>
+                <Link
+                  href="/catalog/bathroom-design"
+                  className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-full text-sm font-semibold border shadow-sm transition hover:opacity-90"
+                  style={{ borderColor: primaryColor, color: primaryColor }}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  Try Bathroom Designer
+                </Link>
+              </div>
             </div>
 
             {/* ── Right panel: Kitchen Planner (maroon bg, white border) ── */}
@@ -248,7 +257,7 @@ export default async function HomePage() {
                 <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
                 </svg>
-                <span className="text-white/80 text-xs font-medium uppercase tracking-widest">2D Drag &amp; Drop</span>
+                <span className="text-white/80 text-xs font-medium uppercase tracking-widest">2D &amp; 3D Drag &amp; Drop</span>
               </div>
 
               {/* Heading */}
@@ -262,7 +271,7 @@ export default async function HomePage() {
 
               {/* Description */}
               <p className="text-white/60 text-base leading-relaxed mb-8 max-w-sm">
-                Drag real catalog products onto a 2D canvas, plan your layout to scale, then generate an AI visualization of your finished kitchen.
+                Drag real catalog products onto a 2D canvas, plan your layout to scale, switch to a live 3D view, then generate an AI visualization of your finished kitchen.
               </p>
 
               {/* Feature list */}
@@ -270,6 +279,7 @@ export default async function HomePage() {
                 {[
                   "Real product dimensions to scale",
                   "Snap-to-grid cabinet placement",
+                  "Switch between 2D and 3D views",
                   "Generate AI kitchen visualization",
                 ].map((feat) => (
                   <li key={feat} className="flex items-center gap-3 text-white/70 text-sm">

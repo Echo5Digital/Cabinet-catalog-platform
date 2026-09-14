@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-// ── Parse the structured project_description from design_ai submissions ───────
+// ── Parse the structured project_description from design_ai / design_ai_bathroom submissions ───
 function parseDesignDescription(text) {
   if (!text) return null;
   const lines = text.split("\n");
@@ -14,6 +14,9 @@ function parseDesignDescription(text) {
     if (line.startsWith("AI Kitchen Design — ")) {
       f.conceptName = line.replace("AI Kitchen Design — ", "").trim();
       inItems = false;
+    } else if (line.startsWith("AI Bathroom Design — ")) {
+      f.conceptName = line.replace("AI Bathroom Design — ", "").trim();
+      inItems = false;
     } else if (line.startsWith("Style: ")) {
       inItems = false;
       line.split(" | ").forEach((part) => {
@@ -23,6 +26,17 @@ function parseDesignDescription(text) {
         const val = part.slice(idx + 2).trim();
         if (key === "Style") f.style = val;
         else if (key === "Layout") f.layout = val;
+        else if (key === "Budget Style") f.budgetStyle = val;
+      });
+    } else if (line.startsWith("Bathroom Type: ")) {
+      inItems = false;
+      line.split(" | ").forEach((part) => {
+        const idx = part.indexOf(": ");
+        if (idx === -1) return;
+        const key = part.slice(0, idx).trim();
+        const val = part.slice(idx + 2).trim();
+        if (key === "Bathroom Type") f.bathroomType = val;
+        else if (key === "Style") f.style = val;
         else if (key === "Budget Style") f.budgetStyle = val;
       });
     } else if (line.startsWith("Upper: ")) {
@@ -37,6 +51,20 @@ function parseDesignDescription(text) {
         else if (key === "Countertop") f.countertop = val;
         else if (key === "Flooring") f.flooring = val;
       });
+    } else if (line.startsWith("Vanity Finish: ")) {
+      inItems = false;
+      line.split(" | ").forEach((part) => {
+        const idx = part.indexOf(": ");
+        if (idx === -1) return;
+        const key = part.slice(0, idx).trim();
+        const val = part.slice(idx + 2).trim();
+        if (key === "Vanity Finish") f.vanityFinish = val;
+        else if (key === "Countertop") f.countertop = val;
+        else if (key === "Flooring") f.flooring = val;
+      });
+    } else if (line.startsWith("Faucet: ")) {
+      inItems = false;
+      f.faucet = line.replace("Faucet: ", "").trim();
     } else if (line.startsWith("Project Type: ")) {
       inItems = false;
       f.projectType = line.replace("Project Type: ", "").trim();
@@ -59,6 +87,27 @@ function parseDesignDescription(text) {
   f.itemsList = itemLines;
   return f;
 }
+
+// ── Small badge distinguishing Kitchen vs Bathroom design leads ───────────────
+function DesignCategoryBadge({ source }) {
+  if (source === "design_ai_bathroom") {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 bg-teal-100 text-teal-700">
+        Bathroom
+      </span>
+    );
+  }
+  if (source === "design_ai") {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 bg-indigo-100 text-indigo-700">
+        Kitchen
+      </span>
+    );
+  }
+  return null;
+}
+
+const DESIGN_AI_SOURCES = new Set(["design_ai", "design_ai_bathroom"]);
 
 async function downloadRender(url) {
   try {
@@ -86,13 +135,16 @@ function DesignDetails({ description, before_image_url }) {
   const detailRows = [
     { label: "Concept", value: d.conceptName },
     { label: "Project Type", value: d.projectType },
+    { label: "Bathroom Type", value: d.bathroomType },
     { label: "Layout", value: d.layout },
-    { label: "Cabinet Style", value: d.style },
+    { label: d.bathroomType ? "Style" : "Cabinet Style", value: d.style },
     { label: "Budget Style", value: d.budgetStyle },
     { label: "Upper Cabinets", value: d.upperColor },
     { label: "Lower Cabinets", value: d.lowerColor },
+    { label: "Vanity Finish", value: d.vanityFinish },
     { label: "Countertop", value: d.countertop },
     { label: "Flooring", value: d.flooring },
+    { label: "Faucet", value: d.faucet },
   ].filter((r) => r.value && r.value !== "—");
 
   return (
@@ -384,7 +436,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                   </svg>
-                  {lead.source === "design_ai" && lead.project_description ? (() => {
+                  {DESIGN_AI_SOURCES.has(lead.source) && lead.project_description ? (() => {
                     const d = parseDesignDescription(lead.project_description);
                     return <p className="text-xs text-gray-600 truncate">{d?.address || <span className="text-gray-300 italic">—</span>}</p>;
                   })() : (
@@ -394,10 +446,10 @@ function LeadDetail({ lead, onClose, onUpdate }) {
               </div>
 
               {/* Non-AI source extras */}
-              {lead.source !== "design_ai" && lead.company && (
+              {!DESIGN_AI_SOURCES.has(lead.source) && lead.company && (
                 <p className="text-sm text-gray-500">{lead.company}</p>
               )}
-              {lead.source !== "design_ai" && lead.project_description && (
+              {!DESIGN_AI_SOURCES.has(lead.source) && lead.project_description && (
                 <p className="text-sm text-gray-600 pt-2 border-t border-gray-200 mt-1">
                   {lead.project_description}
                 </p>
@@ -409,7 +461,7 @@ function LeadDetail({ lead, onClose, onUpdate }) {
           </div>
 
           {/* Design AI structured details */}
-          {lead.source === "design_ai" && lead.project_description && (
+          {DESIGN_AI_SOURCES.has(lead.source) && lead.project_description && (
             <DesignDetails description={lead.project_description} before_image_url={lead.before_image_url} />
           )}
 
@@ -510,8 +562,8 @@ function LeadDetail({ lead, onClose, onUpdate }) {
 function LeadCard({ lead, onClick, onDownload, onSetConfirm, onDelete, confirmDeleteId, deletingId }) {
   const statusClass = STATUS_COLORS[lead.status] || STATUS_COLORS.new;
   const borderAccent = STATUS_LEFT_BORDER[lead.status] || "border-l-gray-200";
-  const projectType = lead.source === "design_ai" && lead.project_description
-    ? parseDesignDescription(lead.project_description)?.projectType
+  const projectType = DESIGN_AI_SOURCES.has(lead.source) && lead.project_description
+    ? (parseDesignDescription(lead.project_description)?.projectType || parseDesignDescription(lead.project_description)?.bathroomType)
     : null;
   return (
     <div
@@ -524,6 +576,7 @@ function LeadCard({ lead, onClick, onDownload, onSetConfirm, onDelete, confirmDe
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusClass}`}>
             {lead.status}
           </span>
+          <DesignCategoryBadge source={lead.source} />
           <span className="text-gray-300 text-xs shrink-0">·</span>
           <p className="text-sm text-gray-500 truncate">{lead.email}</p>
           {projectType && (
@@ -658,17 +711,20 @@ export default function AdminLeadsPage() {
       const res = await fetch(`/api/leads/${lead.id}`);
       if (!res.ok) return;
       const { lead: full } = await res.json();
-      const d = full.source === "design_ai" ? parseDesignDescription(full.project_description) : null;
+      const d = DESIGN_AI_SOURCES.has(full.source) ? parseDesignDescription(full.project_description) : null;
 
       const designRows = d ? [
         d.conceptName  && `<tr><td>Concept</td><td>${escHtml(d.conceptName)}</td></tr>`,
+        d.bathroomType && `<tr><td>Bathroom Type</td><td>${escHtml(d.bathroomType)}</td></tr>`,
         d.style        && `<tr><td>Style</td><td>${escHtml(d.style)}</td></tr>`,
         d.layout       && `<tr><td>Layout</td><td>${escHtml(d.layout)}</td></tr>`,
         d.budgetStyle  && `<tr><td>Budget Style</td><td>${escHtml(d.budgetStyle)}</td></tr>`,
         d.upperColor   && `<tr><td>Upper Color</td><td>${escHtml(d.upperColor)}</td></tr>`,
         d.lowerColor   && `<tr><td>Lower Color</td><td>${escHtml(d.lowerColor)}</td></tr>`,
+        d.vanityFinish && `<tr><td>Vanity Finish</td><td>${escHtml(d.vanityFinish)}</td></tr>`,
         d.countertop   && `<tr><td>Countertop</td><td>${escHtml(d.countertop)}</td></tr>`,
         d.flooring     && `<tr><td>Flooring</td><td>${escHtml(d.flooring)}</td></tr>`,
+        d.faucet       && `<tr><td>Faucet</td><td>${escHtml(d.faucet)}</td></tr>`,
         d.projectType  && `<tr><td>Project Type</td><td>${escHtml(d.projectType)}</td></tr>`,
         d.address      && `<tr><td>Address</td><td>${escHtml(d.address)}</td></tr>`,
         d.comments     && `<tr><td>Comments</td><td>${escHtml(d.comments)}</td></tr>`,

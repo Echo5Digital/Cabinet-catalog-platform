@@ -1,86 +1,189 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import DesignResultBoard from "@/components/catalog/DesignResultBoard";
+import BathroomDesignResultBoard from "@/components/catalog/BathroomDesignResultBoard";
 import { MagicCard } from "@/registry/magicui/magic-card";
 import { TypingAnimation } from "@/registry/magicui/typing-animation";
 
-const PROJECT_TYPES = [
-  "New Kitchen",
-  "Remodel Existing Kitchen",
-  "Replace Cabinets Only",
-  "Countertop Only",
-  "Full Design + Quote",
-];
+const BATHROOM_TYPES = ["Full Bathroom", "Vanity", "Shower Area"];
 
-// Project types that REQUIRE a kitchen photo (existing kitchen present)
-const PHOTO_REQUIRED_TYPES = ["Remodel Existing Kitchen", "Replace Cabinets Only", "Countertop Only"];
-
-const LAYOUT_CONFIGS = [
+// 3-4 hardcoded styles per bathroom type — simple inline SVG icons (no DB rows needed to ship).
+const FULL_BATHROOM_STYLES = [
   {
-    name: "L-shaped",
+    name: "Modern Minimal",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
-        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="6" y="10" width="24" height="14" rx="1" fill="currentColor" />
+        <circle cx="54" cy="20" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="6" y="38" width="68" height="14" rx="1" fill="currentColor" opacity="0.5" />
       </svg>
     ),
   },
   {
-    name: "U-shaped",
+    name: "Traditional",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
-        <rect x="6"  y="18" width="10" height="34" rx="1" fill="currentColor" />
-        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="6" y="8" width="24" height="16" rx="2" fill="currentColor" />
+        <rect x="48" y="10" width="16" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="6" y="40" width="68" height="12" rx="1" fill="currentColor" opacity="0.5" />
       </svg>
     ),
   },
   {
-    name: "Galley",
+    name: "Spa Retreat",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6" y="8"  width="68" height="10" rx="1" fill="currentColor" />
-        <rect x="6" y="42" width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="8" y="12" width="20" height="12" rx="6" fill="currentColor" />
+        <rect x="44" y="8" width="28" height="20" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="6" y="40" width="68" height="12" rx="6" fill="currentColor" opacity="0.5" />
       </svg>
     ),
   },
   {
-    name: "Island",
+    name: "Compact Efficient",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
-        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
-        <rect x="22" y="30" width="28" height="12" rx="1" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    name: "Single Wall",
-    svg: (
-      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6" y="8" width="68" height="10" rx="1" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    name: "G-shaped",
-    svg: (
-      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
-        <rect x="6"  y="18" width="10" height="34" rx="1" fill="currentColor" />
-        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
-        <rect x="16" y="42" width="28" height="10" rx="1" fill="currentColor" />
+        <rect x="6" y="10" width="18" height="12" rx="1" fill="currentColor" />
+        <rect x="32" y="10" width="14" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="54" y="10" width="18" height="34" rx="1" fill="currentColor" opacity="0.5" />
       </svg>
     ),
   },
 ];
 
-const CABINET_STYLES = ["American", "Euro", "Shaker", "Modern", "Traditional"];
+const VANITY_STYLES = [
+  {
+    name: "Floating",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="14" y="24" width="52" height="16" rx="2" fill="currentColor" />
+        <rect x="20" y="14" width="12" height="8" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    name: "Furniture Style",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="10" y="20" width="60" height="26" rx="2" fill="currentColor" />
+        <rect x="14" y="46" width="8" height="8" fill="currentColor" />
+        <rect x="58" y="46" width="8" height="8" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    name: "Double Sink",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="6" y="22" width="68" height="20" rx="2" fill="currentColor" />
+        <circle cx="24" cy="20" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="56" cy="20" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+];
 
-const HARDWARE_OPTIONS = ["Gold", "Silver", "Black", "Bronze", "None"];
+const SHOWER_AREA_STYLES = [
+  {
+    name: "Walk-in Glass",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="10" y="8" width="4" height="44" fill="currentColor" />
+        <rect x="18" y="8" width="52" height="44" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    name: "Framed Enclosure",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="10" y="8" width="60" height="44" rx="1" fill="none" stroke="currentColor" strokeWidth="3" />
+        <line x1="40" y1="8" x2="40" y2="52" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    name: "Tub & Shower Combo",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="8" y="30" width="64" height="18" rx="4" fill="currentColor" />
+        <rect x="8" y="8" width="64" height="20" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+];
 
-const APPLIANCE_COLORS = ["Stainless", "White", "Black", "Panel Ready"];
+const BATHROOM_TYPE_STYLES = {
+  "Full Bathroom": FULL_BATHROOM_STYLES,
+  "Vanity": VANITY_STYLES,
+  "Shower Area": SHOWER_AREA_STYLES,
+};
+
+// Hardcoded faucet styles — simple inline SVG icons (no DB/catalog dependency to ship).
+const FAUCET_STYLES = [
+  {
+    name: "Waterfall",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="34" y="8" width="8" height="26" rx="1" fill="currentColor" />
+        <rect x="26" y="8" width="24" height="7" rx="1" fill="currentColor" />
+        <rect x="30" y="42" width="20" height="6" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Wide Waterfall",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="30" y="8" width="8" height="22" rx="1" fill="currentColor" />
+        <rect x="16" y="8" width="36" height="7" rx="1" fill="currentColor" />
+        <rect x="20" y="40" width="28" height="6" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Gooseneck",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="34" y="20" width="7" height="24" rx="1" fill="currentColor" />
+        <path d="M37 20 C37 8, 54 8, 54 22 L54 34" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <rect x="28" y="44" width="19" height="5" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Single-Lever",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="36" y="16" width="6" height="26" rx="2" fill="currentColor" />
+        <path d="M39 16 C39 10, 48 10, 48 16" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <rect x="26" y="12" width="14" height="4" rx="2" fill="currentColor" />
+        <rect x="30" y="44" width="18" height="5" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Widespread",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <circle cx="20" cy="26" r="5" fill="none" stroke="currentColor" strokeWidth="3" />
+        <circle cx="60" cy="26" r="5" fill="none" stroke="currentColor" strokeWidth="3" />
+        <path d="M40 16 L40 30 C40 36, 46 36, 46 30" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <rect x="18" y="44" width="44" height="5" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Vessel-Height",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="35" y="4" width="7" height="32" rx="1" fill="currentColor" />
+        <rect x="27" y="4" width="23" height="6" rx="1" fill="currentColor" />
+        <ellipse cx="40" cy="46" rx="20" ry="8" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+      </svg>
+    ),
+  },
+];
 
 const BUDGET_STYLES = [
   { id: "Budget-friendly", label: "Budget-friendly", desc: "Affordable, functional & clean" },
@@ -88,65 +191,51 @@ const BUDGET_STYLES = [
   { id: "Premium Luxury",  label: "Premium Luxury",  desc: "High-end materials & custom details" },
 ];
 
-// RFC-5321 inspired regex: requires local@domain.tld (TLD ≥ 2 chars, no spaces)
+// Optional enhancement keywords — not covered by any wizard step, but woven into the
+// AI prompt (via design_comments) at generation time when selected.
+const ENHANCEMENT_OPTIONS = [
+  { id: "Storage Enhancement",     desc: "Add extra drawers, shelving, or built-in storage" },
+  { id: "Improved Lighting",       desc: "Layered task, ambient, and accent lighting" },
+  { id: "Better Ventilation",      desc: "Exhaust fan or window for moisture control" },
+  { id: "Heated Flooring",         desc: "Radiant floor heating for comfort" },
+  { id: "Anti-Fog Mirror",         desc: "Defogging mirror for a clear post-shower view" },
+  { id: "Water-Efficient Fixtures", desc: "Low-flow faucet and showerhead options" },
+];
+
 function isValidEmail(email) {
   return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
 }
 
-// Match a layout name to the closest structure by normalising both sides
-function findStructureImage(layoutName, structures) {
-  if (!structures || structures.length === 0) return null;
-  const norm = (s) => s.toLowerCase().replace(/[-\s]/g, "");
-  const key  = norm(layoutName);
-  const found = structures.find((s) => norm(s.name).includes(key));
-  return found?.image_url ?? null;
-}
-
-export default function KitchenDesignForm({ countertopColors, floorColors, finishes, structures = [], onVerified }) {
+export default function BathroomDesignForm({ countertopColors, floorColors, finishes, onVerified }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
-    project_type: "",
-    layout: "",
-    cabinet_style: "",
-    budget_style: "",
-    upper_color: "",
-    lower_color: "",
+    bathroom_type: "",
+    style: "",
+    vanity_finish: "",
     countertop: "",
     flooring: "",
-    hood_style: "",
-    hardware: "",
-    appliance_color: "",
+    budget_style: "",
+    faucet_style: "",
+    enhancements: [],
     design_comments: "",
     image_status: "No",
     image_url: "",
     image_source: "url",
     image_file_data: "",
-    room_width: "",
-    room_length: "",
-    ceiling_height: "",
-    window_positions: "",
-    door_positions: "",
-    refrigerator_position: "",
-    sink_position: "",
-    special_features: "",
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [originalPhotoUrl, setOriginalPhotoUrl] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Wizard step
-  const [currentStep, setCurrentStep] = useState(0); // 0-indexed, 0–7
-  const wizardTopRef = useRef(null); // used to scroll page to stepper on step change
+  const [currentStep, setCurrentStep] = useState(0); // 0-6
+  const wizardTopRef = useRef(null);
   const otpSendInFlight = useRef(false); // guards against duplicate/overlapping send-otp calls invalidating a code the user already has
 
-  // Navigate to a step AND scroll to the stepper top.
-  // Called only from button handlers — never fires on initial page load.
   function navigateTo(step) {
     setCurrentStep(step);
     if (wizardTopRef.current) {
@@ -156,7 +245,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     }
   }
 
-  // OTP / email-verification state
   const [resultState,  setResultState]  = useState(null); // null | "pending" | "verified"
   const [otpSending,   setOtpSending]   = useState(false);
   const [otpSent,      setOtpSent]      = useState(false);
@@ -165,18 +253,25 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   const [otpError,     setOtpError]     = useState("");
   const [otpSendError, setOtpSendError] = useState("");
 
-  // Field touched tracking (shows inline errors after blur or submit attempt)
   const [touched, setTouched] = useState({});
   function touch(field) {
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
-  // Quote submission state
-  const [quoteStatus, setQuoteStatus] = useState("idle"); // idle | submitting | success | error
+  const [quoteStatus, setQuoteStatus] = useState("idle");
   const [quoteError, setQuoteError] = useState("");
 
   function set(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleEnhancement(id) {
+    setForm((prev) => ({
+      ...prev,
+      enhancements: prev.enhancements.includes(id)
+        ? prev.enhancements.filter((e) => e !== id)
+        : [...prev.enhancements, id],
+    }));
   }
 
   function handleFileChange(e) {
@@ -247,7 +342,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
 
   async function handleSubmit(e) {
     e.preventDefault();
-    // Mark all info fields as touched so errors become visible
     setTouched({ name: true, email: true, phone: true, address: true });
     if (
       !form.name.trim() ||
@@ -265,10 +359,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setOtpError("");
     setOtpSendError("");
     setOtpSent(false);
-    // Yield to the browser so React can paint the "Generating…" state
-    // before the synchronous JSON.stringify + fetch work begins.
     await new Promise((r) => setTimeout(r, 0));
-    // Scroll to the flickering grid loading placeholder now it's mounted
     setTimeout(() => {
       document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
@@ -280,19 +371,27 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             : form.image_url
           : "";
 
-      const res = await fetch("/api/ai/kitchen-design", {
+      // Fold selected enhancement keywords into design_comments — the AI route/prompt
+      // already treat design_comments as freeform special requirements, so no other
+      // change is needed downstream for these to influence the generated design.
+      const combinedComments = [
+        form.enhancements.length > 0 ? `Requested enhancements: ${form.enhancements.join(", ")}.` : "",
+        form.design_comments.trim(),
+      ].filter(Boolean).join(" ");
+
+      const res = await fetch("/api/ai/bathroom-design", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, image_url: effectiveImageUrl }),
+        body: JSON.stringify({ ...form, image_url: effectiveImageUrl, design_comments: combinedComments }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed.");
       setResult(data);
       setResultState("pending");
-      if (PHOTO_REQUIRED_TYPES.includes(form.project_type) && effectiveImageUrl) {
+      if (effectiveImageUrl) {
         setOriginalPhotoUrl(effectiveImageUrl);
       }
-      sendOTP(); // auto-send OTP immediately
+      sendOTP();
       setTimeout(() => {
         document.getElementById("design-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -316,10 +415,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     setQuoteError("");
     try {
       const projectDescription = [
-        `AI Kitchen Design — ${result.concept?.name || "Custom Design"}`,
-        `Style: ${form.cabinet_style || "—"} | Layout: ${form.layout || "—"} | Budget Style: ${form.budget_style || "—"}`,
-        `Upper: ${form.upper_color || "—"} | Lower: ${form.lower_color || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
-        `Project Type: ${form.project_type || "—"}`,
+        `AI Bathroom Design — ${result.concept?.name || "Custom Design"}`,
+        `Bathroom Type: ${form.bathroom_type || "—"} | Style: ${form.style || "—"} | Budget Style: ${form.budget_style || "—"}`,
+        `Vanity Finish: ${form.vanity_finish || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
+        `Faucet: ${form.faucet_style || "—"}`,
+        form.enhancements.length > 0 ? `Enhancements: ${form.enhancements.join(", ")}` : "",
         form.address ? `Address: ${form.address}` : "",
         form.design_comments ? `Comments: ${form.design_comments}` : "",
         result.image_url ? `Render URL: ${result.image_url}` : "",
@@ -337,6 +437,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           notes: form.design_comments || undefined,
           products: result.products || [],
           before_photo: originalPhotoUrl || undefined,
+          source: "design_ai_bathroom",
         }),
       });
       const data = await res.json();
@@ -348,16 +449,10 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
     }
   }
 
-  // Build name → image_url maps from props for the result board
   const finishImageMap = Object.fromEntries((finishes || []).map((f) => [f.name, f.image_url]));
   const countertopImageMap = Object.fromEntries((countertopColors || []).map((c) => [c.name, c.image_url]));
   const floorImageMap = Object.fromEntries((floorColors || []).map((c) => [c.name, c.image_url]));
 
-  // Photo requirement logic
-  const photoRequired = PHOTO_REQUIRED_TYPES.includes(form.project_type);
-  const hasPhoto = form.image_source === "upload" ? !!form.image_file_data : !!form.image_url;
-
-  // Per-step validation: steps 0-1 are gated; steps 2+ always allow proceeding
   function canProceedFromStep(step) {
     if (step === 0) {
       return !!(
@@ -366,49 +461,43 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
       );
     }
     if (step === 1) {
-      return !!(form.project_type && form.layout && (!photoRequired || hasPhoto));
+      return !!(form.bathroom_type && form.style);
     }
     return true;
   }
 
   const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-700/20 focus:border-rose-600 shadow-sm placeholder:text-stone-400 transition";
-  const selectCls = `${inputCls} cursor-pointer`;
   const labelCls = "block text-xs font-semibold text-[#3D0810] mb-1.5 uppercase tracking-wide";
-
-  // Shared nav button classes
   const backBtnCls = "flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:border-stone-400 transition";
   const nextBtnCls = "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#6E1020] hover:bg-[#7D1528] !text-white transition disabled:bg-[#6E1020]/50 disabled:cursor-not-allowed";
 
   const WIZARD_STEPS = [
-    { label: "Your Info",  icon: <StepIconPerson /> },
-    { label: "Project",    icon: <StepIconCabinet /> },
-    { label: "Style",      icon: <StepIconLamp /> },
-    { label: "Colors",     icon: <StepIconPalette /> },
-    { label: "Budget",     icon: <StepIconTag /> },
-    { label: "Details",    icon: <StepIconClipboard /> },
-    { label: "Notes",      icon: <StepIconChat /> },
-    { label: "Advanced",   icon: <StepIconGear /> },
+    { label: "Your Info", icon: <BStepIconPerson /> },
+    { label: "Type",      icon: <BStepIconBathroom /> },
+    { label: "Colors",    icon: <BStepIconPalette /> },
+    { label: "Budget",    icon: <BStepIconTag /> },
+    { label: "Faucets",   icon: <BStepIconFaucet /> },
+    { label: "Notes",     icon: <BStepIconChat /> },
+    { label: "Generate",  icon: <BStepIconSparkle /> },
   ];
+
+  const styleOptions = BATHROOM_TYPE_STYLES[form.bathroom_type] || [];
 
   return (
     <div ref={wizardTopRef}>
-      {/* ── Wizard Stepper + Form — hidden once design is verified ── */}
       {resultState !== "verified" && (
       <>
       <WizardStepper currentStep={currentStep} steps={WIZARD_STEPS} />
 
       <form onSubmit={handleSubmit}>
-      {/* Consistent-height content wrapper — keeps the layout stable across all steps */}
       <div className="min-h-[380px] sm:min-h-[420px]">
 
-        {/* ══════════════════════════════════════
-            Step 0 — Your Information
-        ══════════════════════════════════════ */}
+        {/* Step 0 — Your Information */}
         {currentStep === 0 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>1</span>
                 <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Your Information</h2>
               </div>
@@ -423,12 +512,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     onChange={(e) => set("name", e.target.value)}
                     onBlur={() => touch("name")}
                   />
-                  {touched.name && !form.name.trim() && (
-                    <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                      Name is required
-                    </p>
-                  )}
+                  {touched.name && !form.name.trim() && <p className="text-xs text-red-500 mt-1.5">Name is required</p>}
                 </div>
                 <div>
                   <label className={labelCls}>Email <span className="text-red-500">*</span></label>
@@ -442,10 +526,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     onBlur={() => touch("email")}
                   />
                   {touched.email && (!form.email.trim() || !isValidEmail(form.email)) && (
-                    <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                      {!form.email.trim() ? "Email is required" : "Enter a valid email address (e.g. name@domain.com)"}
-                    </p>
+                    <p className="text-xs text-red-500 mt-1.5">{!form.email.trim() ? "Email is required" : "Enter a valid email address"}</p>
                   )}
                 </div>
                 <div>
@@ -459,12 +540,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     onChange={(e) => set("phone", e.target.value)}
                     onBlur={() => touch("phone")}
                   />
-                  {touched.phone && !form.phone.trim() && (
-                    <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                      Phone is required
-                    </p>
-                  )}
+                  {touched.phone && !form.phone.trim() && <p className="text-xs text-red-500 mt-1.5">Phone is required</p>}
                 </div>
                 <div>
                   <label className={labelCls}>Address <span className="text-red-500">*</span></label>
@@ -476,17 +552,11 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     onChange={(e) => set("address", e.target.value)}
                     onBlur={() => touch("address")}
                   />
-                  {touched.address && !form.address.trim() && (
-                    <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                      Address is required
-                    </p>
-                  )}
+                  {touched.address && !form.address.trim() && <p className="text-xs text-red-500 mt-1.5">Address is required</p>}
                 </div>
               </div>
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-end mt-5">
               <button
                 type="button"
@@ -506,61 +576,84 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            Step 1 — Project Details
-        ══════════════════════════════════════ */}
+        {/* Step 1 — Bathroom Type + Style */}
         {currentStep === 1 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>2</span>
-                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Project Details</h2>
+                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Bathroom Type</h2>
               </div>
               <div className="space-y-6">
                 <div>
-                  <label className={labelCls}>Project Type *</label>
-                  <select
-                    required
-                    className={selectCls}
-                    value={form.project_type}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setForm((prev) => ({
-                        ...prev,
-                        project_type: val,
-                        // Required types: force Yes. Optional/none: reset to No.
-                        image_status: PHOTO_REQUIRED_TYPES.includes(val) ? "Yes" : "No",
-                      }));
-                    }}
-                  >
-                    <option value="">— Select project type —</option>
-                    {PROJECT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <label className={labelCls}>What are you designing? *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                    {BATHROOM_TYPES.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, bathroom_type: t, style: "" }))}
+                        className={`py-3 px-4 rounded-xl border text-sm font-medium transition ${
+                          form.bathroom_type === t
+                            ? "border-[#1C1917] bg-[#1C1917] text-white"
+                            : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* ── Kitchen Photo — positioned between Project Type and Layout ── */}
-                {form.project_type && (
+                {form.bathroom_type && (
+                  <div>
+                    <label className={labelCls}>Choose a Style *</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
+                      {styleOptions.map(({ name, svg }) => {
+                        const selected = form.style === name;
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => set("style", name)}
+                            className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
+                              selected
+                                ? "border-[#6E1020] bg-[#6E1020] text-white"
+                                : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
+                            }`}
+                          >
+                            <div className="w-16 h-12 my-3">{svg}</div>
+                            <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
+                              {name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {form.bathroom_type && (
                   <div>
                     <label className={labelCls}>
-                      Kitchen Photo
-                      {photoRequired
-                        ? <span className="text-red-500 ml-1">*</span>
-                        : <span className="ml-1.5 text-stone-400 font-normal normal-case tracking-normal">(optional)</span>
-                      }
+                      Existing Bathroom Photo
+                      <span className="ml-1.5 text-stone-400 font-normal normal-case tracking-normal">(optional)</span>
                     </label>
-
-                    {photoRequired ? (
-                      /* Required: always-visible upload, no toggle */
+                    <div className="flex items-center gap-3 mb-3">
+                      {["Yes", "No"].map((opt) => (
+                        <button key={opt} type="button" onClick={() => set("image_status", opt)}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                            form.image_status === opt
+                              ? "border-[#1C1917] bg-[#1C1917] text-white"
+                              : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                          }`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    {form.image_status === "Yes" && (
                       <div className="space-y-3">
-                        <p className="text-xs text-rose-900 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2.5">
-                          {form.project_type === "Replace Cabinets Only"
-                            ? <>A photo of your existing kitchen is required for <strong>Replace Cabinets Only</strong>. The AI will preserve your room geometry and only update cabinetry.</>
-                            : form.project_type === "Countertop Only"
-                            ? <>A photo of your existing kitchen is required for <strong>Countertop Only</strong>. The AI will preserve your room geometry and only update countertop.</>
-                            : <>A photo of your existing kitchen is required for <strong>{form.project_type}</strong>. The AI will preserve your room geometry and only update cabinetry, countertop, and flooring.</>
-                          }
-                        </p>
                         <div className="flex items-center gap-2">
                           {[{ value: "upload", label: "Upload from device" }, { value: "url", label: "Paste URL" }].map((opt) => (
                             <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
@@ -581,128 +674,22 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                               <div className="mt-2 flex items-center gap-2">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
-                                <div>
-                                  <p className="text-xs text-stone-600 font-medium">Image ready</p>
-                                  <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
-                                </div>
+                                <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition">Remove</button>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div>
-                            <input type="url" className={inputCls} placeholder="https://example.com/my-kitchen.jpg"
-                              value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
-                          </div>
+                          <input type="url" className={inputCls} placeholder="https://example.com/my-bathroom.jpg"
+                            value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
                         )}
-                      </div>
-                    ) : (
-                      /* Optional: Yes/No toggle */
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          {["Yes", "No"].map((opt) => (
-                            <button key={opt} type="button" onClick={() => set("image_status", opt)}
-                              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
-                                form.image_status === opt
-                                  ? "border-[#1C1917] bg-[#1C1917] text-white"
-                                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
-                              }`}>
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                        {form.image_status === "Yes" && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              {[{ value: "upload", label: "Upload from device" }, { value: "url", label: "Paste URL" }].map((opt) => (
-                                <button key={opt.value} type="button" onClick={() => set("image_source", opt.value)}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                                    form.image_source === opt.value
-                                      ? "border-[#1C1917] bg-[#1C1917] text-white"
-                                      : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
-                                  }`}>
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </div>
-                            {form.image_source === "upload" ? (
-                              <div>
-                                <input type="file" accept="image/*" onChange={handleFileChange}
-                                  className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
-                                {form.image_file_data && (
-                                  <div className="mt-2 flex items-center gap-2">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
-                                    <div>
-                                      <p className="text-xs text-stone-600 font-medium">Image ready</p>
-                                      <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
-                                    </div>
-                                  </div>
-                                )}
-                                <p className="text-xs text-stone-400 mt-1">The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.</p>
-                              </div>
-                            ) : (
-                              <div>
-                                <label className={labelCls}>Image URL</label>
-                                <input type="url" className={inputCls} placeholder="https://example.com/my-kitchen.jpg"
-                                  value={form.image_url} onChange={(e) => set("image_url", e.target.value)} />
-                                <p className="text-xs text-stone-400 mt-1">The AI will analyze your existing kitchen and redesign it — preserving room layout and structure.</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        <p className="text-xs text-stone-400">The AI will analyze your existing bathroom and redesign it — preserving room layout and structure.</p>
                       </div>
                     )}
                   </div>
                 )}
-
-                <div>
-                  <label className={labelCls}>Kitchen Layout *</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
-                    {LAYOUT_CONFIGS.map(({ name, svg }) => {
-                      const imgUrl = findStructureImage(name, structures);
-                      const selected = form.layout === name;
-                      return (
-                        <button
-                          key={name}
-                          type="button"
-                          onClick={() => set("layout", name)}
-                          className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
-                            selected
-                              ? "border-[#6E1020] bg-[#6E1020] text-white"
-                              : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
-                          }`}
-                        >
-                          {imgUrl ? (
-                            <div className="w-full relative" style={{ paddingTop: "66%" }}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={imgUrl}
-                                alt={name}
-                                className={`absolute inset-0 w-full h-full object-cover transition-opacity ${selected ? "opacity-80" : "opacity-100"}`}
-                              />
-                              {selected && (
-                                <div className="absolute inset-0 bg-stone-900/30" />
-                              )}
-                            </div>
-                          ) : (
-                            <div className="w-16 h-12 my-3">
-                              {svg}
-                            </div>
-                          )}
-                          <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${
-                            selected ? "text-white" : "text-stone-700"
-                          }`}>
-                            {name}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-between mt-5">
               <button type="button" onClick={() => navigateTo(0)} className={backBtnCls}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -710,12 +697,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 </svg>
                 Back
               </button>
-              <button
-                type="button"
-                onClick={() => { if (canProceedFromStep(1)) navigateTo(2); }}
-                disabled={!canProceedFromStep(1)}
-                className={nextBtnCls}
-              >
+              <button type="button" onClick={() => { if (canProceedFromStep(1)) navigateTo(2); }} disabled={!canProceedFromStep(1)} className={nextBtnCls}>
                 Next
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -725,51 +707,24 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            Step 2 — Design Style
-        ══════════════════════════════════════ */}
+        {/* Step 2 — Colors & Materials */}
         {currentStep === 2 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>3</span>
-                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Design Style</h2>
+                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Colors &amp; Materials</h2>
               </div>
-              <div>
-                <label className={labelCls}>Cabinet Style *</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-1">
-                  {CABINET_STYLES.map((style) => (
-                    <button
-                      key={style}
-                      type="button"
-                      onClick={() => {
-                        setForm((prev) => {
-                          const wasFiltered = ["American", "Euro"].includes(prev.cabinet_style);
-                          const willFilter  = ["American", "Euro"].includes(style);
-                          const clearColors = wasFiltered || willFilter;
-                          return {
-                            ...prev,
-                            cabinet_style: style,
-                            upper_color: clearColors ? "" : prev.upper_color,
-                            lower_color: clearColors ? "" : prev.lower_color,
-                          };
-                        });
-                      }}
-                      className={`py-3 px-4 rounded-xl border text-sm font-medium transition ${
-                        form.cabinet_style === style
-                          ? "border-[#1C1917] bg-[#1C1917] text-white"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
-                      }`}
-                    >
-                      {style}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <BathroomColorMaterialsSection
+                finishes={finishes}
+                countertopColors={countertopColors}
+                floorColors={floorColors}
+                form={form}
+                set={set}
+              />
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-between mt-5">
               <button type="button" onClick={() => navigateTo(1)} className={backBtnCls}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -787,29 +742,37 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            Step 3 — Colors & Materials
-        ══════════════════════════════════════ */}
+        {/* Step 3 — Budget */}
         {currentStep === 3 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>4</span>
-                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Colors &amp; Materials</h2>
+                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
               </div>
-              <ColorMaterialsSection
-                finishes={finishes}
-                countertopColors={countertopColors}
-                floorColors={floorColors}
-                form={form}
-                set={set}
-                setForm={setForm}
-                cabinet_style={form.cabinet_style}
-              />
+              <div>
+                <label className={labelCls}>Bathroom Style</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                  {BUDGET_STYLES.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => set("budget_style", s.id)}
+                      className={`flex flex-col text-left rounded-xl border p-4 transition ${
+                        form.budget_style === s.id
+                          ? "border-[#1C1917] bg-[#1C1917] text-white"
+                          : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                      }`}
+                    >
+                      <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>{s.label}</span>
+                      <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>{s.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-between mt-5">
               <button type="button" onClick={() => navigateTo(2)} className={backBtnCls}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -827,44 +790,39 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            Step 4 — Budget Range
-        ══════════════════════════════════════ */}
+        {/* Step 4 — Faucets */}
         {currentStep === 4 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>5</span>
-                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Budget Range</h2>
+                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Faucets</h2>
               </div>
-              <div>
-                <label className={labelCls}>Kitchen Style</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
-                  {BUDGET_STYLES.map((s) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {FAUCET_STYLES.map(({ name, svg }) => {
+                  const selected = form.faucet_style === name;
+                  return (
                     <button
-                      key={s.id}
+                      key={name}
                       type="button"
-                      onClick={() => set("budget_style", s.id)}
-                      className={`flex flex-col text-left rounded-xl border p-4 transition ${
-                        form.budget_style === s.id
-                          ? "border-[#1C1917] bg-[#1C1917] text-white"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                      onClick={() => set("faucet_style", name)}
+                      className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
+                        selected
+                          ? "border-[#6E1020] bg-[#6E1020] text-white"
+                          : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
                       }`}
                     >
-                      <span className={`text-sm font-semibold mb-0.5 ${form.budget_style === s.id ? "text-white" : "text-stone-900"}`}>
-                        {s.label}
-                      </span>
-                      <span className={`text-xs ${form.budget_style === s.id ? "text-white/70" : "text-stone-400"}`}>
-                        {s.desc}
+                      <div className="w-16 h-12 my-3">{svg}</div>
+                      <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
+                        {name}
                       </span>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-between mt-5">
               <button type="button" onClick={() => navigateTo(3)} className={backBtnCls}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -882,86 +840,39 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            Step 5 — Additional Details  (optional)
-        ══════════════════════════════════════ */}
+        {/* Step 5 — Notes */}
         {currentStep === 5 && (
           <>
             <section className="form-section-card rounded-2xl overflow-hidden">
               <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>6</span>
-                <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Additional Details</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className={labelCls}>Hood Style</label>
-                  <input
-                    className={inputCls}
-                    placeholder="e.g. Chimney, Downdraft, Under-cabinet"
-                    value={form.hood_style}
-                    onChange={(e) => set("hood_style", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Hardware Style</label>
-                  <select
-                    className={selectCls}
-                    value={form.hardware}
-                    onChange={(e) => set("hardware", e.target.value)}
-                  >
-                    <option value="">— Select hardware —</option>
-                    {HARDWARE_OPTIONS.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Appliance Color</label>
-                  <select
-                    className={selectCls}
-                    value={form.appliance_color}
-                    onChange={(e) => set("appliance_color", e.target.value)}
-                  >
-                    <option value="">— Select appliance color —</option>
-                    {APPLIANCE_COLORS.map((a) => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                </div>
-              </div>
-              </MagicCard>
-            </section>
-            {/* Nav */}
-            <div className="flex items-center justify-between mt-5">
-              <button type="button" onClick={() => navigateTo(4)} className={backBtnCls}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                Back
-              </button>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => navigateTo(7)}
-                  className="text-xs text-stone-400 hover:text-stone-600 transition underline underline-offset-2">
-                  Skip to Generate
-                </button>
-                <button type="button" onClick={() => navigateTo(6)} className={nextBtnCls}>
-                  Next
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* ══════════════════════════════════════
-            Step 6 — Comments / Notes  (optional)
-        ══════════════════════════════════════ */}
-        {currentStep === 6 && (
-          <>
-            <section className="form-section-card rounded-2xl overflow-hidden">
-              <MagicCard gradientColor="#7D152825" gradientSize={280} className="p-5 sm:p-7">
-              <div className="form-section-header flex items-center gap-3">
-                <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>7</span>
                 <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Comments / Notes</h2>
+              </div>
+              <div className="mb-6">
+                <label className={labelCls}>
+                  Enhancements <span className="ml-1.5 text-stone-400 font-normal normal-case tracking-normal">(optional — select any that apply)</span>
+                </label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {ENHANCEMENT_OPTIONS.map((opt) => {
+                    const selected = form.enhancements.includes(opt.id);
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        title={opt.desc}
+                        onClick={() => toggleEnhancement(opt.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
+                          selected
+                            ? "border-[#6E1020] bg-[#6E1020] text-white"
+                            : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
+                        }`}
+                      >
+                        {opt.id}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <label className={labelCls}>Any special requests, constraints, or notes for our team</label>
@@ -975,175 +886,35 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               </div>
               </MagicCard>
             </section>
-            {/* Nav */}
             <div className="flex items-center justify-between mt-5">
+              <button type="button" onClick={() => navigateTo(4)} className={backBtnCls}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+                Back
+              </button>
+              <button type="button" onClick={() => navigateTo(6)} className={nextBtnCls}>
+                Next
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Step 6 — Generate */}
+        {currentStep === 6 && (
+          <>
+            <div className="mb-5">
               <button type="button" onClick={() => navigateTo(5)} className={backBtnCls}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
                 Back
               </button>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => navigateTo(7)}
-                  className="text-xs text-stone-400 hover:text-stone-600 transition underline underline-offset-2">
-                  Skip to Generate
-                </button>
-                <button type="button" onClick={() => navigateTo(7)} className={nextBtnCls}>
-                  Next
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* ══════════════════════════════════════
-            Step 7 — Advanced + Generate  (optional)
-        ══════════════════════════════════════ */}
-        {currentStep === 7 && (
-          <>
-            {/* Back button row */}
-            <div className="mb-5">
-              <button type="button" onClick={() => navigateTo(6)} className={backBtnCls}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                Back
-              </button>
             </div>
 
-            {/* Section 8: Advanced (accordion) */}
-            <section className="form-section-card rounded-2xl overflow-hidden mb-5">
-              {/* Clickable header — always visible */}
-              <button
-                type="button"
-                onClick={() => setAdvancedOpen((v) => !v)}
-                className="w-full flex items-center gap-3 px-5 sm:px-7 py-4 sm:py-[1.0625rem] text-left"
-                style={{ background: "transparent" }}
-              >
-                <span
-                  className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0"
-                  style={{ background: "#6E1020" }}
-                >8</span>
-                <h2
-                  className="text-base font-semibold text-[#4A0A15] tracking-tight flex-1"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                >Advanced</h2>
-                <span className="text-xs text-[#7D1528]/60 font-normal mr-2 hidden sm:inline">Optional</span>
-                <svg
-                  className={`w-4 h-4 text-[#7D1528]/60 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Collapsible content */}
-              {advancedOpen && (
-                <MagicCard gradientColor="#7D152825" gradientSize={280}>
-                <div className="px-5 sm:px-7 pb-6 border-t border-stone-100 pt-5 space-y-4">
-                  <p className="text-xs text-stone-400">
-                    Providing room details helps the AI generate a more accurate layout. All fields are optional.
-                  </p>
-
-                  {/* Dimensions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className={labelCls}>Kitchen Width</label>
-                      <div className="relative">
-                        <input
-                          className={inputCls}
-                          placeholder="e.g. 12"
-                          value={form.room_width}
-                          onChange={(e) => set("room_width", e.target.value)}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Kitchen Length</label>
-                      <div className="relative">
-                        <input
-                          className={inputCls}
-                          placeholder="e.g. 14"
-                          value={form.room_length}
-                          onChange={(e) => set("room_length", e.target.value)}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Ceiling Height</label>
-                      <div className="relative">
-                        <input
-                          className={inputCls}
-                          placeholder="e.g. 9"
-                          value={form.ceiling_height}
-                          onChange={(e) => set("ceiling_height", e.target.value)}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">ft</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Positions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelCls}>Window Positions</label>
-                      <input
-                        className={inputCls}
-                        placeholder="e.g. South wall, 3 ft from left corner"
-                        value={form.window_positions}
-                        onChange={(e) => set("window_positions", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Door Positions</label>
-                      <input
-                        className={inputCls}
-                        placeholder="e.g. Entry door on east wall"
-                        value={form.door_positions}
-                        onChange={(e) => set("door_positions", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Refrigerator Position</label>
-                      <input
-                        className={inputCls}
-                        placeholder="e.g. Left end of kitchen, north wall"
-                        value={form.refrigerator_position}
-                        onChange={(e) => set("refrigerator_position", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Sink Position</label>
-                      <input
-                        className={inputCls}
-                        placeholder="e.g. Center of main counter, under window"
-                        value={form.sink_position}
-                        onChange={(e) => set("sink_position", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Special features */}
-                  <div>
-                    <label className={labelCls}>Special Features / Constraints</label>
-                    <input
-                      className={inputCls}
-                      placeholder="e.g. Pantry cabinet, breakfast bar, structural column in corner"
-                      value={form.special_features}
-                      onChange={(e) => set("special_features", e.target.value)}
-                    />
-                  </div>
-                </div>
-                </MagicCard>
-              )}
-            </section>
-
-            {/* ── Generate My Design card ── */}
             <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #3D0810 0%, #6E1020 45%, #7D1528 100%)" }}>
               {error && (
                 <div className="mx-5 sm:mx-8 mt-6 px-4 py-3 rounded-lg bg-red-900/30 border border-red-500/30 text-red-300 text-sm">
@@ -1151,33 +922,24 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 </div>
               )}
               <div className="px-6 sm:px-10 py-8 sm:py-10 flex flex-col items-center text-center">
-                {/* Icon */}
                 <div className="w-14 h-14 rounded-full flex items-center justify-center mb-5" style={{ background: "rgba(255,255,255,0.08)" }}>
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
                 </div>
-
-                {/* Headline */}
-                <h3
-                  className="text-xl sm:text-2xl font-bold text-white mb-2"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                >
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
                   Generate My Design
                 </h3>
                 <p className="text-white/70 text-sm mb-7 max-w-xs leading-relaxed">
-                  Your personalized AI kitchen design, ready in seconds
+                  Your personalized AI bathroom design, ready in seconds
                 </p>
-
-                {/* Button */}
                 <button
                   type="submit"
                   disabled={
                     loading ||
                     !form.name.trim() || !form.email.trim() || !isValidEmail(form.email) ||
                     !form.phone.trim() || !form.address.trim() ||
-                    !form.project_type || !form.layout ||
-                    (photoRequired && !hasPhoto)
+                    !form.bathroom_type || !form.style
                   }
                   className="w-full sm:w-auto px-10 py-4 rounded-full text-sm font-bold bg-white text-stone-900 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
@@ -1186,47 +948,20 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </button>
-
-                {/* Validation hint */}
-                {(!form.project_type || !form.layout || (photoRequired && !hasPhoto)) && (
-                  <p className="text-xs text-white/60 mt-3">
-                    {!form.project_type
-                      ? "Project type and layout are required to generate concepts."
-                      : !form.layout
-                      ? "Please select a kitchen layout."
-                      : "A kitchen photo is required for this project type."}
-                  </p>
-                )}
-
-                {/* Trust badges */}
                 <div className="flex items-center flex-wrap justify-center gap-x-5 gap-y-2 mt-6 pt-5 border-t border-white/10 w-full">
-                  <span className="flex items-center gap-1.5 text-xs text-white/70">
-                    <svg className="w-3.5 h-3.5 text-white/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Free to use
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-white/70">
-                    <svg className="w-3.5 h-3.5 text-white/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
-                    AI-Powered
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-white/70">
-                    <svg className="w-3.5 h-3.5 text-white/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    No commitment
-                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-white/70">Free to use</span>
+                  <span className="flex items-center gap-1.5 text-xs text-white/70">AI-Powered</span>
+                  <span className="flex items-center gap-1.5 text-xs text-white/70">No commitment</span>
                 </div>
               </div>
             </div>
           </>
         )}
 
-      </div>{/* end consistent-height wrapper */}
+      </div>
       </form>
-      </> )}{/* end resultState !== "verified" guard */}
+      </>
+      )}
 
       {/* ── Loading: Flickering grid placeholder ── */}
       {loading && (
@@ -1303,10 +1038,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
         </div>
       )}
 
-      {/* ── Result: Pending verification — blurred preview + OTP form ── */}
+      {/* Pending: blurred preview + OTP */}
       {result && resultState === "pending" && (
         <div id="design-result" className="mt-4">
-          {/* Blurred image preview */}
           <div className="form-section-card rounded-2xl overflow-hidden relative">
             {result.image_url && (
               <div className="relative w-full">
@@ -1321,9 +1055,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 />
                 <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
                   <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow">
-                    <svg className="w-4 h-4 text-rose-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
                     <span className="text-sm font-semibold text-stone-800">Verify email to unlock</span>
                   </div>
                 </div>
@@ -1331,19 +1062,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             )}
             {!result.image_url && (
               <div className="px-5 pt-5 pb-3 flex items-start gap-3 border-b border-amber-100 bg-amber-50">
-                <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
                 <p className="text-xs text-amber-800 leading-relaxed">
                   <span className="font-semibold">Visual render unavailable.</span>{" "}
-                  {result.render_error
-                    ? result.render_error
-                    : "The AI render could not be generated at this time."}{" "}
+                  {result.render_error ? result.render_error : "The AI render could not be generated at this time."}{" "}
                   Your design concept and product recommendations are still ready — verify your email below to view them.
                 </p>
               </div>
             )}
-            {/* Blurred content placeholders */}
             <div className="p-5 sm:p-7 space-y-3" style={{ filter: "blur(6px)", userSelect: "none", pointerEvents: "none" }}>
               <div className="h-5 bg-stone-200 rounded w-2/3" />
               <div className="h-4 bg-stone-100 rounded w-full" />
@@ -1352,7 +1077,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             </div>
           </div>
 
-          {/* OTP verification card */}
           <div className="mt-4 form-section-card rounded-2xl p-5 sm:p-7">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-stone-100">
               <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
@@ -1367,11 +1091,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                 </p>
               </div>
             </div>
-
             {otpSendError && (
               <div className="mb-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{otpSendError}</div>
             )}
-
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <input
                 type="text"
@@ -1390,55 +1112,28 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
               >
                 {otpVerifying ? "Verifying…" : "Verify & View Design"}
               </button>
-              <button
-                type="button"
-                onClick={sendOTP}
-                disabled={otpSending}
-                className="text-xs text-stone-400 hover:text-stone-600 transition underline underline-offset-2 shrink-0"
-              >
+              <button type="button" onClick={sendOTP} disabled={otpSending} className="text-xs text-stone-400 hover:text-stone-600 transition underline underline-offset-2 shrink-0">
                 {otpSending ? "Sending…" : "Resend code"}
               </button>
             </div>
-            {otpError && (
-              <p className="mt-2 text-xs text-red-600">{otpError}</p>
-            )}
+            {otpError && <p className="mt-2 text-xs text-red-600">{otpError}</p>}
           </div>
         </div>
       )}
 
-      {/* ── Result: Verified — full design ── */}
+      {/* Verified: full design */}
       {result && resultState === "verified" && (
         <div id="design-result" className="mt-4 form-section-card rounded-2xl p-5 sm:p-8">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <h2
-              className="text-2xl font-bold text-stone-900"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-            >
+            <h2 className="text-2xl font-bold text-stone-900" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
               Your Design Concept
             </h2>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-200 text-stone-600 text-sm hover:border-stone-400 hover:text-stone-900 transition"
-            >
-              {copied ? (
-                <>
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy Summary
-                </>
-              )}
+            <button onClick={handleCopy} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-200 text-stone-600 text-sm hover:border-stone-400 hover:text-stone-900 transition">
+              {copied ? "Copied!" : "Copy Summary"}
             </button>
           </div>
 
-          <DesignResultBoard
+          <BathroomDesignResultBoard
             concept={result.concept}
             image_url={result.image_url}
             original_image_url={originalPhotoUrl}
@@ -1446,20 +1141,18 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
             sales_summary={result.sales_summary}
             next_steps={result.next_steps}
             color_suggestions={result.color_suggestions}
-            layout={result.layout}
+            bathroom_type={result.bathroom_type}
             finishImageMap={finishImageMap}
             countertopImageMap={countertopImageMap}
             floorImageMap={floorImageMap}
             design_concept={result.design_concept}
-            layout_plan={result.layout_plan}
             material_plan={result.material_plan}
+            fixture_plan={result.fixture_plan}
             budget_logic={result.budget_logic}
-            cabinet_plan={result.cabinet_plan}
             product_recommendations={result.product_recommendations}
             design_validation={result.design_validation}
           />
 
-          {/* ── Request a Quote ── */}
           <div className="mt-6 rounded-2xl border border-rose-200/60 bg-gradient-to-br from-rose-50/60 to-stone-50 p-6 sm:p-8">
             {quoteStatus === "success" ? (
               <div className="flex flex-col items-center text-center gap-3 py-4">
@@ -1475,15 +1168,8 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   Your design and product selections have been sent to our team.
                   {form.email && <> We&apos;ll reach out at <strong>{form.email}</strong> shortly.</>}
                 </p>
-                <a
-                  href="/catalog"
-                  className="mt-2 inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold text-white transition"
-                  style={{ background: "linear-gradient(135deg, #6E1020 0%, #7D1528 100%)" }}
-                >
+                <a href="/catalog" className="mt-2 inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold text-white transition" style={{ background: "linear-gradient(135deg, #6E1020 0%, #7D1528 100%)" }}>
                   Browse Collection
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
                 </a>
               </div>
             ) : (
@@ -1498,8 +1184,6 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     </p>
                   </div>
                 </div>
-
-                {/* Summary of what will be submitted */}
                 <div className="grid sm:grid-cols-3 gap-3 mb-5 text-sm">
                   <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Contact</p>
@@ -1510,7 +1194,7 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                   <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Design</p>
                     <p className="text-stone-700 font-medium">{result.concept?.name || "Custom Design"}</p>
-                    <p className="text-stone-500 text-xs">{form.layout} · {form.cabinet_style}</p>
+                    <p className="text-stone-500 text-xs">{form.bathroom_type} · {form.style}</p>
                   </div>
                   <div className="rounded-xl bg-white border border-stone-200 px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Products</p>
@@ -1518,35 +1202,16 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                     <p className="text-stone-500 text-xs">{result.products?.slice(0, 2).map(p => p.sku).join(", ")}{result.products?.length > 2 ? "…" : ""}</p>
                   </div>
                 </div>
-
                 {quoteError && (
-                  <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                    {quoteError}
-                  </div>
+                  <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{quoteError}</div>
                 )}
-
                 <button
                   type="button"
                   onClick={handleQuoteSubmit}
                   disabled={quoteStatus === "submitting"}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold bg-rose-800 hover:bg-rose-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {quoteStatus === "submitting" ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Submitting…
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      Confirm &amp; Request Quote
-                    </>
-                  )}
+                  {quoteStatus === "submitting" ? "Submitting…" : "Confirm & Request Quote"}
                 </button>
               </>
             )}
@@ -1557,19 +1222,14 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
   );
 }
 
+// ── Tabbed grid for Colors & Materials ────────────────────────────────────────
 // ── Tab icons for the Colors & Materials section ──────────────────────────────
-function TabIcon({ id, active }) {
+function BathroomTabIcon({ id, active }) {
   const cls = `w-4 h-4 shrink-0 ${active ? "text-rose-800" : "text-stone-400"}`;
-  if (id === "upper_color")
+  if (id === "vanity_finish")
     return (
       <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M3 9V6a1 1 0 011-1h16a1 1 0 011 1v3M3 9v9a1 1 0 001 1h16a1 1 0 001-1V9M8 13h8" />
-      </svg>
-    );
-  if (id === "lower_color")
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 12V9a1 1 0 011-1h16a1 1 0 011 1v3M3 12v5a1 1 0 001 1h16a1 1 0 001-1v-5M8 16h8" />
       </svg>
     );
   if (id === "countertop")
@@ -1585,25 +1245,18 @@ function TabIcon({ id, active }) {
   );
 }
 
-// ── Tabbed grid for Colors & Materials ────────────────────────────────────────
-function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, set, setForm, cabinet_style }) {
-  const [activeTab, setActiveTab] = useState("upper_color");
+// ── Tabbed grid for Colors & Materials — mirrors KitchenDesignForm's ColorMaterialsSection ──
+function BathroomColorMaterialsSection({ finishes, countertopColors, floorColors, form, set }) {
+  const [activeTab, setActiveTab] = useState("vanity_finish");
 
   const TABS = [
-    { id: "upper_color", label: "Upper Cabinet Color", shortLabel: "Upper Color", subtitle: "Select the perfect color for your upper cabinets", items: finishes },
-    { id: "lower_color", label: "Lower Cabinet Color", shortLabel: "Lower Color", subtitle: "Select the perfect color for your lower cabinets", items: finishes },
-    { id: "countertop",  label: "Countertop",          shortLabel: "Countertop",  subtitle: "Choose your countertop material and color",          items: countertopColors },
-    { id: "flooring",    label: "Flooring",             shortLabel: "Flooring",    subtitle: "Pick the perfect flooring finish",                   items: floorColors },
+    { id: "vanity_finish", label: "Vanity Finish", shortLabel: "Vanity", subtitle: "Select the perfect finish for your vanity cabinet", items: finishes },
+    { id: "countertop",    label: "Countertop",    shortLabel: "Countertop", subtitle: "Choose your countertop material and color",         items: countertopColors },
+    { id: "flooring",      label: "Flooring",      shortLabel: "Flooring",   subtitle: "Pick the perfect flooring finish",                   items: floorColors },
   ];
 
-  const tab      = TABS.find((t) => t.id === activeTab);
-  const rawItems = tab?.items || [];
-
-  // Filter finishes for upper/lower tabs when American or Euro style is selected
-  const items = (activeTab === "upper_color" || activeTab === "lower_color") &&
-    (cabinet_style === "American" || cabinet_style === "Euro")
-    ? rawItems.filter((item) => item.style_category === cabinet_style)
-    : rawItems;
+  const tab = TABS.find((t) => t.id === activeTab);
+  const items = tab?.items || [];
   const value = form[activeTab];
 
   return (
@@ -1621,7 +1274,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                 : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
             }`}
           >
-            <TabIcon id={t.id} active={activeTab === t.id} />
+            <BathroomTabIcon id={t.id} active={activeTab === t.id} />
             <span className="hidden sm:inline">{t.label}</span>
             <span className="sm:hidden leading-tight text-center">{t.shortLabel}</span>
           </button>
@@ -1635,7 +1288,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
           <p className="text-xs text-stone-400 mt-0.5">{tab?.subtitle}</p>
         </div>
 
-        {/* ── Carousel ── */}
+        {/* ── Grid ── */}
         <div className="relative">
           <div className="flex flex-wrap gap-3">
             {items.length === 0 ? (
@@ -1649,16 +1302,6 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                     type="button"
                     onClick={() => {
                       set(activeTab, item.name);
-                      // Auto-select cabinet style when picking an American/Euro finish
-                      if (
-                        (activeTab === "upper_color" || activeTab === "lower_color") &&
-                        item.style_category
-                      ) {
-                        setForm((prev) => ({
-                          ...prev,
-                          cabinet_style: item.style_category,
-                        }));
-                      }
                       // Auto-advance to next tab after a brief visual pause
                       const currentIdx = TABS.findIndex((t) => t.id === activeTab);
                       if (currentIdx < TABS.length - 1) {
@@ -1705,7 +1348,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
   );
 }
 
-// ── Wizard Stepper ────────────────────────────────────────────────────────────
+// ── Wizard Stepper — mirrors KitchenDesignForm.jsx's WizardStepper ───────────
 function WizardStepper({ currentStep, steps }) {
   const activeStepRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -1723,38 +1366,36 @@ function WizardStepper({ currentStep, steps }) {
   return (
     <>
       <style>{`
-        @keyframes wz-ring {
+        @keyframes bwz-ring {
           0%   { transform: scale(1); opacity: 0.55; }
           100% { transform: scale(2.2); opacity: 0; }
         }
-        @keyframes wz-check {
+        @keyframes bwz-check {
           0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
           65%  { transform: scale(1.2) rotate(3deg); }
           100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        @keyframes wz-dot {
+        @keyframes bwz-dot {
           0%, 100% { transform: scale(1); opacity: 1; }
           50%       { transform: scale(1.5); opacity: 0.7; }
         }
-        .wz-circle {
+        .bwz-circle {
           transition: transform 0.25s ease, box-shadow 0.25s ease;
           cursor: default;
         }
-        .wz-circle:hover { transform: scale(1.1); }
+        .bwz-circle:hover { transform: scale(1.1); }
       `}</style>
 
       <div className="w-full overflow-x-auto pb-1 mb-7" ref={scrollContainerRef}>
-        {/* Transparent — no background card */}
         <div className="flex items-center justify-center min-w-max mx-auto px-2 py-3">
           {steps.map((step, i) => {
             const done   = i < currentStep;
             const active = i === currentStep;
             return (
               <div key={i} className="flex items-center" ref={active ? activeStepRef : null}>
-                {/* Circle */}
                 <div className="flex flex-col items-center">
                   <div
-                    className="wz-circle relative rounded-full flex items-center justify-center"
+                    className="bwz-circle relative rounded-full flex items-center justify-center"
                     style={{
                       width: active ? 52 : 44,
                       height: active ? 52 : 44,
@@ -1768,7 +1409,6 @@ function WizardStepper({ currentStep, steps }) {
                       flexShrink: 0,
                     }}
                   >
-                    {/* Pulsing ring — active step only */}
                     {active && (
                       <span
                         style={{
@@ -1776,7 +1416,7 @@ function WizardStepper({ currentStep, steps }) {
                           inset: 0,
                           borderRadius: "50%",
                           border: "2px solid rgba(110,16,32,0.35)",
-                          animation: "wz-ring 1.8s ease-out infinite",
+                          animation: "bwz-ring 1.8s ease-out infinite",
                           pointerEvents: "none",
                         }}
                       />
@@ -1785,7 +1425,7 @@ function WizardStepper({ currentStep, steps }) {
                     {done ? (
                       <svg
                         className="w-5 h-5 text-white"
-                        style={{ animation: "wz-check 0.35s ease forwards" }}
+                        style={{ animation: "bwz-check 0.35s ease forwards" }}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1803,18 +1443,16 @@ function WizardStepper({ currentStep, steps }) {
                     )}
                   </div>
 
-                  {/* Active indicator dot */}
                   <div className="h-2 flex items-center justify-center mt-1.5">
                     {active && (
                       <span
                         className="w-1.5 h-1.5 rounded-full"
-                        style={{ background: "#6E1020", animation: "wz-dot 1.4s ease-in-out infinite" }}
+                        style={{ background: "#6E1020", animation: "bwz-dot 1.4s ease-in-out infinite" }}
                       />
                     )}
                   </div>
                 </div>
 
-                {/* Connector dots — not after last step */}
                 {i < steps.length - 1 && (
                   <div className="flex items-center gap-1 shrink-0 mb-3" style={{ width: 16 }}>
                     {[0, 1, 2].map((d) => (
@@ -1840,10 +1478,10 @@ function WizardStepper({ currentStep, steps }) {
   );
 }
 
-// ── Wizard step icons (kitchen / AI design themed) ───────────────────────────
+// ── Wizard step icons (bathroom / AI design themed) ──────────────────────────
 
 // Step 1 — Your Info: contact card
-function StepIconPerson() {
+function BStepIconPerson() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1851,26 +1489,17 @@ function StepIconPerson() {
   );
 }
 
-// Step 2 — Project Details: house / kitchen layout
-function StepIconCabinet() {
+// Step 2 — Bathroom Type: bathtub / fixture
+function BStepIconBathroom() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5M4.5 12V6.75A2.25 2.25 0 016.75 4.5h.75m0 0a1.5 1.5 0 013 0M4.5 12v6a2.25 2.25 0 002.25 2.25h10.5A2.25 2.25 0 0019.5 18v-6" />
     </svg>
   );
 }
 
-// Step 3 — Design Style: magic wand / sparkle (AI design)
-function StepIconLamp() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-    </svg>
-  );
-}
-
-// Step 4 — Colors & Materials: paint swatch / finish
-function StepIconPalette() {
+// Step 3 — Colors & Materials: paint swatch / finish
+function BStepIconPalette() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
@@ -1878,8 +1507,8 @@ function StepIconPalette() {
   );
 }
 
-// Step 5 — Budget Range: currency / wallet
-function StepIconTag() {
+// Step 4 — Budget Range: currency / wallet
+function BStepIconTag() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1887,17 +1516,17 @@ function StepIconTag() {
   );
 }
 
-// Step 6 — Additional Details: adjustments / sliders (appliances/hardware)
-function StepIconClipboard() {
+// Step 5 — Faucets: water droplet
+function BStepIconFaucet() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.75c3 3.6 6 7.03 6 10.125a6 6 0 11-12 0c0-3.096 3-6.525 6-10.125z" />
     </svg>
   );
 }
 
-// Step 7 — Comments / Notes: pencil / edit
-function StepIconChat() {
+// Step 6 — Notes: pencil / edit
+function BStepIconChat() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -1905,11 +1534,11 @@ function StepIconChat() {
   );
 }
 
-// Step 8 — Advanced: measuring tape / room dimensions
-function StepIconGear() {
+// Step 7 — Generate: sparkle (AI design)
+function BStepIconSparkle() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
     </svg>
   );
 }

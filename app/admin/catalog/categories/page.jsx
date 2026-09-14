@@ -7,6 +7,7 @@ const DEFAULT_CATEGORIES = [
   { name: "Wall", slug: "wall", description: "Wall-mounted upper cabinets" },
   { name: "Tall", slug: "tall", description: "Full-height pantry and utility cabinets" },
   { name: "Vanity", slug: "vanity", description: "Bathroom vanity cabinets" },
+  { name: "Faucet", slug: "faucet", description: "Bathroom faucets and fixtures" },
   { name: "Specialty", slug: "specialty", description: "Corner, blind, and specialty configurations" },
 ];
 

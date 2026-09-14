@@ -54,7 +54,11 @@ export async function POST(request) {
       notes,
       products = [],
       before_photo,
+      source = "design_ai",
     } = body;
+
+    const allowedSources = new Set(["design_ai", "design_ai_bathroom"]);
+    const leadSource = allowedSources.has(source) ? source : "design_ai";
 
     if (!name || !email) {
       return NextResponse.json({ error: "name and email are required." }, { status: 400 });
@@ -80,7 +84,7 @@ export async function POST(request) {
       .from("lead_requests")
       .insert({
         tenant_id: tenantId,
-        source: "design_ai",
+        source: leadSource,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone?.trim() ?? null,

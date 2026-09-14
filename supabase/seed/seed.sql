@@ -85,7 +85,8 @@ values
   ('c0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001', 'Specialty', 'specialty', 'Corner solutions, blind corners, and specialty configurations', 4),
   ('c0000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000001', 'Vanity',    'vanity',    'Bathroom vanity base cabinets', 5),
   ('c0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000001', 'Drawer',    'drawer',    'All-drawer base cabinets', 6),
-  ('c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000001', 'Corner',    'corner',    'Corner base and wall cabinets', 7)
+  ('c0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000001', 'Corner',    'corner',    'Corner base and wall cabinets', 7),
+  ('c0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000001', 'Faucet',    'faucet',    'Bathroom faucets and fixtures', 8)
 on conflict (id) do nothing;
 
 -- ── Finishes: American Collection ─────────────────────────────
@@ -348,6 +349,47 @@ values
    'V48', 'Vanity Cabinet 48"',
    '48" bathroom vanity base with 2 doors and 1 adjustable shelf. Fits double-sink tops.',
    48, 34.5, 21, 2, 0, true, 40)
+on conflict (id) do nothing;
+
+-- ── American: Bathroom Faucets ─────────────────────────────────
+insert into products (id, tenant_id, catalog_line_id, category_id, sku, name, description,
+  width_in, height_in, depth_in, is_active, sort_order)
+values
+  ('e0000000-0000-0000-0001-000000000041', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-WF01', 'Chrome Waterfall Faucet',
+   'Single-handle waterfall spout faucet in polished chrome with a squared modern silhouette.',
+   6, 9, 6, true, 10),
+
+  ('e0000000-0000-0000-0001-000000000042', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-WF02', 'Chrome Wide Waterfall Faucet',
+   'Wide waterfall spout faucet in polished chrome with a broad flat pour and squared column base.',
+   7, 8, 6, true, 20),
+
+  ('e0000000-0000-0000-0001-000000000043', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-GN01', 'Chrome Gooseneck Faucet',
+   'Curved gooseneck single-handle faucet in polished chrome with a tall arched spout.',
+   6, 11, 6, true, 30),
+
+  ('e0000000-0000-0000-0001-000000000044', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-ST01', 'Brushed Nickel Single-Lever Faucet',
+   'Slim single-lever faucet in brushed nickel with a straight cylindrical body and low-arc spout.',
+   5, 8, 5, true, 40),
+
+  ('e0000000-0000-0000-0001-000000000045', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-WS01', 'Chrome Widespread Faucet',
+   'Widespread two-handle faucet in polished chrome with a curved spout and paddle handles.',
+   8, 7, 6, true, 50),
+
+  ('e0000000-0000-0000-0001-000000000046', 'a0000000-0000-0000-0000-000000000001',
+   'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000008',
+   'F-VS01', 'Chrome Vessel-Height Faucet',
+   'Tall vessel-sink faucet in polished chrome with a squared column and slim waterfall pour, sized for above-counter basins.',
+   6, 14, 6, true, 60)
 on conflict (id) do nothing;
 
 -- ================================================================

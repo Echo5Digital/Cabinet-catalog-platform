@@ -39,15 +39,9 @@ async function getData() {
 export default async function GalleryPage() {
   const { images } = await getData();
 
-  // Group images by gallery_category
-  const categoryGroups = {};
-  for (const img of images) {
-    if (!categoryGroups[img.gallery_category]) categoryGroups[img.gallery_category] = [];
-    categoryGroups[img.gallery_category].push(img);
-  }
-
   // Ordered by fixed CATEGORIES order, only categories that have photos
-  const activeCategories = CATEGORIES.filter((c) => categoryGroups[c.id]?.length > 0);
+  const presentCategoryIds = new Set(images.map((img) => img.gallery_category));
+  const activeCategories = CATEGORIES.filter((c) => presentCategoryIds.has(c.id));
 
   const totalImages = images.length;
 
@@ -73,38 +67,8 @@ export default async function GalleryPage() {
             Browse inspiration from our cabinet collections — real kitchen designs to help you envision
             your perfect space.
           </p>
-          {totalImages > 0 && (
-            <p className="text-stone-400/80 text-sm mt-3">
-              {totalImages} photo{totalImages !== 1 ? "s" : ""}
-            </p>
-          )}
         </div>
       </div>
-
-      {/* Filter tabs by category */}
-      {activeCategories.length > 1 && (
-        <div className="border-b border-stone-200 bg-[#F8F6F3] sticky top-16 z-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center gap-1 overflow-x-auto py-3 scrollbar-hide">
-              <a
-                href="#all"
-                className="px-4 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-700 hover:border-stone-400 transition whitespace-nowrap shrink-0"
-              >
-                All Photos
-              </a>
-              {activeCategories.map((cat) => (
-                <a
-                  key={cat.id}
-                  href={`#cat-${cat.id}`}
-                  className="px-4 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900 transition whitespace-nowrap shrink-0"
-                >
-                  {cat.name}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 bg-[#F8F6F3] min-h-[60vh]" id="all">
 
@@ -121,27 +85,7 @@ export default async function GalleryPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-16">
-
-            {/* Grouped by category */}
-            {activeCategories.map((cat) => (
-              <div key={cat.id} id={`cat-${cat.id}`}>
-                <div className="flex items-center justify-between mb-6 section-band">
-                  <div className="flex items-center gap-3">
-                    <h2
-                      className="text-xl font-bold text-stone-900"
-                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                    >
-                      {cat.name}
-                    </h2>
-                    <span className="count-badge">{categoryGroups[cat.id].length}</span>
-                  </div>
-                </div>
-                <GalleryGrid images={categoryGroups[cat.id]} />
-              </div>
-            ))}
-
-          </div>
+          <GalleryGrid images={images} categories={activeCategories} />
         )}
 
         {/* CTA */}

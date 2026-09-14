@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
-export default function GalleryGrid({ images }) {
+export default function GalleryGrid({ images, categories }) {
   const [openIndex, setOpenIndex] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  const visibleImages = useMemo(() => {
+    if (activeCategory === "all") return images;
+    return images.filter((img) => img.gallery_category === activeCategory);
+  }, [images, activeCategory]);
 
   const close = useCallback(() => setOpenIndex(null), []);
   const showPrev = useCallback(() => {
-    setOpenIndex((i) => (i === null ? null : (i - 1 + images.length) % images.length));
-  }, [images.length]);
+    setOpenIndex((i) => (i === null ? null : (i - 1 + visibleImages.length) % visibleImages.length));
+  }, [visibleImages.length]);
   const showNext = useCallback(() => {
-    setOpenIndex((i) => (i === null ? null : (i + 1) % images.length));
-  }, [images.length]);
+    setOpenIndex((i) => (i === null ? null : (i + 1) % visibleImages.length));
+  }, [visibleImages.length]);
 
   const handleKey = useCallback(
     (e) => {
@@ -38,23 +44,51 @@ export default function GalleryGrid({ images }) {
 
   if (!images || images.length === 0) return null;
 
-  const current = openIndex !== null ? images[openIndex] : null;
+  const current = openIndex !== null ? visibleImages[openIndex] : null;
 
   return (
     <>
+      {categories && categories.length > 1 && (
+        <div className="flex items-center gap-1 overflow-x-auto pb-6 scrollbar-hide">
+          <button
+            type="button"
+            onClick={() => { setActiveCategory("all"); setOpenIndex(null); }}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition whitespace-nowrap shrink-0 ${
+              activeCategory === "all"
+                ? "border-stone-900 bg-stone-900 text-white"
+                : "border-stone-200 text-stone-700 hover:border-stone-400"
+            }`}
+          >
+            All Photos
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => { setActiveCategory(cat.id); setOpenIndex(null); }}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition whitespace-nowrap shrink-0 ${
+                activeCategory === cat.id
+                  ? "border-stone-900 bg-stone-900 text-white"
+                  : "border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900"
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {images.map((img, idx) => (
+        {visibleImages.map((img, idx) => (
           <button
             key={img.id || idx}
             type="button"
             onClick={() => setOpenIndex(idx)}
             aria-label="View full-size photo"
-            className={`group relative overflow-hidden rounded-xl bg-stone-100 shimmer-card text-left cursor-zoom-in ${
-              idx === 0 ? "col-span-2 row-span-2 sm:col-span-2 sm:row-span-2" : ""
-            }`}
+            className="group relative overflow-hidden rounded-xl bg-stone-100 shimmer-card text-left cursor-zoom-in"
             style={{ animationName: 'fade-in-up-sm', animationDuration: '0.45s', animationFillMode: 'both', animationTimingFunction: 'ease', animationDelay: `${idx * 0.05}s` }}
           >
-            <div className={`${idx === 0 ? "aspect-square" : "aspect-[4/3]"} overflow-hidden`}>
+            <div className="aspect-[4/3] overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.public_url}
@@ -93,7 +127,7 @@ export default function GalleryGrid({ images }) {
           </button>
 
           {/* Prev/Next — hidden on very small screens' thumb reach is fine at edges */}
-          {images.length > 1 && (
+          {visibleImages.length > 1 && (
             <>
               <button
                 type="button"
@@ -134,9 +168,9 @@ export default function GalleryGrid({ images }) {
                 {current.alt_text}
               </p>
             )}
-            {images.length > 1 && (
+            {visibleImages.length > 1 && (
               <p className="text-white/50 text-xs mt-2">
-                {openIndex + 1} / {images.length}
+                {openIndex + 1} / {visibleImages.length}
               </p>
             )}
           </div>
