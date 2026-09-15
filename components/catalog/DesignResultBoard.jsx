@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import BeforeAfterLightbox from "./BeforeAfterLightbox";
 
 // ── Layout SVG configs (self-contained — mirrors KitchenDesignForm.jsx) ──────
 const LAYOUT_CONFIGS = [
@@ -160,6 +161,7 @@ export default function DesignResultBoard({
   );
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [beforeAfterOpen, setBeforeAfterOpen] = useState(false);
   const [viewMode, setViewMode] = useState("generated"); // "generated" | "compare"
   const [threeDImage,   setThreeDImage]   = useState(null);
   const [threeDLoading, setThreeDLoading] = useState(false);
@@ -360,8 +362,13 @@ export default function DesignResultBoard({
 
       <div className="relative w-full bg-stone-900" style={{ aspectRatio: "16/7" }}>
         {viewMode === "compare" && original_image_url && image_url ? (
-          /* ── Compare mode: side-by-side ── */
-          <div className="absolute inset-0 flex">
+          /* ── Compare mode: side-by-side, click to open the full Before/Side-By-Side/After viewer ── */
+          <button
+            type="button"
+            className="absolute inset-0 flex w-full h-full cursor-zoom-in"
+            onClick={() => setBeforeAfterOpen(true)}
+            aria-label="Open before and after comparison"
+          >
             {/* Original photo */}
             <div className="relative flex-1 overflow-hidden border-r border-white/20">
               <Image
@@ -388,7 +395,14 @@ export default function DesignResultBoard({
                 AI Generated
               </span>
             </div>
-          </div>
+            {/* Zoom hint */}
+            <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-6-3v6m-3-3h6" />
+              </svg>
+              Click to compare
+            </span>
+          </button>
         ) : image_url ? (
           /* ── Generated mode (default): single image with zoom ── */
           <button
@@ -970,6 +984,16 @@ export default function DesignResultBoard({
             </svg>
           </button>
         </div>
+      )}
+
+      {original_image_url && image_url && (
+        <BeforeAfterLightbox
+          open={beforeAfterOpen}
+          onClose={() => setBeforeAfterOpen(false)}
+          beforeUrl={original_image_url}
+          afterUrl={image_url}
+          title={conceptName}
+        />
       )}
     </>
   );

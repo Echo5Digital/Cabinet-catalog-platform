@@ -118,7 +118,7 @@ const BATHROOM_TYPE_STYLES = {
 };
 
 // Hardcoded faucet styles — simple inline SVG icons (no DB/catalog dependency to ship).
-const FAUCET_STYLES = [
+const VANITY_FAUCET_STYLES = [
   {
     name: "Waterfall",
     svg: (
@@ -183,6 +183,98 @@ const FAUCET_STYLES = [
   },
 ];
 
+const SHOWER_FAUCET_STYLES = [
+  {
+    name: "Round Rain Shower",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <path d="M12 12 L30 12" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="40" cy="12" rx="14" ry="5" fill="currentColor" opacity="0.55" />
+        <circle cx="12" cy="30" r="4" fill="none" stroke="currentColor" strokeWidth="3" />
+        <rect x="8" y="38" width="8" height="4" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Square Rain Shower",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <path d="M12 12 L28 12" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <rect x="30" y="6" width="24" height="12" rx="1" fill="currentColor" opacity="0.55" />
+        <circle cx="12" cy="30" r="4" fill="none" stroke="currentColor" strokeWidth="3" />
+        <rect x="8" y="38" width="8" height="4" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Round Arm Shower",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <path d="M14 14 L52 14" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <circle cx="58" cy="14" r="7" fill="none" stroke="currentColor" strokeWidth="3" />
+        <rect x="10" y="10" width="6" height="8" rx="1" fill="currentColor" />
+        <rect x="8" y="38" width="8" height="4" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Square Arm Shower",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <path d="M14 14 L50 14" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <rect x="50" y="8" width="12" height="12" rx="1" fill="none" stroke="currentColor" strokeWidth="3" />
+        <rect x="10" y="10" width="6" height="8" rx="1" fill="currentColor" />
+        <rect x="8" y="38" width="8" height="4" rx="1" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Exposed Valve + Handheld",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <rect x="10" y="18" width="10" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+        <path d="M20 23 L34 23" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="42" cy="23" r="7" fill="none" stroke="currentColor" strokeWidth="3" />
+        <path d="M14 28 L14 44" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 3" />
+        <rect x="10" y="44" width="8" height="5" rx="2" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "Concealed Valve + Overhead",
+    svg: (
+      <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
+        <circle cx="16" cy="26" r="8" fill="none" stroke="currentColor" strokeWidth="3" />
+        <circle cx="16" cy="26" r="2.5" fill="currentColor" />
+        <path d="M24 14 L48 14" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="58" cy="14" rx="12" ry="5" fill="currentColor" opacity="0.55" />
+      </svg>
+    ),
+  },
+];
+
+// Faucet finish colors — rendered as glossy metal spheres (radial-gradient
+// highlight simulating a light source) rather than flat swatches, so each
+// option reads visually as its actual metal finish.
+const FAUCET_COLORS = [
+  {
+    name: "Silver",
+    gradient: "radial-gradient(circle at 32% 28%, #ffffff 0%, #d7dbe0 22%, #9aa1ab 55%, #6b7280 80%, #4b5157 100%)",
+  },
+  {
+    name: "Gold",
+    gradient: "radial-gradient(circle at 32% 28%, #fff6d8 0%, #f0d27a 22%, #cf9f3f 55%, #a97c1f 80%, #7a5613 100%)",
+  },
+  {
+    name: "Black",
+    gradient: "radial-gradient(circle at 32% 28%, #6b6b6b 0%, #3a3a3a 25%, #1c1c1c 55%, #0a0a0a 80%, #000000 100%)",
+  },
+  {
+    name: "Bronze",
+    gradient: "radial-gradient(circle at 32% 28%, #e8c9a0 0%, #b9834a 22%, #8a5a2e 55%, #603c1c 80%, #3d240f 100%)",
+  },
+];
+
 const BUDGET_STYLES = [
   { id: "Budget-friendly", label: "Budget-friendly", desc: "Affordable, functional & clean" },
   { id: "Modern Euro",     label: "Modern Euro",     desc: "Sleek, handleless, contemporary" },
@@ -232,6 +324,8 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
     flooring: "",
     budget_style: "",
     faucet_style: "",
+    shower_faucet_style: "",
+    faucet_color: "",
     enhancements: [],
     design_comments: "",
     image_status: "No",
@@ -431,7 +525,7 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
         `AI Bathroom Design — ${result.concept?.name || "Custom Design"}`,
         `Bathroom Type: ${form.bathroom_type || "—"} | Style: ${form.style || "—"} | Budget Style: ${form.budget_style || "—"}`,
         `Vanity Finish: ${form.vanity_finish || "—"} | Countertop: ${form.countertop || "—"} | Flooring: ${form.flooring || "—"}`,
-        `Faucet: ${form.faucet_style || "—"}`,
+        `Vanity Faucet: ${form.faucet_style || "—"} | Shower Faucet: ${form.shower_faucet_style || "—"} | Faucet Color: ${form.faucet_color || "—"}`,
         form.enhancements.length > 0 ? `Enhancements: ${form.enhancements.join(", ")}` : "",
         form.address ? `Address: ${form.address}` : "",
         form.design_comments ? `Comments: ${form.design_comments}` : "",
@@ -833,27 +927,96 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
                 <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: "#6E1020" }}>5</span>
                 <h2 className="text-base font-semibold text-stone-800 tracking-tight" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Faucets</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {FAUCET_STYLES.map(({ name, svg }) => {
-                  const selected = form.faucet_style === name;
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => set("faucet_style", name)}
-                      className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
-                        selected
-                          ? "border-[#6E1020] bg-[#6E1020] text-white"
-                          : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
-                      }`}
-                    >
-                      <div className="w-16 h-12 my-3">{svg}</div>
-                      <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
-                        {name}
-                      </span>
-                    </button>
-                  );
-                })}
+
+              <div className="space-y-6">
+                {/* Vanity Faucets — shown for Full Bathroom + Vanity */}
+                {form.bathroom_type !== "Shower Area" && (
+                  <div>
+                    <label className={labelCls}>Vanity Faucets</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
+                      {VANITY_FAUCET_STYLES.map(({ name, svg }) => {
+                        const selected = form.faucet_style === name;
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => set("faucet_style", name)}
+                            className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
+                              selected
+                                ? "border-[#6E1020] bg-[#6E1020] text-white"
+                                : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
+                            }`}
+                          >
+                            <div className="w-16 h-12 my-3">{svg}</div>
+                            <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
+                              {name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shower Faucets — shown for Full Bathroom + Shower Area */}
+                {form.bathroom_type !== "Vanity" && (
+                  <div>
+                    <label className={labelCls}>Shower Faucets</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
+                      {SHOWER_FAUCET_STYLES.map(({ name, svg }) => {
+                        const selected = form.shower_faucet_style === name;
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => set("shower_faucet_style", name)}
+                            className={`flex flex-col items-center rounded-xl border overflow-hidden transition ${
+                              selected
+                                ? "border-[#6E1020] bg-[#6E1020] text-white"
+                                : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
+                            }`}
+                          >
+                            <div className="w-16 h-12 my-3">{svg}</div>
+                            <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
+                              {name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Faucet Color — glossy metal-sphere swatches */}
+                <div>
+                  <label className={labelCls}>Faucet Color</label>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {FAUCET_COLORS.map(({ name, gradient }) => {
+                      const selected = form.faucet_color === name;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => set("faucet_color", name)}
+                          className="flex flex-col items-center gap-1.5 group"
+                          aria-pressed={selected}
+                        >
+                          <span
+                            className={`block w-11 h-11 sm:w-12 sm:h-12 rounded-full shadow-inner transition-all ${
+                              selected
+                                ? "ring-2 ring-offset-2 ring-[#6E1020] scale-105"
+                                : "ring-1 ring-black/10 group-hover:scale-105"
+                            }`}
+                            style={{ backgroundImage: gradient }}
+                          />
+                          <span className={`text-xs font-medium ${selected ? "text-[#6E1020]" : "text-stone-600"}`}>
+                            {name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
               </MagicCard>
             </section>

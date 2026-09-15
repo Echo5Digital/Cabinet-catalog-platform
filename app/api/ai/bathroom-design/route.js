@@ -24,12 +24,21 @@ async function recordAIError(tenantId, errorMessage) {
 // Per-bathroom-type visual blocks for image generation.
 // boundary = positive description of what must NOT appear, phrased as what the absent
 // elements look like (avoids "NO"/"FORBIDDEN" language which can introduce the concept anyway).
+// Full Bathroom defaults to a SHOWER enclosure, never a bathtub, unless the
+// customer explicitly asked for a tub in Special Requests / Notes (see the
+// `wantsTub` check where TYPE_VISUAL/STYLE_VISUAL are consumed below). Two
+// variants are kept so the wording never mentions "tub" at all when one
+// wasn't requested — earlier "shower or tub" phrasing actively invited the
+// model to render a tub even when nobody asked for one.
 const TYPE_VISUAL = {
   "Full Bathroom": {
-    structure: "A complete residential bathroom showing the vanity/sink area, toilet, and shower or tub — all visible within a realistic room footprint.",
-    camera:    "Three-quarter angled view capturing the vanity wall and the shower/tub area together.",
-    spatial:   "Realistic clearances between vanity, toilet, and shower/tub as required by residential building standards.",
-    boundary:  "Exactly one vanity, one toilet, and one shower or tub enclosure — a single self-contained residential bathroom, not a suite of multiple rooms or a hallway view into other spaces.",
+    structure: "A complete residential bathroom showing the vanity/sink area, toilet, and a walk-in or framed shower enclosure — all visible within a realistic room footprint.",
+    structureWithTub: "A complete residential bathroom showing the vanity/sink area, toilet, and a bathtub (with or without an overhead shower) — all visible within a realistic room footprint.",
+    camera:    "Three-quarter angled view capturing the vanity wall and the shower area together.",
+    cameraWithTub: "Three-quarter angled view capturing the vanity wall and the tub/shower area together.",
+    spatial:   "Realistic clearances between vanity, toilet, and shower enclosure as required by residential building standards.",
+    boundary:  "Exactly one vanity, one toilet, and one shower enclosure — NO bathtub anywhere in the room unless explicitly requested in Special Requests — a single self-contained residential bathroom, not a suite of multiple rooms or a hallway view into other spaces.",
+    boundaryWithTub: "Exactly one vanity, one toilet, and one bathtub (with or without an overhead shower) — a single self-contained residential bathroom, not a suite of multiple rooms or a hallway view into other spaces.",
   },
   "Vanity": {
     structure: "A close, focused view of the vanity wall — cabinet, countertop, sink(s), faucet, and mirror. Other fixtures may be partially visible but are not the focus.",
@@ -57,30 +66,34 @@ const STYLE_VISUAL = {
   // must be chosen to fit the shape being rendered, or the layout reads as
   // generic regardless of what the structure text says.
   "L-Shaped": {
-    structure: "Vanity and toilet run along one wall, with the shower or tub enclosure turning the corner onto an adjoining perpendicular wall — a classic two-wall L-shaped footprint.",
+    structure: "Vanity and toilet run along one wall, with the shower enclosure turning the corner onto an adjoining perpendicular wall — a classic two-wall L-shaped footprint. No bathtub.",
+    structureWithTub: "Vanity and toilet run along one wall, with the bathtub turning the corner onto an adjoining perpendicular wall — a classic two-wall L-shaped footprint.",
     camera:    "Elevated three-quarter corner view shot from the open side of the room, positioned so BOTH walls of the L are visible in the same frame and the 90-degree corner junction between them is clearly readable — never a straight-on view of only one wall.",
-    boundary:  "Exactly TWO fixture-lined walls meeting at a 90-degree corner — not one wall (that is Single Wall), not two PARALLEL walls facing each other (that is Galley), and not three walls (that is U-Shaped). If the corner junction is not visible in frame, the render has FAILED this layout.",
+    boundary:  "Exactly TWO fixture-lined walls meeting at a 90-degree corner — not one wall (that is Single Wall), not two PARALLEL walls facing each other (that is Galley), and not three walls (that is U-Shaped). If the corner junction is not visible in frame, the render has FAILED this layout. NO bathtub anywhere unless explicitly requested — the corner enclosure is a shower only.",
     palette:   "Balanced neutral palette that reads consistently across both connected walls, large-format tile carrying around the corner.",
-    lighting:  "Vanity sconces or a light bar above the mirror, plus a separate recessed light over the shower/tub leg of the L.",
+    lighting:  "Vanity sconces or a light bar above the mirror, plus a separate recessed light over the shower leg of the L.",
   },
   "Galley": {
-    structure: "Fixtures split across two parallel walls facing each other — vanity on one wall, shower/tub and toilet on the opposite wall — with a walkway corridor between them.",
+    structure: "Fixtures split across two parallel walls facing each other — vanity on one wall, shower and toilet on the opposite wall — with a walkway corridor between them. No bathtub.",
+    structureWithTub: "Fixtures split across two parallel walls facing each other — vanity on one wall, bathtub and toilet on the opposite wall — with a walkway corridor between them.",
     camera:    "Camera positioned at one end of the corridor, looking straight down its length, so both parallel walls are visible on the left and right sides of the frame simultaneously with the walkway between them — never a view showing only one wall.",
-    boundary:  "Exactly TWO fixture-lined walls that are PARALLEL and face each other across a corridor — not walls meeting at a corner (that is L-Shaped), not a single wall (that is Single Wall), and not three walls (that is U-Shaped). If both parallel walls are not simultaneously visible with a walkway between them, the render has FAILED this layout.",
+    boundary:  "Exactly TWO fixture-lined walls that are PARALLEL and face each other across a corridor — not walls meeting at a corner (that is L-Shaped), not a single wall (that is Single Wall), and not three walls (that is U-Shaped). If both parallel walls are not simultaneously visible with a walkway between them, the render has FAILED this layout. NO bathtub anywhere unless explicitly requested — the opposite wall holds a shower only.",
     palette:   "Cohesive palette carried on both facing walls so the corridor reads as one unified room, not two mismatched sides.",
     lighting:  "Symmetrical lighting on both parallel walls — vanity light bar facing a recessed or surface light on the opposite wall.",
   },
   "Single Wall": {
-    structure: "All fixtures — vanity, toilet, and shower/tub — aligned along a single wall in a compact linear run, typical of a narrow bathroom footprint.",
-    camera:    "Straight-on wide view facing the single fixture wall head-on from across the room, framed so the full linear run — vanity, toilet, and shower/tub in sequence — is visible in one continuous line with no fixtures on the side or back walls.",
-    boundary:  "Exactly ONE fixture-lined wall — no fixture may appear on any side wall, back wall, or corner. If a second wall carries any fixture (vanity, toilet, or shower/tub), the render has FAILED this layout — that describes L-Shaped, Galley, or U-Shaped instead.",
+    structure: "All fixtures — vanity, toilet, and shower — aligned along a single wall in a compact linear run, typical of a narrow bathroom footprint. No bathtub.",
+    structureWithTub: "All fixtures — vanity, toilet, and bathtub — aligned along a single wall in a compact linear run, typical of a narrow bathroom footprint.",
+    camera:    "Straight-on wide view facing the single fixture wall head-on from across the room, framed so the full linear run — vanity, toilet, and shower in sequence — is visible in one continuous line with no fixtures on the side or back walls.",
+    boundary:  "Exactly ONE fixture-lined wall — no fixture may appear on any side wall, back wall, or corner. If a second wall carries any fixture (vanity, toilet, or shower), the render has FAILED this layout — that describes L-Shaped, Galley, or U-Shaped instead. NO bathtub anywhere unless explicitly requested — the run ends in a shower only.",
     palette:   "Light, unified palette along the single run to keep the narrow linear space feeling open rather than cramped.",
     lighting:  "One continuous light source (light bar or run of recessed cans) along the full length of the wall.",
   },
   "U-Shaped": {
-    structure: "Fixtures wrap three walls — vanity on the back wall, with the toilet and shower/tub occupying the two side walls — forming a U-shaped enclosure around a central floor area.",
+    structure: "Fixtures wrap three walls — vanity on the back wall, with the toilet and shower occupying the two side walls — forming a U-shaped enclosure around a central floor area. No bathtub.",
+    structureWithTub: "Fixtures wrap three walls — vanity on the back wall, with the toilet and bathtub occupying the two side walls — forming a U-shaped enclosure around a central floor area.",
     camera:    "Wide-angle view shot from the open (fourth) side of the room facing inward, positioned so all three fixture-lined walls — both side walls and the back wall between them — are simultaneously visible, clearly reading as a three-wall wrap around open floor space.",
-    boundary:  "Exactly THREE fixture-lined walls (back wall plus both side walls) wrapping around open floor space, with the fourth wall open/omitted for the camera — not two walls (that is L-Shaped or Galley) and not one wall (that is Single Wall). If fewer than three fixture-lined walls are visible, the render has FAILED this layout.",
+    boundary:  "Exactly THREE fixture-lined walls (back wall plus both side walls) wrapping around open floor space, with the fourth wall open/omitted for the camera — not two walls (that is L-Shaped or Galley) and not one wall (that is Single Wall). If fewer than three fixture-lined walls are visible, the render has FAILED this layout. NO bathtub anywhere unless explicitly requested — the side wall enclosure is a shower only.",
     palette:   "Consistent palette wrapping all three walls so the U reads as one enclosed room rather than three separate zones.",
     lighting:  "Central ceiling fixture or recessed cans overhead plus a vanity light bar on the back wall, evenly lighting all three sides.",
   },
@@ -119,11 +132,24 @@ const STYLE_VISUAL = {
 };
 
 // Budget-appropriate realism descriptions for image generation.
+// FAUCET is deliberately excluded from these descriptions — the customer's
+// own vanity/shower faucet style + color selections are mandatory and must
+// never be overridden or contradicted by the budget tier (e.g. a "Gold"
+// selection must render as gold even at the Budget-friendly tier).
 const BUDGET_REALISM = {
-  "Budget-friendly": "Budget-tier residential bathroom. VANITY: Flat thermofoil or laminate cabinet doors, builder-grade appearance. COUNTERTOP: Solid-color laminate or cultured marble with no veining. FAUCET: Basic chrome single-handle faucet. LIGHTING: Single builder-grade vanity light bar. TILE/FLOORING: Plain ceramic tile, minimal pattern. Overall: functional and utilitarian — unmistakably builder-grade low-budget construction quality.",
-  "Modern Euro":     "Mid-range contemporary residential bathroom. VANITY: Flat-panel or shaker cabinet doors in matte white or light gray, clean machine-cut edges. COUNTERTOP: Light gray or white quartz with subtle veining. FAUCET: Brushed nickel or matte black single-handle faucet. LIGHTING: Warm LED vanity sconces or a modern light bar with even, flattering illumination. TILE/FLOORING: Large-format porcelain tile in a clean layout. Overall: clean, contemporary, mid-range residential — clearly a step above basic.",
-  "Premium Luxury":  "High-end luxury residential bathroom. VANITY: Custom inset cabinet doors with precise shadow-line gaps, furniture-quality finish or rich wood veneer. COUNTERTOP: Thick natural marble or quartzite slab with dramatic veining. FAUCET: Unlacquered brass or matte black designer faucet with premium handle detailing. LIGHTING: Layered warm lighting — statement vanity sconces plus a decorative overhead fixture. TILE/FLOORING: Large-format natural stone or handmade tile with a herringbone or book-matched layout. Overall: unmistakably high-end custom luxury — every surface signals expensive craftsmanship and premium materials.",
+  "Budget-friendly": "Budget-tier residential bathroom. VANITY: Flat thermofoil or laminate cabinet doors, builder-grade appearance. COUNTERTOP: Solid-color laminate or cultured marble with no veining. LIGHTING: Single builder-grade vanity light bar. TILE/FLOORING: Plain ceramic tile, minimal pattern. Overall: functional and utilitarian — unmistakably builder-grade low-budget construction quality.",
+  "Modern Euro":     "Mid-range contemporary residential bathroom. VANITY: Flat-panel or shaker cabinet doors in matte white or light gray, clean machine-cut edges. COUNTERTOP: Light gray or white quartz with subtle veining. LIGHTING: Warm LED vanity sconces or a modern light bar with even, flattering illumination. TILE/FLOORING: Large-format porcelain tile in a clean layout. Overall: clean, contemporary, mid-range residential — clearly a step above basic.",
+  "Premium Luxury":  "High-end luxury residential bathroom. VANITY: Custom inset cabinet doors with precise shadow-line gaps, furniture-quality finish or rich wood veneer. COUNTERTOP: Thick natural marble or quartzite slab with dramatic veining. LIGHTING: Layered warm lighting — statement vanity sconces plus a decorative overhead fixture. TILE/FLOORING: Large-format natural stone or handmade tile with a herringbone or book-matched layout. Overall: unmistakably high-end custom luxury — every surface signals expensive craftsmanship and premium materials.",
 };
+
+// Full Bathroom defaults to a shower enclosure, never a bathtub — a tub is
+// only generated if the customer explicitly asked for one in Special
+// Requests / Notes (which already carries any selected enhancement
+// keywords, folded in by BathroomDesignForm.jsx before this route is called).
+function wantsTub(designComments) {
+  if (!designComments) return false;
+  return /\b(tub|bathtub|soaking tub|freestanding tub)\b/i.test(designComments);
+}
 
 /** Convert a customer bathroom photo (HTTP URL or base64 data URL) to a Buffer. */
 async function getImageBuffer(imageUrlOrBase64) {
@@ -213,7 +239,7 @@ export async function POST(request) {
       name, address, email, phone,
       bathroom_type, style, budget_style,
       vanity_finish, countertop, flooring,
-      faucet_style,
+      faucet_style, shower_faucet_style, faucet_color,
       design_comments,
       image_status, image_url,
     } = body;
@@ -291,7 +317,12 @@ export async function POST(request) {
     const vanity_finish_desc = vanity_finish ? (finishDescMap[vanity_finish] || "") : "";
     const countertop_desc    = countertop    ? (colorDescMap[countertop]     || "") : "";
     const flooring_desc      = flooring      ? (colorDescMap[flooring]       || "") : "";
-    const faucet_desc        = faucet_style  ? `${faucet_style} style faucet` : "";
+    const faucet_desc        = faucet_style
+      ? `${faucet_style} style faucet${faucet_color ? ` in ${faucet_color} finish` : ""}`
+      : "";
+    const shower_faucet_desc = shower_faucet_style
+      ? `${shower_faucet_style} shower faucet/fixture${faucet_color ? ` in ${faucet_color} finish` : ""}`
+      : "";
 
     const effectiveImageUrl = image_status === "Yes" && image_url ? image_url : "";
     const includeImageAnalysis = !!effectiveImageUrl;
@@ -303,8 +334,10 @@ export async function POST(request) {
         bathroom_type, style, budget_style,
         vanity_finish, countertop, flooring,
         faucet_finish: faucet_style,
+        shower_faucet_finish: shower_faucet_style,
+        faucet_color,
         design_comments,
-        vanity_finish_desc, countertop_desc, flooring_desc, faucet_desc,
+        vanity_finish_desc, countertop_desc, flooring_desc, faucet_desc, shower_faucet_desc,
       },
       catalogContext,
       includeImageAnalysis,
@@ -395,10 +428,12 @@ export async function POST(request) {
     }
 
     // Force-override with customer selections
-    if (vanity_finish) concept.vanity_finish = vanity_finish;
-    if (countertop)    concept.countertop    = countertop;
-    if (flooring)      concept.flooring      = flooring;
-    if (faucet_style)  concept.faucet_finish = faucet_style;
+    if (vanity_finish)         concept.vanity_finish        = vanity_finish;
+    if (countertop)            concept.countertop           = countertop;
+    if (flooring)              concept.flooring             = flooring;
+    if (faucet_style)          concept.faucet_finish        = faucet_style;
+    if (shower_faucet_style)   concept.shower_faucet_finish = shower_faucet_style;
+    if (faucet_color)          concept.faucet_color         = faucet_color;
 
     // ── Stage 4: Resolve product images for recommended SKUs (Vanity category) ──
     const skuList = (Array.isArray(recommendedSkus) ? recommendedSkus : [])
@@ -518,15 +553,17 @@ export async function POST(request) {
 
       if (effectiveImageUrl) {
         console.log(`[bathroom-design] Using gpt-image-2.5-sunburst edit for redesign with type: ${bathroom_type}, style: ${style}`);
+        const colorNote = faucet_color ? ` in ${faucet_color} finish` : "";
         const sections = [
-          `Photorealistic residential bathroom photograph. Redesign using the customer's existing room — ONLY the vanity, countertop, flooring, and faucet change. Everything else is copied from the source photo without modification.`,
+          `Photorealistic residential bathroom photograph. Redesign using the customer's existing room — ONLY the vanity, countertop, flooring, and faucet(s) change. Everything else is copied from the source photo without modification.`,
           PHOTO_LOCKED,
           [
             `CHANGE LIST — the ONLY elements permitted to differ from the source photo:`,
             `• Vanity cabinet: new finish colour, door style, and configuration matching the selected style`,
             `• Countertop: new material`,
             `• Flooring: new material and colour`,
-            faucet_style ? `• Faucet: replaced with ${faucet_style} style` : "",
+            faucet_style        ? `• Vanity faucet: replaced with ${faucet_style} style${colorNote}` : "",
+            shower_faucet_style ? `• Shower faucet/fixture: replaced with ${shower_faucet_style}${colorNote}` : "",
           ].filter(Boolean).join("\n"),
         ];
         if (sv) {
@@ -546,7 +583,8 @@ export async function POST(request) {
           const d = flooring_desc ? ` ${flooring_desc}.` : "";
           sections.push(`FLOORING: Replace with ${flooring}.${d}`);
         }
-        if (faucet_style) sections.push(`MANDATORY FAUCET: ${faucet_style} style faucet — must be clearly visible on the vanity. Do not substitute or omit.`);
+        if (faucet_style) sections.push(`MANDATORY VANITY FAUCET: ${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity. Do not substitute or omit.`);
+        if (shower_faucet_style) sections.push(`MANDATORY SHOWER FAUCET/FIXTURE: ${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure. Do not substitute or omit.`);
         if (style) sections.push(`STYLE: ${style}`);
         if (design_comments) {
           sections.push(
@@ -574,17 +612,30 @@ export async function POST(request) {
         // rather than being layered alongside them (which previously gave the
         // model two different, sometimes-conflicting camera instructions).
         const isFullBathroomLayout = bathroom_type === "Full Bathroom" && sv;
-        const structureText = isFullBathroomLayout ? sv.structure : tv?.structure;
-        const cameraText    = isFullBathroomLayout ? sv.camera    : tv?.camera;
+
+        // Full Bathroom defaults to a shower, never a bathtub, unless the
+        // customer explicitly asked for one — see the `*WithTub` variants
+        // defined alongside TYPE_VISUAL/STYLE_VISUAL above.
+        const includeTub = bathroom_type === "Full Bathroom" && wantsTub(design_comments);
+
+        const structureText = isFullBathroomLayout
+          ? (includeTub && sv.structureWithTub ? sv.structureWithTub : sv.structure)
+          : (includeTub && tv?.structureWithTub ? tv.structureWithTub : tv?.structure);
+        const cameraText = isFullBathroomLayout
+          ? sv.camera
+          : (includeTub && tv?.cameraWithTub ? tv.cameraWithTub : tv?.camera);
+        const boundaryText = tv
+          ? (includeTub && tv.boundaryWithTub ? tv.boundaryWithTub : tv.boundary)
+          : null;
 
         if (structureText) sections.push(`MANDATORY LAYOUT:\n${structureText}`);
         if (cameraText)    sections.push(`MANDATORY CAMERA VIEW:\n${cameraText}`);
         if (tv) {
           sections.push(`MANDATORY SPATIAL RULES:\n${tv.spatial}`);
-          sections.push(`COMPOSITION BOUNDARIES:\n${tv.boundary}`);
+          sections.push(`COMPOSITION BOUNDARIES:\n${boundaryText}`);
         }
         if (isFullBathroomLayout && sv.boundary) {
-          sections.push(`LAYOUT BOUNDARY — wall count is non-negotiable:\n${sv.boundary}`);
+          sections.push(`LAYOUT BOUNDARY — wall count is non-negotiable:\n${includeTub ? sv.boundary.replace(/NO bathtub anywhere unless explicitly requested — [^.]*\./, "A bathtub was explicitly requested and replaces the shower enclosure in this layout.") : sv.boundary}`);
         }
         if (sv && !isFullBathroomLayout) {
           // Fixture-configuration styles (Vanity's Floating/Furniture Style/
@@ -609,7 +660,11 @@ export async function POST(request) {
           const desc = flooring_desc ? ` ${flooring_desc}.` : "";
           sections.push(`FLOORING:\n${flooring}.${desc}`);
         }
-        if (faucet_style) sections.push(`MANDATORY FAUCET:\n${faucet_style} style faucet — must be clearly visible on the vanity. Do not substitute.`);
+        {
+          const colorNote = faucet_color ? ` in ${faucet_color} finish` : "";
+          if (faucet_style) sections.push(`MANDATORY VANITY FAUCET:\n${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity. Do not substitute.`);
+          if (shower_faucet_style) sections.push(`MANDATORY SHOWER FAUCET/FIXTURE:\n${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure. Do not substitute.`);
+        }
         if (style) sections.push(`STYLE:\n${style}`);
         if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified:\n${design_comments}`);
         sections.push(dalle_prompt
@@ -625,6 +680,18 @@ export async function POST(request) {
           // right before generation, after every other instruction.
           sections.push(
             `FINAL LAYOUT CHECK before rendering: this is a "${style}" bathroom. ${cameraText} Re-confirm the wall count and camera framing above match "${style}" exactly — do not default to a generic three-quarter room view.`
+          );
+        }
+        if (bathroom_type === "Full Bathroom") {
+          // Final restatement of the shower/tub default, placed last for
+          // recency — repeated once more in plain terms right before
+          // generation since this is the fixture most likely to be
+          // hallucinated by default (image models are heavily biased toward
+          // showing a bathtub in "bathroom" training data).
+          sections.push(
+            includeTub
+              ? `FINAL FIXTURE CHECK before rendering: a bathtub was explicitly requested — include it as described above.`
+              : `FINAL FIXTURE CHECK before rendering: this bathroom has a SHOWER ENCLOSURE ONLY. Do NOT render a bathtub, soaking tub, or freestanding tub anywhere in the image — no tub was requested.`
           );
         }
 
