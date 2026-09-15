@@ -1,51 +1,49 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import BathroomDesignResultBoard from "@/components/catalog/BathroomDesignResultBoard";
 import { MagicCard } from "@/registry/magicui/magic-card";
 import { TypingAnimation } from "@/registry/magicui/typing-animation";
 
 const BATHROOM_TYPES = ["Full Bathroom", "Vanity", "Shower Area"];
 
-// 3-4 hardcoded styles per bathroom type — simple inline SVG icons (no DB rows needed to ship).
+// 4 hardcoded room-layout styles for Full Bathroom — simple inline SVG icons,
+// same shape language as the Kitchen Layout picker (KitchenDesignForm.jsx).
 const FULL_BATHROOM_STYLES = [
   {
-    name: "Modern Minimal",
+    name: "L-Shaped",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6" y="10" width="24" height="14" rx="1" fill="currentColor" />
-        <circle cx="54" cy="20" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-        <rect x="6" y="38" width="68" height="14" rx="1" fill="currentColor" opacity="0.5" />
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
       </svg>
     ),
   },
   {
-    name: "Traditional",
+    name: "Galley",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6" y="8" width="24" height="16" rx="2" fill="currentColor" />
-        <rect x="48" y="10" width="16" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-        <rect x="6" y="40" width="68" height="12" rx="1" fill="currentColor" opacity="0.5" />
+        <rect x="6" y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="6" y="42" width="68" height="10" rx="1" fill="currentColor" />
       </svg>
     ),
   },
   {
-    name: "Spa Retreat",
+    name: "Single Wall",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="8" y="12" width="20" height="12" rx="6" fill="currentColor" />
-        <rect x="44" y="8" width="28" height="20" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-        <rect x="6" y="40" width="68" height="12" rx="6" fill="currentColor" opacity="0.5" />
+        <rect x="6" y="8" width="68" height="10" rx="1" fill="currentColor" />
       </svg>
     ),
   },
   {
-    name: "Compact Efficient",
+    name: "U-Shaped",
     svg: (
       <svg viewBox="0 0 80 60" className="w-full h-full" fill="none">
-        <rect x="6" y="10" width="18" height="12" rx="1" fill="currentColor" />
-        <rect x="32" y="10" width="14" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
-        <rect x="54" y="10" width="18" height="34" rx="1" fill="currentColor" opacity="0.5" />
+        <rect x="6"  y="8"  width="68" height="10" rx="1" fill="currentColor" />
+        <rect x="6"  y="18" width="10" height="34" rx="1" fill="currentColor" />
+        <rect x="64" y="18" width="10" height="34" rx="1" fill="currentColor" />
       </svg>
     ),
   },
@@ -206,7 +204,22 @@ function isValidEmail(email) {
   return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
 }
 
-export default function BathroomDesignForm({ countertopColors, floorColors, finishes, onVerified }) {
+// Match a Full-Bathroom layout name (e.g. "L-Shaped") to its uploaded structure
+// image. Bathroom layout structures are coded "bathroom-{layout}" (e.g.
+// "bathroom-l-shape") to keep them distinct from the kitchen's own L-Shaped/
+// Galley/etc. structure rows — see admin → Catalog → Structures.
+function findStructureImage(layoutName, structures) {
+  if (!structures || structures.length === 0) return null;
+  // Normalize "shaped" → "shape" so "bathroom-l-shape" (a natural filename to
+  // type) still matches the form's "L-Shaped" label without requiring the
+  // exact irregular spelling in the admin structure code.
+  const norm = (s) => s.toLowerCase().replace(/[-\s]/g, "").replace(/shaped\b/g, "shape");
+  const key  = norm(layoutName);
+  const found = structures.find((s) => norm(s.code || s.name).includes(key));
+  return found?.image_url ?? null;
+}
+
+export default function BathroomDesignForm({ countertopColors, floorColors, finishes, structures = [], onVerified }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -608,10 +621,15 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
 
                 {form.bathroom_type && (
                   <div>
-                    <label className={labelCls}>Choose a Style *</label>
+                    <label className={labelCls}>
+                      {form.bathroom_type === "Full Bathroom" ? "Choose a Layout *" : "Choose a Style *"}
+                    </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
                       {styleOptions.map(({ name, svg }) => {
                         const selected = form.style === name;
+                        const imgUrl = form.bathroom_type === "Full Bathroom"
+                          ? findStructureImage(name, structures)
+                          : null;
                         return (
                           <button
                             key={name}
@@ -623,7 +641,22 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
                                 : "border-stone-200 bg-white text-stone-400 hover:border-stone-400 hover:text-stone-700"
                             }`}
                           >
-                            <div className="w-16 h-12 my-3">{svg}</div>
+                            {imgUrl ? (
+                              <div className="w-full relative" style={{ paddingTop: "66%" }}>
+                                <Image
+                                  src={imgUrl}
+                                  alt={name}
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                                  className={`object-cover transition-opacity ${selected ? "opacity-80" : "opacity-100"}`}
+                                />
+                                {selected && (
+                                  <div className="absolute inset-0 bg-stone-900/30" />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-16 h-12 my-3">{svg}</div>
+                            )}
                             <span className={`text-xs font-medium leading-tight text-center py-2 px-1 ${selected ? "text-white" : "text-stone-700"}`}>
                               {name}
                             </span>
@@ -672,8 +705,9 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
                               className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
                             {form.image_file_data && (
                               <div className="mt-2 flex items-center gap-2">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
+                                <div className="relative w-16 h-16 rounded-lg border border-stone-200 overflow-hidden">
+                                  <Image src={form.image_file_data} alt="Preview" fill unoptimized sizes="64px" className="object-cover" />
+                                </div>
                                 <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition">Remove</button>
                               </div>
                             )}
@@ -1043,12 +1077,13 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
         <div id="design-result" className="mt-4">
           <div className="form-section-card rounded-2xl overflow-hidden relative">
             {result.image_url && (
-              <div className="relative w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+                <Image
                   src={result.image_url}
                   alt="Design preview"
-                  className="w-full block"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  className="object-cover"
                   draggable="false"
                   onContextMenu={(e) => e.preventDefault()}
                   style={{ filter: "blur(1.5px)", userSelect: "none", pointerEvents: "none" }}
@@ -1317,8 +1352,7 @@ function BathroomColorMaterialsSection({ finishes, countertopColors, floorColors
                   >
                     <div className="relative bg-stone-100 w-full" style={{ height: 110 }}>
                       {item.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        <Image src={item.image_url} alt={item.name} fill sizes="110px" className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <span className="text-stone-400 text-sm font-bold uppercase">{item.name.slice(0, 2)}</span>

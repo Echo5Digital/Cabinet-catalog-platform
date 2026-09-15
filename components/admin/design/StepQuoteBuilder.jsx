@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import QuoteTable from "./QuoteTable";
 
 const inputCls = "w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 shadow-sm placeholder:text-stone-400 transition";
@@ -205,10 +206,11 @@ export default function StepQuoteBuilder({ formData, onChange, onBack, editId, s
                       Download
                     </button>
                   </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={formData.designImageUrl}
                     alt="AI kitchen render"
+                    width={1024}
+                    height={768}
                     className="w-full h-auto"
                   />
                 </div>

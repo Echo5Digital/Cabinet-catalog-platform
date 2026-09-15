@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import usePlannerStore from "@/store/plannerStore";
 import DesignWizard from "./DesignWizard";
 
@@ -298,7 +299,7 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
                 {/* Image (from admin) or SVG icon fallback */}
                 <div
                   className={[
-                    "w-full aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center transition-colors",
+                    "relative w-full aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center transition-colors",
                     imgUrl
                       ? ""
                       : isSelected
@@ -308,11 +309,12 @@ export default function LayoutSelector({ primaryColor = "#1C1917", structures = 
                   style={!imgUrl ? (isSelected ? { color: primaryColor } : { color: "#78716c" }) : {}}
                 >
                   {imgUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={imgUrl}
                       alt={l.label}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 190px"
+                      className="object-cover"
                       draggable={false}
                     />
                   ) : (

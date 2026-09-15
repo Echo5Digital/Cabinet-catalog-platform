@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors, useDroppable } from "@dnd-kit/core";
 import PlannerHeader from "./PlannerHeader";
 import LayoutSelector from "./LayoutSelector";
@@ -53,7 +54,12 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   const viewMode           = usePlannerStore((s) => s.viewMode);
   const dims               = usePlannerStore((s) => s.roomDimensions);
   const addItem            = usePlannerStore((s) => s.addItem);
-  const scene              = usePlannerStore((s) => s.scene);
+  // Narrowed to the item count: PlannerShell only needs to know whether the
+  // scene is empty for its own render/effect logic. The full scene object is
+  // read on-demand via getState() inside event handlers below so that every
+  // cabinet drag/move (which changes `scene` but not its item count) doesn't
+  // force this entire shell to re-render.
+  const sceneItemCount     = usePlannerStore((s) => s.scene.items.length);
   const setCatalogProducts = usePlannerStore((s) => s.setCatalogProducts);
   const catalogProducts    = usePlannerStore((s) => s.catalogProducts);
   const generateLayout     = usePlannerStore((s) => s.generateLayout);
@@ -115,10 +121,10 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
   // Depends on both `step` and `catalogProducts.length` so that if products
   // finish loading after the step transition, generation still fires automatically.
   useEffect(() => {
-    if (step === 3 && scene.items.length === 0 && catalogProducts.length > 0) {
+    if (step === 3 && sceneItemCount === 0 && catalogProducts.length > 0) {
       generateLayout();
     }
-  }, [step, catalogProducts.length, generateLayout]);
+  }, [step, sceneItemCount, catalogProducts.length, generateLayout]);
 
   // ── Keyboard undo/redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y) ─────────────────────
   useUndoRedo();
@@ -216,12 +222,13 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
 
   // AI generation handler
   const handleGenerateAI = useCallback(async () => {
-    if (aiLoading || scene.items.length === 0) return;
+    if (aiLoading || sceneItemCount === 0) return;
 
     setAiState({ aiLoading: true, aiError: null, aiImageUrl: null });
     openAiPanel();
 
     try {
+      const scene = usePlannerStore.getState().scene;
       const res = await fetch("/api/planner/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -261,7 +268,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
         aiError:    err.message || "An error occurred. Please try again.",
       });
     }
-  }, [aiLoading, scene, layout, dims, upperCabinetColor, lowerCabinetColor, selectedDoorStyle, selectedDrawerStyle, selectedHardware, selectedCountertop, selectedFlooring, lifestyleProfile, setAiState, openAiPanel]);
+  }, [aiLoading, sceneItemCount, layout, dims, upperCabinetColor, lowerCabinetColor, selectedDoorStyle, selectedDrawerStyle, selectedHardware, selectedCountertop, selectedFlooring, lifestyleProfile, setAiState, openAiPanel]);
 
   // ─── Step 1 — Layout Selection ────────────────────────────────────────────────
   if (step === 1) {
@@ -364,8 +371,7 @@ export default function PlannerShell({ tenant, initialProducts = [], initialStru
             {activeDrag ? (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-stone-200 shadow-xl opacity-90 pointer-events-none w-48">
                 {activeDrag.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={activeDrag.imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg bg-stone-50" draggable={false} />
+                  <Image src={activeDrag.imageUrl} alt="" width={40} height={40} className="w-10 h-10 object-contain rounded-lg bg-stone-50" draggable={false} />
                 ) : (
                   <div className="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center">
                     <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

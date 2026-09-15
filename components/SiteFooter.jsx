@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SiteFooter({ tenant, lines }) {
   const name = tenant.name || "Cabinet & Remodeling Depot";
@@ -16,10 +17,11 @@ export default function SiteFooter({ tenant, lines }) {
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
               {tenant.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={tenant.logo_url}
                   alt={name}
+                  width={264}
+                  height={66}
                   className="h-[54px] sm:h-[66px] w-auto mb-5 mix-blend-multiply"
                 />
               ) : (

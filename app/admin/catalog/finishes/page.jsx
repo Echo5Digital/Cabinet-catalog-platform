@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 const FINISH_FAMILIES = [
   { value: "", label: "All families" },
@@ -20,10 +21,11 @@ function SwatchImage({ url, name }) {
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src={url}
       alt={name}
+      width={40}
+      height={40}
       className="w-10 h-10 rounded-lg object-cover border border-gray-200 shrink-0"
     />
   );

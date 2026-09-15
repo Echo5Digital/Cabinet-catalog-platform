@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function ProductCard({ product, lineSlug }) {
@@ -13,13 +14,14 @@ export default function ProductCard({ product, lineSlug }) {
       className="group block bg-white border border-stone-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-200 ease-out"
     >
       {/* Image */}
-      <div className="aspect-square bg-gradient-to-br from-stone-50 via-white to-stone-100 flex items-center justify-center overflow-hidden border-b border-stone-100">
+      <div className="aspect-square bg-gradient-to-br from-stone-50 via-white to-stone-100 flex items-center justify-center overflow-hidden border-b border-stone-100 relative">
         {product.primary_image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.primary_image_url}
             alt={product.name}
-            className="w-full h-full object-contain p-4 group-hover:scale-[1.04] transition-transform duration-300 ease-out"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 240px"
+            className="object-contain p-4 group-hover:scale-[1.04] transition-transform duration-300 ease-out"
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-stone-300">

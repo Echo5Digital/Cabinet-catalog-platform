@@ -36,8 +36,20 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    // Strip immutable fields
-    const { tenant_id, created_by, created_at, id, ...updates } = body;
+    // Allowlist client-editable fields only — everything else (tenant_id,
+    // created_by, created_at, id, ...) is ignored rather than blocklisted so
+    // new/unlisted columns can never be mass-assigned via this endpoint.
+    const EDITABLE_FIELDS = [
+      "customer_name", "customer_email",
+      "room_width", "room_depth", "room_height",
+      "style_notes", "svg_floor_plan", "design_image_url",
+      "quote_items", "quote_notes", "tax_rate",
+      "status", "pdf_url", "design_params",
+    ];
+    const updates = {};
+    for (const field of EDITABLE_FIELDS) {
+      if (field in body) updates[field] = body[field];
+    }
 
     const admin = createAdminClient();
     const { data, error } = await admin

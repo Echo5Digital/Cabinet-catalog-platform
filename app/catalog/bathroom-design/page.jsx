@@ -12,7 +12,7 @@ export const metadata = {
 async function getCatalogData() {
   try {
     const TENANT_ID = await resolveTenantId();
-    if (!TENANT_ID) return { countertopColors: [], floorColors: [], finishes: [] };
+    if (!TENANT_ID) return { countertopColors: [], floorColors: [], finishes: [], structures: [] };
     const admin = createAdminClient();
 
     const [
@@ -20,6 +20,8 @@ async function getCatalogData() {
       { data: finishes },
       { data: finishSwatches },
       { data: colorSwatches },
+      { data: structures },
+      { data: structureImages },
     ] = await Promise.all([
       admin.from("colors")
         .select("id, name, color_type")
@@ -43,6 +45,21 @@ async function getCatalogData() {
         .eq("asset_type", "color_swatch")
         .eq("status", "confirmed")
         .not("color_id", "is", null),
+      // Bathroom layouts (L-Shaped, Galley, Single Wall, U-Shaped) are stored as
+      // structures with a "bathroom-" prefixed code (e.g. "bathroom-l-shape"),
+      // uploaded via Admin → Catalog → Structures, same convention as kitchen.
+      admin.from("structures")
+        .select("id, name, code")
+        .eq("tenant_id", TENANT_ID)
+        .eq("is_active", true)
+        .like("code", "bathroom-%")
+        .order("sort_order"),
+      admin.from("assets")
+        .select("structure_id, public_url")
+        .eq("tenant_id", TENANT_ID)
+        .eq("asset_type", "structure_image")
+        .eq("status", "confirmed")
+        .not("structure_id", "is", null),
     ]);
 
     const finishImageMap = {};
@@ -52,6 +69,10 @@ async function getCatalogData() {
     const colorImageMap = {};
     for (const s of colorSwatches || []) {
       if (s.color_id && !colorImageMap[s.color_id]) colorImageMap[s.color_id] = s.public_url;
+    }
+    const structureImgMap = {};
+    for (const s of structureImages || []) {
+      if (s.structure_id && !structureImgMap[s.structure_id]) structureImgMap[s.structure_id] = s.public_url;
     }
 
     const allColors = (colors || []).map((c) => ({
@@ -71,20 +92,25 @@ async function getCatalogData() {
       countertopColors: allColors.filter((c) => c.color_type === "countertop"),
       floorColors: allColors.filter((c) => c.color_type === "floor"),
       finishes: vanityFinishes,
+      structures: (structures || []).map((s) => ({
+        ...s,
+        image_url: structureImgMap[s.id] ?? null,
+      })),
     };
   } catch {
-    return { countertopColors: [], floorColors: [], finishes: [] };
+    return { countertopColors: [], floorColors: [], finishes: [], structures: [] };
   }
 }
 
 export default async function BathroomDesignPage() {
-  const { countertopColors, floorColors, finishes } = await getCatalogData();
+  const { countertopColors, floorColors, finishes, structures } = await getCatalogData();
 
   return (
     <BathroomDesignPageShell
       countertopColors={countertopColors}
       floorColors={floorColors}
       finishes={finishes}
+      structures={structures}
     />
   );
 }

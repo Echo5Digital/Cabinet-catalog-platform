@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 // ── Layout SVG configs (self-contained — mirrors KitchenDesignForm.jsx) ──────
 const LAYOUT_CONFIGS = [
@@ -80,10 +81,9 @@ function SwatchCell({ imageUrl, name, size = "md" }) {
   const cls = size === "sm" ? "w-10 h-10" : "w-14 h-14";
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`${cls} rounded-md overflow-hidden border border-stone-200 shrink-0`}>
+      <div className={`${cls} rounded-md overflow-hidden border border-stone-200 shrink-0 relative`}>
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name || "swatch"} className="w-full h-full object-cover" />
+          <Image src={imageUrl} alt={name || "swatch"} fill sizes={size === "sm" ? "40px" : "56px"} className="object-cover" />
         ) : (
           <div className="w-full h-full bg-stone-200 flex items-center justify-center">
             <span className="text-[9px] font-bold text-stone-400 uppercase">
@@ -364,11 +364,12 @@ export default function DesignResultBoard({
           <div className="absolute inset-0 flex">
             {/* Original photo */}
             <div className="relative flex-1 overflow-hidden border-r border-white/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={original_image_url}
                 alt="Original kitchen"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 50vw, 512px"
+                className="object-cover"
               />
               <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm">
                 Before
@@ -376,11 +377,12 @@ export default function DesignResultBoard({
             </div>
             {/* AI generated */}
             <div className="relative flex-1 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={image_url}
                 alt={conceptName}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 50vw, 512px"
+                className="object-cover"
               />
               <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-stone-900/70 text-white text-[10px] font-semibold backdrop-blur-sm">
                 AI Generated
@@ -395,11 +397,12 @@ export default function DesignResultBoard({
             onClick={() => setLightboxOpen(true)}
             aria-label="View full size"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={image_url}
               alt={conceptName}
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="object-cover"
             />
             {/* Zoom hint */}
             <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
@@ -486,10 +489,9 @@ export default function DesignResultBoard({
 
           {/* Col 5: View thumbnail */}
           <InfoColumn label="View">
-            <div className="w-16 h-12 rounded overflow-hidden border border-stone-200 bg-stone-100">
+            <div className="w-16 h-12 rounded overflow-hidden border border-stone-200 bg-stone-100 relative">
               {image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={image_url} alt="thumbnail" className="w-full h-full object-cover" />
+                <Image src={image_url} alt="thumbnail" fill sizes="64px" className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -745,13 +747,14 @@ export default function DesignResultBoard({
                 key={product.sku}
                 className="border border-stone-200 rounded-xl overflow-hidden bg-white"
               >
-                <div className="aspect-square bg-stone-50 overflow-hidden">
+                <div className="aspect-square bg-stone-50 overflow-hidden relative">
                   {product.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={product.image_url}
                       alt={product.name}
-                      className="w-full h-full object-contain p-3"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
+                      className="object-contain p-3"
                     />
                   ) : (
                     <ProductPlaceholder />
@@ -870,11 +873,12 @@ export default function DesignResultBoard({
                   willChange: "transform",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={image_url}
                   alt={conceptName}
-                  className="block max-w-full max-h-[80vh] object-contain select-none"
+                  width={1600}
+                  height={1200}
+                  className="block max-w-full max-h-[80vh] w-auto h-auto object-contain select-none"
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />

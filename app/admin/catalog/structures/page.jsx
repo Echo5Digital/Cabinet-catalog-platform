@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 function toCode(name) {
   return name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -58,10 +59,11 @@ function StructureRow({ structure, onUpdated, onDeleted }) {
       <td className="px-4 py-3">
         {structure.swatch_asset ? (
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={structure.swatch_asset.public_url}
               alt={structure.name}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded object-cover border border-stone-200"
             />
             <span className="text-xs text-green-600 font-medium">Live</span>
@@ -75,10 +77,11 @@ function StructureRow({ structure, onUpdated, onDeleted }) {
       <td className="px-4 py-3 hidden sm:table-cell">
         {structure.reference_asset ? (
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={structure.reference_asset.public_url}
               alt={`${structure.name} reference`}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded object-cover border border-stone-200"
             />
             <span className="text-xs text-blue-600 font-medium">Set</span>
@@ -292,30 +295,32 @@ export default function StructuresPage() {
             </button>
           </div>
         ) : (
-          <table className="w-full text-left">
-            <thead className="bg-stone-50 border-b border-stone-200">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Image</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide hidden sm:table-cell">AI Reference</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {structures.map((structure) => (
-                <StructureRow
-                  key={structure.id}
-                  structure={structure}
-                  onUpdated={(updated) =>
-                    setStructures((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
-                  }
-                  onDeleted={(id) => setStructures((prev) => prev.filter((s) => s.id !== id))}
-                />
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-stone-50 border-b border-stone-200">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Image</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide hidden sm:table-cell">AI Reference</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {structures.map((structure) => (
+                  <StructureRow
+                    key={structure.id}
+                    structure={structure}
+                    onUpdated={(updated) =>
+                      setStructures((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+                    }
+                    onDeleted={(id) => setStructures((prev) => prev.filter((s) => s.id !== id))}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

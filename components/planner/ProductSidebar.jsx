@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useDraggable } from "@dnd-kit/core";
 import usePlannerStore from "@/store/plannerStore";
 import KitchenHealthScore from "./KitchenHealthScore";
@@ -250,8 +251,7 @@ function SwatchChip({ name, swatchUrl, hex, isSelected, onClick }) {
       ].join(" ")}
     >
       {swatchUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={swatchUrl} alt={name} className="w-full h-full object-cover" draggable={false}/>
+        <Image src={swatchUrl} alt={name} fill sizes="36px" className="object-cover" draggable={false}/>
       ) : hex ? (
         <span className="block w-full h-full" style={{ backgroundColor: hex }}/>
       ) : (
@@ -311,12 +311,11 @@ function DraggableProduct({ product, onQuickAdd }) {
     >
       {/* Thumbnail */}
       <div className={[
-        "w-10 h-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center",
+        "relative w-10 h-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center",
         isFixture ? "bg-stone-50 border border-stone-100" : "bg-stone-50 border border-stone-100",
       ].join(" ")}>
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" draggable={false}/>
+          <Image src={product.imageUrl} alt={product.name} fill sizes="40px" className="object-contain" draggable={false}/>
         ) : (
           FIXTURE_ICONS[product.category] || (
             <svg className="w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

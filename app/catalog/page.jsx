@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -159,11 +160,12 @@ export default async function CatalogPage() {
                 {/* Image */}
                 <div className={`overflow-hidden bg-stone-100 relative img-hover-burn ${isLarge ? "aspect-[21/9]" : "aspect-[4/3]"}`}>
                   {hero?.public_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={hero.public_url}
                       alt={hero.alt_text || line.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-stone-200 flex items-center justify-center">
@@ -186,11 +188,12 @@ export default async function CatalogPage() {
                   {isLarge && line.images.length > 1 && (
                     <div className="absolute bottom-3 right-3 flex gap-1.5">
                       {line.images.slice(1, 3).map((img, i) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           key={i}
                           src={img.public_url}
                           alt=""
+                          width={64}
+                          height={64}
                           className="w-16 h-16 rounded-lg object-cover border-2 border-white shadow"
                         />
                       ))}

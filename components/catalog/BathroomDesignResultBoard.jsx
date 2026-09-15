@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 function InfoColumn({ label, children }) {
   return (
@@ -17,10 +18,9 @@ function SwatchCell({ imageUrl, name, size = "md" }) {
   const cls = size === "sm" ? "w-10 h-10" : "w-14 h-14";
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`${cls} rounded-md overflow-hidden border border-stone-200 shrink-0`}>
+      <div className={`${cls} rounded-md overflow-hidden border border-stone-200 shrink-0 relative`}>
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name || "swatch"} className="w-full h-full object-cover" />
+          <Image src={imageUrl} alt={name || "swatch"} fill sizes={size === "sm" ? "40px" : "56px"} className="object-cover" />
         ) : (
           <div className="w-full h-full bg-stone-200 flex items-center justify-center">
             <span className="text-[9px] font-bold text-stone-400 uppercase">
@@ -124,15 +124,13 @@ export default function BathroomDesignResultBoard({
         {viewMode === "compare" && original_image_url && image_url ? (
           <div className="absolute inset-0 flex">
             <div className="relative flex-1 overflow-hidden border-r border-white/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={original_image_url} alt="Original bathroom" className="w-full h-full object-cover" />
+              <Image src={original_image_url} alt="Original bathroom" fill sizes="(max-width: 1024px) 50vw, 512px" className="object-cover" />
               <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm">
                 Before
               </span>
             </div>
             <div className="relative flex-1 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image_url} alt={conceptName} className="w-full h-full object-cover" />
+              <Image src={image_url} alt={conceptName} fill sizes="(max-width: 1024px) 50vw, 512px" className="object-cover" />
               <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-stone-900/70 text-white text-[10px] font-semibold backdrop-blur-sm">
                 AI Generated
               </span>
@@ -145,8 +143,7 @@ export default function BathroomDesignResultBoard({
             onClick={() => setLightboxOpen(true)}
             aria-label="View full size"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image_url} alt={conceptName} className="w-full h-full object-cover" />
+            <Image src={image_url} alt={conceptName} fill sizes="(max-width: 1024px) 100vw, 1024px" className="object-cover" />
             <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-6-3v6m-3-3h6" />
@@ -412,10 +409,9 @@ export default function BathroomDesignResultBoard({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {products.map((product) => (
               <div key={product.sku} className="border border-stone-200 rounded-xl overflow-hidden bg-white">
-                <div className="aspect-square bg-stone-50 overflow-hidden">
+                <div className="aspect-square bg-stone-50 overflow-hidden relative">
                   {product.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-3" />
+                    <Image src={product.image_url} alt={product.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px" className="object-contain p-3" />
                   ) : (
                     <ProductPlaceholder />
                   )}
@@ -473,8 +469,7 @@ export default function BathroomDesignResultBoard({
           onClick={() => setLightboxOpen(false)}
         >
           <div className="relative max-w-[92vw] max-h-[85vh] rounded-xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image_url} alt={conceptName} className="max-w-[92vw] max-h-[85vh] object-contain" />
+            <Image src={image_url} alt={conceptName} width={1600} height={1200} className="max-w-[92vw] max-h-[85vh] w-auto h-auto object-contain" />
           </div>
           <button
             type="button"

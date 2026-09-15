@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import usePlannerStore from "@/store/plannerStore";
 import { COMMANDS } from "@/lib/planner/engine/SpatialEngine";
 import ViewModeToggle from "./ViewModeToggle";
@@ -129,12 +130,15 @@ export default function PlannerDesignViewer({ lead }) {
       <div className="flex-1 min-h-0 flex relative overflow-hidden bg-gray-100">
         {tab === "ai" && hasAiImage ? (
           <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lead.ai_image_url}
-              alt="AI-generated kitchen visualization"
-              className="max-w-full max-h-full object-contain rounded-xl shadow-md"
-            />
+            <div className="relative w-full h-full">
+              <Image
+                src={lead.ai_image_url}
+                alt="AI-generated kitchen visualization"
+                fill
+                sizes="100vw"
+                className="object-contain rounded-xl shadow-md"
+              />
+            </div>
           </div>
         ) : viewMode === "3D" ? (
           <PlannerScene3D primaryColor={ADMIN_ACCENT} />

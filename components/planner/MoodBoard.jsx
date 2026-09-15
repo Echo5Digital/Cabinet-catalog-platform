@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import usePlannerStore from "@/store/plannerStore";
 
 // ─── Swatch tile ──────────────────────────────────────────────────────────────
@@ -10,14 +11,13 @@ function SwatchTile({ label, hex, imageUrl, missing }) {
     <div className="flex flex-col items-center gap-1">
       <div
         className={[
-          "w-full aspect-square rounded-xl overflow-hidden border-2 shadow-sm",
+          "relative w-full aspect-square rounded-xl overflow-hidden border-2 shadow-sm",
           missing ? "border-dashed border-stone-200" : "border-stone-200",
         ].join(" ")}
         style={!imageUrl && !missing ? { backgroundColor: hex || "#e5e5e5" } : {}}
       >
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+          <Image src={imageUrl} alt={label} fill sizes="80px" className="object-cover" />
         ) : missing ? (
           <div className="w-full h-full bg-stone-50 flex items-center justify-center">
             <svg className="w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

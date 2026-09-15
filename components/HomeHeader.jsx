@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HomeHeader({ tenant, primaryColor, name }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,10 +14,11 @@ export default function HomeHeader({ tenant, primaryColor, name }) {
         {/* Logo / Name */}
         <Link href="/" className="shrink-0 flex items-center">
           {tenant.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={tenant.logo_url}
               alt={name}
+              width={264}
+              height={66}
               className="h-[54px] sm:h-[66px] w-auto mix-blend-multiply"
             />
           ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import Image from "next/image";
 
 export default function GalleryGrid({ images, categories }) {
   const [openIndex, setOpenIndex] = useState(null);
@@ -88,12 +89,13 @@ export default function GalleryGrid({ images, categories }) {
             className="group relative overflow-hidden rounded-xl bg-stone-100 shimmer-card text-left cursor-zoom-in"
             style={{ animationName: 'fade-in-up-sm', animationDuration: '0.45s', animationFillMode: 'both', animationTimingFunction: 'ease', animationDelay: `${idx * 0.05}s` }}
           >
-            <div className="aspect-[4/3] overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="aspect-[4/3] overflow-hidden relative">
+              <Image
                 src={img.public_url}
                 alt={img.alt_text || "Kitchen design inspiration"}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 320px"
+                className="object-cover group-hover:scale-110 transition-transform duration-700"
                 loading={idx < 4 ? "eager" : "lazy"}
               />
             </div>
@@ -157,10 +159,11 @@ export default function GalleryGrid({ images, categories }) {
             className="relative max-w-full max-h-full flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={current.public_url}
               alt={current.alt_text || "Kitchen design inspiration"}
+              width={1600}
+              height={1200}
               className="max-w-full max-h-[85vh] sm:max-h-[88vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
             />
             {current.alt_text && (

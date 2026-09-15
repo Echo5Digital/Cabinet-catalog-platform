@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 export default function LifestyleBanner({ images, lineName }) {
   const [current, setCurrent] = useState(0);
@@ -22,11 +23,13 @@ export default function LifestyleBanner({ images, lineName }) {
   if (total === 1) {
     return (
       <div className="relative w-full h-[380px] sm:h-[520px] lg:h-[75vh] overflow-hidden bg-stone-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={images[0].url}
           alt={images[0].alt || lineName}
-          className="w-full h-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
         {/* Bottom gradient + line name */}
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
@@ -61,11 +64,13 @@ export default function LifestyleBanner({ images, lineName }) {
             i === current ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={img.url}
             alt={img.alt || lineName}
-            className="w-full h-full object-cover"
+            fill
+            priority={i === 0}
+            sizes="100vw"
+            className="object-cover"
           />
         </div>
       ))}

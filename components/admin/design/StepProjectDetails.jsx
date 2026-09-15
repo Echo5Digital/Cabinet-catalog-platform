@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
+import Image from "next/image";
 
 const PROJECT_TYPES = [
   "New Kitchen",
@@ -240,10 +241,11 @@ export default function StepProjectDetails({ formData, onChange, onNext, onBack 
                         {/* Preview thumbnail once uploaded */}
                         {hasPhoto && !uploading && (
                           <div className="flex items-center gap-3 p-2.5 rounded-lg border border-stone-200 bg-white">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <Image
                               src={formData.imageUrl}
                               alt="Kitchen preview"
+                              width={64}
+                              height={48}
                               className="w-16 h-12 rounded object-cover border border-stone-200 shrink-0"
                             />
                             <div className="flex-1 min-w-0">

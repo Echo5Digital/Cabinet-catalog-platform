@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { QuoteProvider, useQuote } from "@/lib/context/quote";
@@ -45,8 +46,7 @@ function Header({ tenant, lines }) {
         {/* Logo / Name */}
         <Link href="/" className="flex items-center shrink-0">
           {tenant.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={tenant.logo_url} alt={name} className="h-[54px] sm:h-[66px] w-auto mix-blend-multiply" />
+            <Image src={tenant.logo_url} alt={name} width={220} height={66} className="h-[54px] sm:h-[66px] w-auto mix-blend-multiply" />
           ) : (
             <span className="text-stone-900 font-semibold text-base tracking-tight">{name}</span>
           )}

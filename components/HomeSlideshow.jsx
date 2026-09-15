@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 
 export default function HomeSlideshow({ images = [] }) {
   const [current, setCurrent] = useState(0);
@@ -47,12 +48,13 @@ export default function HomeSlideshow({ images = [] }) {
       {/* Images — all stacked, crossfade via opacity */}
       <div className="relative bg-stone-900 flex-1 min-h-[280px] sm:min-h-[360px]">
         {images.map((img, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             key={i}
             src={img.url}
             alt={img.alt || "Kitchen design"}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className={`object-cover transition-opacity duration-700 ease-in-out ${
               i === current ? "opacity-100" : "opacity-0"
             }`}
           />

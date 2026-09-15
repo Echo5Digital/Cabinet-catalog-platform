@@ -49,6 +49,14 @@ export async function PATCH(request, { params }) {
       return forbidden();
     }
 
+    // Nobody may change their own role via the self-service path — prevents a
+    // demoted admin from re-promoting themselves, matching the self-removal
+    // guard on DELETE below. A trusted service-key caller is still allowed
+    // through, same as the owner-role check above.
+    if (!isTrustedService(ctx) && existing.auth_user_id === ctx.user.id && updates.role !== undefined && updates.role !== existing.role) {
+      return forbidden();
+    }
+
     if (password) {
       if (password.length < 8) {
         return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });

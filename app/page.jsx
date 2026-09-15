@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveTenantId } from "@/lib/utils/tenant-context";
 import Link from "next/link";
+import Image from "next/image";
 import HomeHeader from "@/components/HomeHeader";
 import SiteFooter from "@/components/SiteFooter";
 export const dynamic = "force-dynamic";
@@ -350,11 +351,12 @@ export default async function HomePage() {
                   >
                     <div className="aspect-[16/7] overflow-hidden bg-stone-100 relative img-hover-burn">
                       {line.hero_image?.public_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={line.hero_image.public_url}
                           alt={line.hero_image.alt_text || line.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(max-width: 640px) 100vw, 50vw"
+                          className="object-cover"
                         />
                       ) : (
                         <div
@@ -426,11 +428,12 @@ export default async function HomePage() {
           >
             <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative img-hover-burn">
               {card1Image?.public_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={card1Image.public_url}
                   alt="Browse Collections"
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full" style={{ backgroundColor: primaryColor }} />
@@ -490,11 +493,12 @@ export default async function HomePage() {
           >
             <div className="aspect-[4/3] overflow-hidden bg-stone-100 relative img-hover-burn">
               {card3Image?.public_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={card3Image.public_url}
                   alt="Design Gallery"
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full" style={{ backgroundColor: primaryColor }} />

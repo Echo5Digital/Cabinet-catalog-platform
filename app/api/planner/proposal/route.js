@@ -312,7 +312,7 @@ export async function POST(request) {
   } catch (err) {
     console.error("[planner/proposal] error:", err);
     return NextResponse.json(
-      { error: err.message || "Failed to generate proposal PDF." },
+      { error: "Failed to generate proposal PDF." },
       { status: 500 }
     );
   }

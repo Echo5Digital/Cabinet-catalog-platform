@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuote } from "@/lib/context/quote";
+import Image from "next/image";
 import Link from "next/link";
 
 function QuantityInput({ value, onChange }) {
@@ -72,12 +73,15 @@ export default function QuotePanel() {
                   <div className="flex items-start gap-3">
                     {/* Swatch */}
                     {item.swatch_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.swatch_url}
-                        alt={item.finish_name || ""}
-                        className="w-10 h-10 rounded-lg object-cover border border-stone-200 shrink-0 mt-0.5"
-                      />
+                      <div className="relative w-10 h-10 rounded-lg border border-stone-200 shrink-0 mt-0.5 overflow-hidden">
+                        <Image
+                          src={item.swatch_url}
+                          alt={item.finish_name || ""}
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-stone-100 border border-stone-200 shrink-0 mt-0.5" />
                     )}

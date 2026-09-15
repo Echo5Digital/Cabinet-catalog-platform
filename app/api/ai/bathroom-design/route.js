@@ -49,26 +49,26 @@ const TYPE_VISUAL = {
 // bathroom type) produces a structurally and aesthetically distinct render, not just a
 // recolored version of the same room. Mirrors the Kitchen route's LAYOUT_VISUAL pattern.
 const STYLE_VISUAL = {
-  // ── Full Bathroom styles ──
-  "Modern Minimal": {
-    structure: "Clean-lined vanity with integrated sink, a frameless glass shower enclosure, and a wall-hung or low-profile toilet. Minimal visual clutter — no decorative molding, no ornate fixtures.",
-    palette:   "Monochrome or two-tone palette (white/gray/black), matte finishes, geometric large-format tile.",
-    lighting:  "Cool-to-neutral LED lighting, recessed ceiling cans, no ornate fixtures.",
+  // ── Full Bathroom layouts (room-shape configurations) ──
+  "L-Shaped": {
+    structure: "Vanity and toilet run along one wall, with the shower or tub enclosure turning the corner onto an adjoining perpendicular wall — a classic two-wall L-shaped footprint.",
+    palette:   "Balanced neutral palette that reads consistently across both connected walls, large-format tile carrying around the corner.",
+    lighting:  "Vanity sconces or a light bar above the mirror, plus a separate recessed light over the shower/tub leg of the L.",
   },
-  "Traditional": {
-    structure: "Furniture-style vanity with raised-panel doors and turned or bracket feet, a framed mirror, and a tub/shower with classic subway tile surround.",
-    palette:   "Warm neutral palette, painted or stained wood tones, subway tile or small hexagon mosaic flooring.",
-    lighting:  "Warm sconces flanking the mirror, traditional brass or oil-rubbed bronze fixtures.",
+  "Galley": {
+    structure: "Fixtures split across two parallel walls facing each other — vanity on one wall, shower/tub and toilet on the opposite wall — with a walkway corridor between them.",
+    palette:   "Cohesive palette carried on both facing walls so the corridor reads as one unified room, not two mismatched sides.",
+    lighting:  "Symmetrical lighting on both parallel walls — vanity light bar facing a recessed or surface light on the opposite wall.",
   },
-  "Spa Retreat": {
-    structure: "Freestanding soaking tub as a focal point, a separate walk-in shower with rainfall showerhead, natural stone or wood-look accents, and a floating vanity with vessel sink.",
-    palette:   "Earthy neutral palette — stone grays, warm taupe, natural wood — with abundant plants or organic textures.",
-    lighting:  "Soft warm ambient lighting, dimmable, candle-like accent lighting, no harsh overhead glare.",
+  "Single Wall": {
+    structure: "All fixtures — vanity, toilet, and shower/tub — aligned along a single wall in a compact linear run, typical of a narrow bathroom footprint.",
+    palette:   "Light, unified palette along the single run to keep the narrow linear space feeling open rather than cramped.",
+    lighting:  "One continuous light source (light bar or run of recessed cans) along the full length of the wall.",
   },
-  "Compact Efficient": {
-    structure: "Space-saving corner or slim-profile vanity, a compact shower-tub combo, and a standard toilet positioned to maximize walking clearance in a small footprint.",
-    palette:   "Light, bright palette (whites and light grays) to visually expand the small space, small-format wall tile.",
-    lighting:  "Bright even overhead lighting plus a vanity light bar to make the compact room feel open.",
+  "U-Shaped": {
+    structure: "Fixtures wrap three walls — vanity on the back wall, with the toilet and shower/tub occupying the two side walls — forming a U-shaped enclosure around a central floor area.",
+    palette:   "Consistent palette wrapping all three walls so the U reads as one enclosed room rather than three separate zones.",
+    lighting:  "Central ceiling fixture or recessed cans overhead plus a vanity light bar on the back wall, evenly lighting all three sides.",
   },
   // ── Vanity styles ──
   "Floating": {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import usePlannerStore from "@/store/plannerStore";
 
 export default function AiPreviewPanel({ onRegenerate, onClose, primaryColor = "#1C1917" }) {
@@ -89,12 +90,14 @@ export default function AiPreviewPanel({ onRegenerate, onClose, primaryColor = "
                   <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: `${primaryColor}25`, borderTopColor: primaryColor }} />
                 </div>
               )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={aiImageUrl}
                 alt="AI-generated kitchen visualization"
+                fill
+                sizes="(max-width: 768px) 92vw, 320px"
+                unoptimized={aiImageUrl.startsWith("data:") || aiImageUrl.startsWith("blob:")}
                 className={[
-                  "w-full h-full object-cover transition-opacity duration-300",
+                  "object-cover transition-opacity duration-300",
                   imgLoaded ? "opacity-100" : "opacity-0",
                 ].join(" ")}
                 onLoad={() => setImgLoaded(true)}

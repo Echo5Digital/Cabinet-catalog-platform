@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import DesignResultBoard from "@/components/catalog/DesignResultBoard";
 import { MagicCard } from "@/registry/magicui/magic-card";
 import { TypingAnimation } from "@/registry/magicui/typing-animation";
@@ -579,8 +580,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                               className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
                             {form.image_file_data && (
                               <div className="mt-2 flex items-center gap-2">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
+                                <div className="relative w-16 h-16 rounded-lg border border-stone-200 overflow-hidden">
+                                  <Image src={form.image_file_data} alt="Preview" fill unoptimized sizes="64px" className="object-cover" />
+                                </div>
                                 <div>
                                   <p className="text-xs text-stone-600 font-medium">Image ready</p>
                                   <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
@@ -630,8 +632,9 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                                   className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer" />
                                 {form.image_file_data && (
                                   <div className="mt-2 flex items-center gap-2">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={form.image_file_data} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-stone-200" />
+                                    <div className="relative w-16 h-16 rounded-lg border border-stone-200 overflow-hidden">
+                                      <Image src={form.image_file_data} alt="Preview" fill unoptimized sizes="64px" className="object-cover" />
+                                    </div>
                                     <div>
                                       <p className="text-xs text-stone-600 font-medium">Image ready</p>
                                       <button type="button" onClick={() => set("image_file_data", "")} className="text-xs text-red-500 hover:text-red-700 transition mt-0.5">Remove</button>
@@ -674,11 +677,12 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
                         >
                           {imgUrl ? (
                             <div className="w-full relative" style={{ paddingTop: "66%" }}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
+                              <Image
                                 src={imgUrl}
                                 alt={name}
-                                className={`absolute inset-0 w-full h-full object-cover transition-opacity ${selected ? "opacity-80" : "opacity-100"}`}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
+                                className={`object-cover transition-opacity ${selected ? "opacity-80" : "opacity-100"}`}
                               />
                               {selected && (
                                 <div className="absolute inset-0 bg-stone-900/30" />
@@ -1309,12 +1313,13 @@ export default function KitchenDesignForm({ countertopColors, floorColors, finis
           {/* Blurred image preview */}
           <div className="form-section-card rounded-2xl overflow-hidden relative">
             {result.image_url && (
-              <div className="relative w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+                <Image
                   src={result.image_url}
                   alt="Design preview"
-                  className="w-full block"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  className="object-cover"
                   draggable="false"
                   onContextMenu={(e) => e.preventDefault()}
                   style={{ filter: "blur(1.5px)", userSelect: "none", pointerEvents: "none" }}
@@ -1674,8 +1679,7 @@ function ColorMaterialsSection({ finishes, countertopColors, floorColors, form, 
                   >
                     <div className="relative bg-stone-100 w-full" style={{ height: 110 }}>
                       {item.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        <Image src={item.image_url} alt={item.name} fill sizes="110px" className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <span className="text-stone-400 text-sm font-bold uppercase">{item.name.slice(0, 2)}</span>

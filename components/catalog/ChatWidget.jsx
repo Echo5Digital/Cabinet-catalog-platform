@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useQuote } from "@/lib/context/quote";
 
@@ -17,10 +18,9 @@ function SuggestionCard({ product, onAdd }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-white overflow-hidden flex gap-3 p-3 shadow-sm">
       {/* Thumbnail */}
-      <div className="w-14 h-14 rounded-lg bg-stone-100 shrink-0 overflow-hidden">
+      <div className="w-14 h-14 rounded-lg bg-stone-100 shrink-0 overflow-hidden relative">
         {product.primary_image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.primary_image_url} alt={product.name} className="w-full h-full object-cover" />
+          <Image src={product.primary_image_url} alt={product.name} fill sizes="56px" className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <svg className="w-5 h-5 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

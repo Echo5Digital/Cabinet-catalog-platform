@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 function ColorSwatch({ color }) {
   return (
@@ -466,12 +467,13 @@ export default function SettingsPage() {
           <Field label="Logo" hint="Appears in the catalog header. Recommended: PNG or SVG, transparent background, at least 400px wide.">
             <div className="flex items-center gap-4">
               {form.logo_url ? (
-                <div className="border border-gray-200 rounded-lg p-2 bg-gray-50 flex items-center justify-center w-24 h-16">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative border border-gray-200 rounded-lg p-2 bg-gray-50 flex items-center justify-center w-24 h-16">
+                  <Image
                     src={form.logo_url}
                     alt="Logo"
-                    className="max-h-12 max-w-full object-contain"
+                    width={200}
+                    height={48}
+                    className="max-h-12 max-w-full w-auto h-auto object-contain"
                   />
                 </div>
               ) : (

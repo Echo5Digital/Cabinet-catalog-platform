@@ -2,7 +2,7 @@
 import { useState } from "react";
 import BathroomDesignForm from "./BathroomDesignForm";
 
-export default function BathroomDesignPageShell({ countertopColors, floorColors, finishes }) {
+export default function BathroomDesignPageShell({ countertopColors, floorColors, finishes, structures = [] }) {
   const [designVerified, setDesignVerified] = useState(false);
 
   return (
@@ -64,6 +64,7 @@ export default function BathroomDesignPageShell({ countertopColors, floorColors,
             countertopColors={countertopColors}
             floorColors={floorColors}
             finishes={finishes}
+            structures={structures}
             onVerified={() => setDesignVerified(true)}
           />
         </div>

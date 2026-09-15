@@ -4,7 +4,6 @@ import React, { useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import usePlannerStore from "@/store/plannerStore";
 import { COUNTER_THICK } from "@/lib/planner/layoutPresets";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -642,6 +641,13 @@ function Scene3DCabinetInner({
   roomWidthFt  = 20,
   roomLengthFt = 20,
   primaryColor = "#1C1917",
+  isSelected,
+  setSelectedItem,
+  cabinetColorHex,
+  countertopHex,
+  doorStyleId,
+  drawerStyleId,
+  hardwareType,
 }) {
   const meshRef  = useRef(null);
   const [hovered, setHovered] = useState(false);
@@ -656,25 +662,6 @@ function Scene3DCabinetInner({
   const toggleDrawer = useCallback((key) => {
     setOpenDrawers((s) => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n; });
   }, []);
-
-  const selectedItemId      = usePlannerStore((s) => s.selectedItemId);
-  const setSelectedItem     = usePlannerStore((s) => s.setSelectedItem);
-  const upperCabinetColor   = usePlannerStore((s) => s.upperCabinetColor);
-  const lowerCabinetColor   = usePlannerStore((s) => s.lowerCabinetColor);
-  const selectedCountertop  = usePlannerStore((s) => s.selectedCountertop);
-  const selectedHardware    = usePlannerStore((s) => s.selectedHardware);
-  const selectedDoorStyle   = usePlannerStore((s) => s.selectedDoorStyle);
-  const selectedDrawerStyle = usePlannerStore((s) => s.selectedDrawerStyle);
-
-  const doorStyleId   = selectedDoorStyle?.id   ?? "Shaker";
-  const drawerStyleId = selectedDrawerStyle?.id  ?? "Shaker";
-  const hardwareType  = selectedHardware?.type   ?? "bar";
-
-  const isSelected  = selectedItemId === cabinet.id;
-  const isWallCab   = cabinet.category === "Wall Cabinets";
-  const cabinetColorHex = isWallCab
-    ? (upperCabinetColor?.hex ?? null)
-    : (lowerCabinetColor?.hex ?? null);
 
   const { widthFt, depthFt, heightFt } = cabinet.dimensions;
   const { xFt, yFt, zFt }             = cabinet.position;
@@ -706,9 +693,6 @@ function Scene3DCabinetInner({
   const counterD    = ctFacingNS ? depthFt + COUNTER_OVERHANG : depthFt;
   const counterOX   = ctFacingNS ? 0 : ctFrontSign * COUNTER_OVERHANG / 2;
   const counterOZ   = ctFacingNS ? ctFrontSign * COUNTER_OVERHANG / 2 : 0;
-
-  // Countertop color — user selection or realistic warm quartz default
-  const countertopHex = selectedCountertop?.hex ?? "#c8c0b4";
 
   return (
     <group
@@ -851,16 +835,29 @@ function Scene3DCabinetInner({
   );
 }
 
-// Memoize: re-render only when spatial props change. Color/style changes flow via store subscriptions.
+// Memoize: re-render only when spatial props, selection, or style actually
+// change for THIS cabinet. Selection/color/style values are resolved once in
+// the parent and passed down as plain props so unrelated cabinets skip
+// re-rendering when another cabinet is selected or restyled.
 const Scene3DCabinet = React.memo(Scene3DCabinetInner, (prev, next) =>
   prev.cabinet.id         === next.cabinet.id         &&
   prev.cabinet.position   === next.cabinet.position   &&
   prev.cabinet.rotation   === next.cabinet.rotation   &&
   prev.cabinet.dimensions === next.cabinet.dimensions &&
   prev.cabinet.material   === next.cabinet.material   &&
+  prev.cabinet.doorCount  === next.cabinet.doorCount  &&
+  prev.cabinet.drawerCount=== next.cabinet.drawerCount&&
+  prev.cabinet.category   === next.cabinet.category   &&
+  prev.cabinet.isFiller   === next.cabinet.isFiller   &&
   prev.roomWidthFt        === next.roomWidthFt        &&
   prev.roomLengthFt       === next.roomLengthFt       &&
-  prev.primaryColor       === next.primaryColor
+  prev.primaryColor       === next.primaryColor       &&
+  prev.isSelected         === next.isSelected         &&
+  prev.cabinetColorHex    === next.cabinetColorHex    &&
+  prev.countertopHex      === next.countertopHex      &&
+  prev.doorStyleId        === next.doorStyleId        &&
+  prev.drawerStyleId      === next.drawerStyleId      &&
+  prev.hardwareType       === next.hardwareType
 );
 
 export default Scene3DCabinet;

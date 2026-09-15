@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 
 const CATEGORIES = [
   { value: "american", label: "American" },
@@ -104,12 +105,14 @@ function UploadForm({ onUploaded }) {
             onClick={(e) => e.stopPropagation()}
           >
             {files.map((f, idx) => (
-              <div key={idx} className="relative group/thumb">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div key={idx} className="relative group/thumb aspect-square">
+                <Image
                   src={f.preview}
                   alt={f.file.name}
-                  className="w-full aspect-square rounded-lg object-cover border border-gray-200"
+                  fill
+                  unoptimized
+                  sizes="(max-width: 640px) 33vw, 25vw"
+                  className="rounded-lg object-cover border border-gray-200"
                 />
                 <button
                   type="button"
@@ -201,11 +204,12 @@ function ImageCard({ image, onDelete }) {
 
   return (
     <div className="group relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={image.public_url}
         alt={image.alt_text || "Gallery photo"}
-        className="w-full h-full object-cover"
+        fill
+        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+        className="object-cover"
       />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex flex-col justify-between p-2 opacity-0 group-hover:opacity-100">
         <div className="flex justify-end">

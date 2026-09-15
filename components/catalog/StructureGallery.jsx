@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 export default function StructureGallery({ structures }) {
   const [selected, setSelected] = useState(null);
@@ -34,11 +35,12 @@ export default function StructureGallery({ structures }) {
           >
             <div className="aspect-square bg-stone-100 overflow-hidden relative">
               {structure.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={structure.image.public_url}
                   alt={structure.image.alt_text || structure.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -80,13 +82,14 @@ export default function StructureGallery({ structures }) {
               </svg>
             </button>
 
-            <div className="aspect-square w-full overflow-hidden bg-stone-100">
+            <div className="aspect-square w-full overflow-hidden bg-stone-100 relative">
               {selected.image?.public_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={selected.image.public_url}
                   alt={selected.image.alt_text || selected.name}
-                  className="w-full h-full object-contain"
+                  fill
+                  sizes="(max-width: 512px) 100vw, 512px"
+                  className="object-contain"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

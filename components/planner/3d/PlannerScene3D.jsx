@@ -33,6 +33,22 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
   const setSceneGraph   = usePlannerStore((s) => s.setSceneGraph);
   const setSelectedItem = usePlannerStore((s) => s.setSelectedItem);
 
+  // Selection/style values resolved once here and passed down as plain props
+  // so each Scene3DCabinet's memo comparator can actually skip re-rendering
+  // unrelated cabinets when only the selection or a style changes.
+  const selectedItemId      = usePlannerStore((s) => s.selectedItemId);
+  const upperCabinetColor   = usePlannerStore((s) => s.upperCabinetColor);
+  const lowerCabinetColor   = usePlannerStore((s) => s.lowerCabinetColor);
+  const selectedCountertop  = usePlannerStore((s) => s.selectedCountertop);
+  const selectedHardware    = usePlannerStore((s) => s.selectedHardware);
+  const selectedDoorStyle   = usePlannerStore((s) => s.selectedDoorStyle);
+  const selectedDrawerStyle = usePlannerStore((s) => s.selectedDrawerStyle);
+
+  const doorStyleId   = selectedDoorStyle?.id   ?? "Shaker";
+  const drawerStyleId = selectedDrawerStyle?.id ?? "Shaker";
+  const hardwareType  = selectedHardware?.type  ?? "bar";
+  const countertopHex = selectedCountertop?.hex ?? "#c8c0b4";
+
   // Walkthrough mode toggle (first-person vs orbit)
   const [walkthrough, setWalkthrough] = useState(false);
 
@@ -172,6 +188,17 @@ export default function PlannerScene3D({ primaryColor = "#1C1917" }) {
                   roomWidthFt={sceneGraph.room.widthFt}
                   roomLengthFt={sceneGraph.room.lengthFt}
                   primaryColor={primaryColor}
+                  isSelected={selectedItemId === cab.id}
+                  setSelectedItem={setSelectedItem}
+                  cabinetColorHex={
+                    cab.category === "Wall Cabinets"
+                      ? (upperCabinetColor?.hex ?? null)
+                      : (lowerCabinetColor?.hex ?? null)
+                  }
+                  countertopHex={countertopHex}
+                  doorStyleId={doorStyleId}
+                  drawerStyleId={drawerStyleId}
+                  hardwareType={hardwareType}
                 />
           )}
         </Suspense>

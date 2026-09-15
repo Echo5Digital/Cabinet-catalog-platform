@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 export default function FinishGallery({ finishes, lineMap }) {
   const [selected, setSelected] = useState(null);
@@ -86,13 +87,14 @@ export default function FinishGallery({ finishes, lineMap }) {
             </button>
 
             {/* Enlarged swatch image */}
-            <div className="aspect-square w-full overflow-hidden">
+            <div className="aspect-square w-full overflow-hidden relative">
               {selected.swatch?.public_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={selected.swatch.public_url}
                   alt={selected.swatch.alt_text || selected.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 448px) 100vw, 448px"
+                  className="object-cover"
                 />
               ) : (
                 <div
@@ -161,11 +163,12 @@ function FinishGrid({ finishes, lineMap, onSelect }) {
           {/* Swatch */}
           <div className="aspect-square overflow-hidden relative">
             {finish.swatch?.public_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={finish.swatch.public_url}
                 alt={finish.swatch.alt_text || finish.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
               />
             ) : (
               <div

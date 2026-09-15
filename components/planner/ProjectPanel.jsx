@@ -67,7 +67,7 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
 
   // ── Apply a loaded project to the Zustand store ─────────────────────────────
 
-  function applyProjectToStore(project) {
+  const applyProjectToStore = useCallback((project) => {
     if (project.layout)      setLayout(project.layout);
     if (project.cabinet_style) setCabinetStyle(project.cabinet_style);
     if (project.room_dimensions) setDimensions(project.room_dimensions);
@@ -90,7 +90,13 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
         zones: project.scene.zones ?? [],
       });
     }
-  }
+  }, [
+    setLayout, setCabinetStyle, setDimensions,
+    setUpperCabinetColor, setLowerCabinetColor,
+    setSelectedDoorStyle, setSelectedDrawerStyle, setSelectedHardware,
+    setSelectedCountertop, setSelectedFlooring, setLifestyleProfile,
+    clearDoorWindows, addDoorWindow, applyCommand,
+  ]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -113,7 +119,7 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
     } catch {
       // error already set in hook
     }
-  }, [loadProject]);
+  }, [loadProject, applyProjectToStore]);
 
   const handleDelete = useCallback(async (projectId, projectName) => {
     if (!window.confirm(`Delete "${projectName}"?`)) return;
@@ -147,7 +153,7 @@ export default function ProjectPanel({ onClose, primaryColor = "#1C1917" }) {
     } catch {
       // error already set in hook
     }
-  }, [restoreVersion]);
+  }, [restoreVersion, applyProjectToStore]);
 
   return (
     <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useQuote } from "@/lib/context/quote";
 
 // ─── Image viewer ─────────────────────────────────────────────────────────────
@@ -24,12 +25,13 @@ function ImageViewer({ images, productName }) {
   return (
     <div>
       {/* Primary image */}
-      <div className="aspect-square bg-stone-50 rounded-2xl border border-stone-100 overflow-hidden flex items-center justify-center mb-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="aspect-square bg-stone-50 rounded-2xl border border-stone-100 overflow-hidden flex items-center justify-center mb-3 relative">
+        <Image
           src={active.url}
           alt={active.alt || productName}
-          className="w-full h-full object-contain p-8"
+          fill
+          sizes="(max-width: 768px) 100vw, 600px"
+          className="object-contain p-8"
         />
       </div>
 
@@ -40,12 +42,11 @@ function ImageViewer({ images, productName }) {
             <button
               key={i}
               onClick={() => setActiveIdx(i)}
-              className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+              className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition relative ${
                 i === activeIdx ? "border-stone-900" : "border-stone-100 hover:border-stone-300"
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={img.alt || ""} className="w-full h-full object-contain p-1 bg-stone-50" />
+              <Image src={img.url} alt={img.alt || ""} fill sizes="64px" className="object-contain p-1 bg-stone-50" />
             </button>
           ))}
         </div>
@@ -79,7 +80,7 @@ function FinishSelector({ finishes, selectedId, onSelect }) {
             >
               {/* Swatch circle */}
               <div
-                className={`w-10 h-10 rounded-full border-2 overflow-hidden transition ${
+                className={`w-10 h-10 rounded-full border-2 overflow-hidden transition relative ${
                   selected
                     ? "border-stone-900 ring-2 ring-stone-900 ring-offset-2"
                     : finish.incompatible
@@ -88,8 +89,7 @@ function FinishSelector({ finishes, selectedId, onSelect }) {
                 }`}
               >
                 {finish.swatch_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={finish.swatch_url} alt={finish.name} className="w-full h-full object-cover" />
+                  <Image src={finish.swatch_url} alt={finish.name} fill sizes="40px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full bg-stone-200 flex items-center justify-center">
                     <span className="text-stone-400 text-[10px]">?</span>

@@ -169,7 +169,7 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+", hasDish
       ]);
     }
     return new THREE.TubeGeometry(curve, 28, 0.010, 12, false);
-  }, [heightFt, depthFt, widthFt, hasDishwasher, faceDir, bsnX, bsnZ]);
+  }, [heightFt, depthFt, faceDir, bsnX, bsnZ, SINK_W]);
 
   // Spout tip coords (bottom of aerator)
   const spoutTip = useMemo(() => {
@@ -184,7 +184,7 @@ function SinkMesh({ widthFt, heightFt, depthFt, hovered, faceDir = "z+", hasDish
     }
     const fz = bsnZ - depthFt * 0.26;
     return [bsnX, by + rH - 0.09, fz + fwd + 0.05];
-  }, [heightFt, depthFt, widthFt, hasDishwasher, faceDir, bsnX, bsnZ]);
+  }, [heightFt, depthFt, faceDir, bsnX, bsnZ, SINK_W]);
 
   // ── Faucet deck base coords ───────────────────────────────────────────────────
   const mountY = heightFt / 2 + COUNTER_THICK;

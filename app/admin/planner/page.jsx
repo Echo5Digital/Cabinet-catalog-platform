@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -201,13 +202,15 @@ function LeadDrawer({ lead, onClose, onStatusChange, onViewDesign }) {
           {lead.ai_image_url && (
             <section>
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">AI Visualization</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={lead.ai_image_url}
-                alt="AI kitchen visualization"
-                className="w-full rounded-xl border border-gray-100 object-cover"
-                style={{ maxHeight: 220 }}
-              />
+              <div className="relative w-full" style={{ height: 220 }}>
+                <Image
+                  src={lead.ai_image_url}
+                  alt="AI kitchen visualization"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 512px"
+                  className="rounded-xl border border-gray-100 object-cover"
+                />
+              </div>
             </section>
           )}
 

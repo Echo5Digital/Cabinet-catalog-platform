@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 
 // ─── Confidence badge ────────────────────────────────────────────────────────
 function ConfidenceBadge({ confidence, isCorrected }) {
@@ -237,8 +238,7 @@ function AssetRow({ asset, lines, finishes, colors, structures, onRefresh, selec
       {/* Thumbnail — hidden on mobile */}
       <td className="px-3 py-3 hidden sm:table-cell">
         {asset.status === "confirmed" && asset.public_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={asset.public_url} alt="" className="w-12 h-12 rounded object-cover border border-gray-200" />
+          <Image src={asset.public_url} alt="" width={48} height={48} className="w-12 h-12 rounded object-cover border border-gray-200" />
         ) : (
           <div className="w-12 h-12 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-300 text-xl">
             🖼

@@ -12,7 +12,7 @@ export async function PATCH(request, { params }) {
 
     const { data: existing } = await admin
       .from("tenant_users")
-      .select("role")
+      .select("auth_user_id, role")
       .eq("id", params.id)
       .eq("tenant_id", ctx.tenantId)
       .single();
@@ -23,6 +23,12 @@ export async function PATCH(request, { params }) {
     // A restricted Admin can neither touch an existing Super Admin's row nor
     // promote anyone to Super Admin — that tier is owner-only to grant or modify.
     if (ctx.role !== "owner" && (existing.role === "owner" || role === "owner")) {
+      return forbidden();
+    }
+
+    // Nobody may change their own role — prevents a demoted admin from
+    // re-promoting themselves, matching the self-removal guard on DELETE below.
+    if (existing.auth_user_id === ctx.user.id && role !== undefined && role !== existing.role) {
       return forbidden();
     }
 

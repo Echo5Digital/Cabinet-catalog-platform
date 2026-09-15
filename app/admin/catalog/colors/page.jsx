@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const COLOR_TYPES = [
   { value: "countertop", label: "Countertop" },
@@ -88,10 +89,11 @@ function ColorRow({ color, onUpdated, onDeleted }) {
       <td className="px-4 py-3">
         {color.swatch_asset ? (
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={color.swatch_asset.public_url}
               alt={color.name}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded object-cover border border-stone-200"
             />
             <span className="text-xs text-green-600 font-medium">Live</span>
@@ -303,12 +305,12 @@ export default function ColorsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4">
+      <div className="flex gap-1 mb-4 overflow-x-auto">
         {[{ value: "all", label: "All" }, ...COLOR_TYPES].map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition ${
               activeTab === tab.value
                 ? "bg-blue-600 text-white"
                 : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -336,28 +338,30 @@ export default function ColorsPage() {
             </button>
           </div>
         ) : (
-          <table className="w-full text-left">
-            <thead className="bg-stone-50 border-b border-stone-200">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Category</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Image</th>
-                <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((color) => (
-                <ColorRow
-                  key={color.id}
-                  color={color}
-                  onUpdated={(updated) => setColors((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
-                  onDeleted={(id) => setColors((prev) => prev.filter((c) => c.id !== id))}
-                />
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-stone-50 border-b border-stone-200">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Category</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Image</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((color) => (
+                  <ColorRow
+                    key={color.id}
+                    color={color}
+                    onUpdated={(updated) => setColors((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
+                    onDeleted={(id) => setColors((prev) => prev.filter((c) => c.id !== id))}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

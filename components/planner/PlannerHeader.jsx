@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import usePlannerStore from "@/store/plannerStore";
 
 const STEPS = [
@@ -28,10 +29,11 @@ export default function PlannerHeader({ tenant = {} }) {
         {/* ── Left: Logo / Name ─────────────────────────────────────────── */}
         <Link href="/" className="shrink-0 flex items-center gap-2.5 group">
           {tenant.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={tenant.logo_url}
               alt={name}
+              width={176}
+              height={44}
               className="h-[38px] sm:h-[44px] w-auto mix-blend-multiply"
             />
           ) : (

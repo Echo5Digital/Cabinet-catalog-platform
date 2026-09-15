@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const CABINET_STYLES = ["American", "Euro", "Shaker", "Modern", "Traditional"];
 const HARDWARE_OPTIONS = ["Gold", "Silver", "Black", "Bronze", "None"];
@@ -58,7 +59,7 @@ function ColorCarousel({ items, selected, onSelect, loading }) {
           >
             <div className="relative bg-stone-100 w-full h-24">
               {item.image_url ? (
-                <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                <Image src={item.image_url} alt={item.name} fill sizes="96px" className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="text-stone-400 text-sm font-bold uppercase">{item.name.slice(0, 2)}</span>

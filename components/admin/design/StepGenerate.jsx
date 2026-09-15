@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import ZoomPanel from "./ZoomPanel";
 
 const PHOTO_REQUIRED_TYPES = ["Remodel Existing Kitchen", "Replace Cabinets Only", "Countertop Only"];
@@ -182,21 +183,20 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
                 ) : viewMode === "compare" && formData.imageUrl && formData.designImageUrl ? (
                   /* Side-by-side compare */
                   <div className="absolute inset-0 flex" style={{ minHeight: 360 }}>
-                    <div className="relative flex-1 overflow-hidden border-r border-white/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={formData.imageUrl} alt="Original kitchen" className="w-full h-full object-cover" style={{ minHeight: 360 }} />
+                    <div className="relative flex-1 overflow-hidden border-r border-white/20" style={{ minHeight: 360 }}>
+                      <Image src={formData.imageUrl} alt="Original kitchen" fill sizes="(max-width: 1024px) 50vw, 400px" className="object-cover" />
                       <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-semibold backdrop-blur-sm">Before</span>
                     </div>
-                    <div className="relative flex-1 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={formData.designImageUrl} alt="AI remodel" className="w-full h-full object-cover" style={{ minHeight: 360 }} />
+                    <div className="relative flex-1 overflow-hidden" style={{ minHeight: 360 }}>
+                      <Image src={formData.designImageUrl} alt="AI remodel" fill sizes="(max-width: 1024px) 50vw, 400px" className="object-cover" />
                       <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-stone-900/70 text-white text-[10px] font-semibold backdrop-blur-sm">AI Generated</span>
                     </div>
                   </div>
                 ) : formData.designImageUrl ? (
                   /* Single AI render */
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={formData.designImageUrl} alt="AI kitchen render" className="w-full h-auto" style={{ minHeight: 360, objectFit: "cover" }} />
+                  <div className="relative w-full" style={{ minHeight: 360 }}>
+                    <Image src={formData.designImageUrl} alt="AI kitchen render" fill sizes="(max-width: 1024px) 100vw, 800px" className="object-cover" />
+                  </div>
                 ) : (
                   <div className="w-full h-[360px] bg-stone-100 flex items-center justify-center">
                     <p className="text-sm text-stone-400">Generating render…</p>
@@ -231,9 +231,11 @@ export default function StepGenerate({ formData, onChange, onNext, onBack }) {
                 {renderError ? (
                   <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">{renderError}</div>
                 ) : formData.designImageUrl ? (
-                  <img
+                  <Image
                     src={formData.designImageUrl}
                     alt="AI kitchen render"
+                    width={1024}
+                    height={768}
                     className="w-full h-auto rounded"
                   />
                 ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 export default function ColorGallery({ countertop, floor }) {
   const [selected, setSelected] = useState(null);
@@ -55,13 +56,14 @@ export default function ColorGallery({ countertop, floor }) {
               </svg>
             </button>
 
-            <div className="aspect-square w-full overflow-hidden bg-stone-100">
+            <div className="aspect-square w-full overflow-hidden bg-stone-100 relative">
               {selected.image?.public_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={selected.image.public_url}
                   alt={selected.image.alt_text || selected.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 448px) 100vw, 448px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -118,11 +120,12 @@ function ColorSection({ title, items, onSelect }) {
           >
             <div className="aspect-square bg-stone-100 overflow-hidden relative">
               {color.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={color.image.public_url}
                   alt={color.image.alt_text || color.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

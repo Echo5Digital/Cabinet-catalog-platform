@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 // ── Parse the structured project_description from design_ai / design_ai_bathroom submissions ───
 function parseDesignDescription(text) {
@@ -187,26 +188,26 @@ function DesignDetails({ description, before_image_url }) {
             {showCompare && compareView ? (
               <div className="flex" style={{ minHeight: 220 }}>
                 {/* Before */}
-                <div className="relative flex-1 overflow-hidden border-r border-gray-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative flex-1 overflow-hidden border-r border-gray-200" style={{ minHeight: 220, maxHeight: 260 }}>
+                  <Image
                     src={before_image_url}
                     alt="Original kitchen"
-                    className="w-full h-full object-cover"
-                    style={{ maxHeight: 260 }}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 320px"
+                    className="object-cover"
                   />
                   <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-semibold">
                     Before
                   </span>
                 </div>
                 {/* After */}
-                <div className="relative flex-1 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative flex-1 overflow-hidden" style={{ minHeight: 220, maxHeight: 260 }}>
+                  <Image
                     src={d.renderUrl}
                     alt="AI Kitchen Render"
-                    className="w-full h-full object-cover"
-                    style={{ maxHeight: 260 }}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 320px"
+                    className="object-cover"
                     onError={() => setImgError(true)}
                   />
                   <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-gray-900/70 text-white text-[10px] font-semibold">
@@ -227,24 +228,28 @@ function DesignDetails({ description, before_image_url }) {
                   </a>
                 </div>
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={d.renderUrl}
-                  alt="AI Kitchen Render"
-                  className="w-full object-cover"
-                  style={{ maxHeight: 260 }}
-                  onError={() => setImgError(true)}
-                />
+                <div className="relative w-full" style={{ height: 260 }}>
+                  <Image
+                    src={d.renderUrl}
+                    alt="AI Kitchen Render"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    className="object-cover"
+                    onError={() => setImgError(true)}
+                  />
+                </div>
               )
             ) : (
               /* Only before photo, no render yet */
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={before_image_url}
-                alt="Original kitchen"
-                className="w-full object-cover"
-                style={{ maxHeight: 260 }}
-              />
+              <div className="relative w-full" style={{ height: 260 }}>
+                <Image
+                  src={before_image_url}
+                  alt="Original kitchen"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  className="object-cover"
+                />
+              </div>
             )}
 
             <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200">
@@ -511,10 +516,9 @@ function LeadDetail({ lead, onClose, onUpdate }) {
               <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
+                    <div className="relative w-10 h-10 rounded-lg bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
                       {item.image_url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={item.image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                        <Image src={item.image_url} alt={item.product_name} fill sizes="40px" className="object-cover" />
                       ) : (
                         <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
