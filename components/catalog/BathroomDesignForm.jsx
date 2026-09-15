@@ -850,6 +850,7 @@ export default function BathroomDesignForm({ countertopColors, floorColors, fini
                 floorColors={floorColors}
                 form={form}
                 set={set}
+                bathroomType={form.bathroom_type}
               />
               </MagicCard>
             </section>
@@ -1444,16 +1445,27 @@ function BathroomTabIcon({ id, active }) {
 }
 
 // ── Tabbed grid for Colors & Materials — mirrors KitchenDesignForm's ColorMaterialsSection ──
-function BathroomColorMaterialsSection({ finishes, countertopColors, floorColors, form, set }) {
-  const [activeTab, setActiveTab] = useState("vanity_finish");
+function BathroomColorMaterialsSection({ finishes, countertopColors, floorColors, form, set, bathroomType }) {
+  // Shower Area has no vanity in frame — vanity finish and countertop are
+  // vanity-specific surfaces that don't apply, so only Flooring is shown.
+  const isShowerArea = bathroomType === "Shower Area";
 
-  const TABS = [
+  const ALL_TABS = [
     { id: "vanity_finish", label: "Vanity Finish", shortLabel: "Vanity", subtitle: "Select the perfect finish for your vanity cabinet", items: finishes },
     { id: "countertop",    label: "Countertop",    shortLabel: "Countertop", subtitle: "Choose your countertop material and color",         items: countertopColors },
     { id: "flooring",      label: "Flooring",      shortLabel: "Flooring",   subtitle: "Pick the perfect flooring finish",                   items: floorColors },
   ];
+  const TABS = isShowerArea ? ALL_TABS.filter((t) => t.id === "flooring") : ALL_TABS;
 
-  const tab = TABS.find((t) => t.id === activeTab);
+  const [activeTab, setActiveTab] = useState(TABS[0].id);
+
+  // If the bathroom type changes (e.g. user goes Back and switches to Shower
+  // Area) while a now-hidden tab is active, snap to the first visible tab.
+  useEffect(() => {
+    if (!TABS.some((t) => t.id === activeTab)) setActiveTab(TABS[0].id);
+  }, [TABS, activeTab]);
+
+  const tab = TABS.find((t) => t.id === activeTab) || TABS[0];
   const items = tab?.items || [];
   const value = form[activeTab];
 

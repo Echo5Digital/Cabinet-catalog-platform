@@ -41,16 +41,23 @@ const TYPE_VISUAL = {
     boundaryWithTub: "Exactly one vanity, one toilet, and one bathtub (with or without an overhead shower) — a single self-contained residential bathroom, not a suite of multiple rooms or a hallway view into other spaces.",
   },
   "Vanity": {
-    structure: "A close, focused view of the vanity wall — cabinet, countertop, sink(s), faucet, and mirror. Other fixtures may be partially visible but are not the focus.",
-    camera:    "Straight-on eye-level view facing the vanity dead-center, framed tight enough that the cabinet, countertop, sink(s), faucet, and mirror fill 80%+ of the frame width — this is a close product-style shot of the vanity wall alone, not a room-scale shot.",
-    spatial:   "Vanity is the visual centerpiece with adequate counter and knee clearance visible.",
-    boundary:  "The vanity wall fills the frame; any toilet or shower/tub is only partially visible at the frame edge or absent entirely — the composition is about the vanity, not a wide room shot.",
+    structure: "A close, focused view of ONLY the vanity wall — cabinet, countertop, sink(s), faucet, and mirror above it. This is a single-wall product shot, not a bathroom.",
+    camera:    "Straight-on eye-level view facing the vanity dead-center, framed so the cabinet, countertop, sink(s), faucet, and mirror fill the ENTIRE frame edge-to-edge with no blank margin, letterboxing, or empty background visible on any side — this is a full-bleed close product-style shot of the vanity wall alone, not a room-scale shot and not a photo floating in empty space.",
+    spatial:   "Vanity is the visual centerpiece with adequate counter and knee clearance visible; ceiling and side walls are cropped out of frame by the tight composition, and the subject extends fully to all four edges of the image.",
+    boundary:  "EXACTLY ONE wall is visible: the vanity wall. NO toilet, NO shower, NO tub, and NO bathtub anywhere in the frame, even partially — this is a vanity-only close-up, not a bathroom-type composition. NO blank/white/empty space bordering the subject — the vanity composition must fill the full canvas. If any fixture besides the vanity/mirror/sink/faucet is visible, OR if blank space borders the subject, the render has FAILED this bathroom type.",
   },
   "Shower Area": {
-    structure: "A focused view of the shower or tub enclosure — glass or curtain, tile surround, showerhead and controls. Vanity may be partially visible in the background but is not the focus.",
-    camera:    "Angled three-quarter view standing just outside the enclosure looking in, framed tight enough that the glass/curtain, full tile surround, showerhead, and controls fill 80%+ of the frame — this is a close shot of the enclosure alone, not a room-scale shot.",
-    spatial:   "Shower/tub enclosure is the visual centerpiece with realistic enclosure dimensions.",
-    boundary:  "The shower/tub enclosure fills the frame; the vanity, if visible at all, is only partially visible at the frame edge — the composition is about the enclosure, not a wide room shot.",
+    // Defaults to a SHOWER enclosure, mirroring the Full Bathroom rule — a
+    // tub only appears when the customer's selected style is a tub-inclusive
+    // one ("Tub & Shower Combo") or a tub was explicitly requested in
+    // Special Requests / Notes. "Walk-in Glass" and "Framed Enclosure" are
+    // shower-only styles and must never render a tub.
+    structure: "A focused view of ONLY the shower enclosure — glass or curtain, tile surround, showerhead and controls. No vanity, no toilet, no tub anywhere in frame.",
+    structureWithTub: "A focused view of ONLY the tub/shower enclosure — alcove tub, shower curtain or glass panel above it, tile surround. No vanity, no toilet anywhere in frame.",
+    camera:    "Angled three-quarter view standing just outside the enclosure looking in, framed so the glass/curtain, full tile surround, showerhead, and controls fill the ENTIRE frame edge-to-edge with no blank margin, letterboxing, or empty background visible on any side — this is a full-bleed close shot of the enclosure alone, not a room-scale shot and not a photo floating in empty space.",
+    spatial:   "Shower enclosure is the visual centerpiece with realistic enclosure dimensions; surrounding walls, ceiling, and any other fixture are cropped out of frame by the tight composition, and the subject extends fully to all four edges of the image.",
+    boundary:  "EXACTLY ONE fixture is visible: the shower enclosure. NO vanity, NO toilet, and NO bathtub anywhere in the frame, even partially — this is an enclosure-only close-up, not a bathroom-type composition, UNLESS a tub-inclusive style was selected or a tub was explicitly requested, in which case the tub replaces the shower as the single visible fixture. NO blank/white/empty space bordering the subject — the enclosure composition must fill the full canvas. If any fixture besides the selected enclosure type is visible, OR if blank space borders the subject, the render has FAILED this bathroom type.",
+    boundaryWithTub: "EXACTLY ONE fixture is visible: the tub/shower enclosure. NO vanity and NO toilet anywhere in the frame, even partially — this is an enclosure-only close-up, not a bathroom-type composition. NO blank/white/empty space bordering the subject. If any fixture besides the tub/shower enclosure is visible, OR if blank space borders the subject, the render has FAILED this bathroom type.",
   },
 };
 
@@ -129,6 +136,27 @@ const STYLE_VISUAL = {
     palette:   "Classic tile palette (white, light gray, or soft blue), tub in white or matching tile-wrapped apron.",
     lighting:  "Single overhead light or small window, straightforward practical illumination.",
   },
+};
+
+// Per-faucet-style silhouette descriptions — the faucet NAME alone ("Waterfall",
+// "Gooseneck") is not a guaranteed visual anchor for an image model; without an
+// explicit shape description every style tends to render as the same generic
+// single-handle faucet regardless of which one was actually selected.
+const FAUCET_VISUAL = {
+  // ── Vanity faucet styles ──
+  "Waterfall": "a single tall rectangular spout rising straight up from the deck with a flat wide slot opening at the top, water sheeting down in a flat plane rather than a rounded stream — no separate handle visible above deck, controls integrated into the base.",
+  "Wide Waterfall": "a wide, low rectangular spout with a broad flat slot opening spanning roughly double the width of a standard waterfall faucet, water sheeting down as one continuous wide plane — no separate handle visible above deck.",
+  "Gooseneck": "a tall, slender cylindrical spout that curves in a smooth high arc like a gooseneck, rising well above the deck before curving down toward the basin — distinctly taller and more arched than a standard faucet, with a compact rectangular base.",
+  "Single-Lever": "a slim vertical spout with ONE single lever handle mounted on top that swings side-to-side and front-to-back to control temperature and flow — only one control, no separate hot/cold handles.",
+  "Widespread": "THREE separate deck-mounted pieces spaced apart: a central spout flanked by two independent handles (one on each side, several inches from the spout) — never a single unified fixture, the handles and spout must be visibly separate pieces.",
+  "Vessel-Height": "a very tall, elevated spout (noticeably taller than a standard faucet) designed to arc down into a vessel/counter-top sink that sits above the counter surface rather than being recessed into it — the extra height is the defining trait.",
+  // ── Shower faucet/fixture styles ──
+  "Round Rain Shower": "a large circular/round overhead rain shower head mounted on a slim wall or ceiling arm, plus a separate round temperature/pressure control valve lower on the wall — the shower head is distinctly ROUND, not square.",
+  "Square Rain Shower": "a large square/rectangular flat-panel overhead rain shower head mounted on a slim wall or ceiling arm, plus a separate round control valve lower on the wall — the shower head is distinctly SQUARE/rectangular, not round.",
+  "Round Arm Shower": "a standard-size ROUND showerhead mounted on a visible round/cylindrical wall arm extending out from the wall (not a large rain-style panel) — compact traditional showerhead silhouette, round throughout.",
+  "Square Arm Shower": "a standard-size SQUARE/rectangular showerhead mounted on a visible wall arm extending out from the wall (not a large rain-style panel) — compact traditional showerhead silhouette, square throughout.",
+  "Exposed Valve + Handheld": "an exposed (surface-mounted, not recessed) square control valve on the wall with visible piping connecting to a handheld shower wand on a wall-mounted hook/bracket and a flexible hose — the handheld wand and its hose must be clearly visible, not just an overhead fixture.",
+  "Concealed Valve + Overhead": "a minimal round concealed (flush, recessed) control valve/trim on the wall with NO visible exposed piping, paired with a wide rectangular overhead rain shower head on a slim arm — the wall valve reads as a clean flush disc, not a projecting fixture.",
 };
 
 // Budget-appropriate realism descriptions for image generation.
@@ -318,10 +346,10 @@ export async function POST(request) {
     const countertop_desc    = countertop    ? (colorDescMap[countertop]     || "") : "";
     const flooring_desc      = flooring      ? (colorDescMap[flooring]       || "") : "";
     const faucet_desc        = faucet_style
-      ? `${faucet_style} style faucet${faucet_color ? ` in ${faucet_color} finish` : ""}`
+      ? `${faucet_style} style faucet${faucet_color ? ` in ${faucet_color} finish` : ""}${FAUCET_VISUAL[faucet_style] ? ` — ${FAUCET_VISUAL[faucet_style]}` : ""}`
       : "";
     const shower_faucet_desc = shower_faucet_style
-      ? `${shower_faucet_style} shower faucet/fixture${faucet_color ? ` in ${faucet_color} finish` : ""}`
+      ? `${shower_faucet_style} shower faucet/fixture${faucet_color ? ` in ${faucet_color} finish` : ""}${FAUCET_VISUAL[shower_faucet_style] ? ` — ${FAUCET_VISUAL[shower_faucet_style]}` : ""}`
       : "";
 
     const effectiveImageUrl = image_status === "Yes" && image_url ? image_url : "";
@@ -583,8 +611,14 @@ export async function POST(request) {
           const d = flooring_desc ? ` ${flooring_desc}.` : "";
           sections.push(`FLOORING: Replace with ${flooring}.${d}`);
         }
-        if (faucet_style) sections.push(`MANDATORY VANITY FAUCET: ${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity. Do not substitute or omit.`);
-        if (shower_faucet_style) sections.push(`MANDATORY SHOWER FAUCET/FIXTURE: ${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure. Do not substitute or omit.`);
+        if (faucet_style) {
+          const shape = FAUCET_VISUAL[faucet_style] ? ` Exact silhouette: ${FAUCET_VISUAL[faucet_style]}` : "";
+          sections.push(`MANDATORY VANITY FAUCET: ${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity, matching this silhouette exactly, not a generic faucet. Do not substitute or omit.${shape}`);
+        }
+        if (shower_faucet_style) {
+          const shape = FAUCET_VISUAL[shower_faucet_style] ? ` Exact silhouette: ${FAUCET_VISUAL[shower_faucet_style]}` : "";
+          sections.push(`MANDATORY SHOWER FAUCET/FIXTURE: ${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure, matching this silhouette exactly, not a generic showerhead. Do not substitute or omit.${shape}`);
+        }
         if (style) sections.push(`STYLE: ${style}`);
         if (design_comments) {
           sections.push(
@@ -613,10 +647,13 @@ export async function POST(request) {
         // model two different, sometimes-conflicting camera instructions).
         const isFullBathroomLayout = bathroom_type === "Full Bathroom" && sv;
 
-        // Full Bathroom defaults to a shower, never a bathtub, unless the
-        // customer explicitly asked for one — see the `*WithTub` variants
-        // defined alongside TYPE_VISUAL/STYLE_VISUAL above.
-        const includeTub = bathroom_type === "Full Bathroom" && wantsTub(design_comments);
+        // Full Bathroom and Shower Area both default to a shower, never a
+        // bathtub, unless the customer explicitly asked for one, OR (Shower
+        // Area only) selected the tub-inclusive "Tub & Shower Combo" style —
+        // see the `*WithTub` variants defined alongside TYPE_VISUAL/STYLE_VISUAL above.
+        const includeTub =
+          (bathroom_type === "Full Bathroom" && wantsTub(design_comments)) ||
+          (bathroom_type === "Shower Area" && (style === "Tub & Shower Combo" || wantsTub(design_comments)));
 
         const structureText = isFullBathroomLayout
           ? (includeTub && sv.structureWithTub ? sv.structureWithTub : sv.structure)
@@ -662,8 +699,14 @@ export async function POST(request) {
         }
         {
           const colorNote = faucet_color ? ` in ${faucet_color} finish` : "";
-          if (faucet_style) sections.push(`MANDATORY VANITY FAUCET:\n${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity. Do not substitute.`);
-          if (shower_faucet_style) sections.push(`MANDATORY SHOWER FAUCET/FIXTURE:\n${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure. Do not substitute.`);
+          if (faucet_style) {
+            const shape = FAUCET_VISUAL[faucet_style] ? ` Exact silhouette: ${FAUCET_VISUAL[faucet_style]}` : "";
+            sections.push(`MANDATORY VANITY FAUCET:\n${faucet_style} style faucet${colorNote} — must be clearly visible on the vanity, matching this silhouette exactly, not a generic faucet. Do not substitute.${shape}`);
+          }
+          if (shower_faucet_style) {
+            const shape = FAUCET_VISUAL[shower_faucet_style] ? ` Exact silhouette: ${FAUCET_VISUAL[shower_faucet_style]}` : "";
+            sections.push(`MANDATORY SHOWER FAUCET/FIXTURE:\n${shower_faucet_style}${colorNote} — must be clearly visible in the shower enclosure, matching this silhouette exactly, not a generic showerhead. Do not substitute.${shape}`);
+          }
         }
         if (style) sections.push(`STYLE:\n${style}`);
         if (design_comments) sections.push(`MANDATORY SPECIAL REQUIREMENTS — apply ALL of the following exactly as specified:\n${design_comments}`);
@@ -682,26 +725,47 @@ export async function POST(request) {
             `FINAL LAYOUT CHECK before rendering: this is a "${style}" bathroom. ${cameraText} Re-confirm the wall count and camera framing above match "${style}" exactly — do not default to a generic three-quarter room view.`
           );
         }
-        if (bathroom_type === "Full Bathroom") {
+        if (bathroom_type === "Vanity" || bathroom_type === "Shower Area") {
+          // Vanity and Shower Area are both tight, single-fixture crops, not
+          // room-scale shots — this is the failure mode most likely for these
+          // two types (image models default toward a wider "bathroom" shot
+          // even when asked for a close-up), so it's restated last for
+          // recency, right before generation.
+          const subject = bathroom_type === "Vanity" ? "the vanity wall only" : "the shower/tub enclosure only";
+          sections.push(
+            `FINAL FRAMING CHECK before rendering: this is a "${bathroom_type}" composition — a FULL-BLEED close-up of ${subject}, extending edge-to-edge to fill the entire canvas with no blank margin, letterboxing, or empty background bordering the subject on any side. Do NOT render a wide, room-scale bathroom shot with multiple fixtures visible, and do NOT render the subject floating in empty space. ${cameraText}`
+          );
+        }
+        if (bathroom_type === "Full Bathroom" || bathroom_type === "Shower Area") {
           // Final restatement of the shower/tub default, placed last for
           // recency — repeated once more in plain terms right before
           // generation since this is the fixture most likely to be
           // hallucinated by default (image models are heavily biased toward
-          // showing a bathtub in "bathroom" training data).
+          // showing a bathtub in "bathroom"/"shower" scenes).
           sections.push(
             includeTub
-              ? `FINAL FIXTURE CHECK before rendering: a bathtub was explicitly requested — include it as described above.`
-              : `FINAL FIXTURE CHECK before rendering: this bathroom has a SHOWER ENCLOSURE ONLY. Do NOT render a bathtub, soaking tub, or freestanding tub anywhere in the image — no tub was requested.`
+              ? `FINAL FIXTURE CHECK before rendering: a bathtub was explicitly requested or selected — include it as described above.`
+              : `FINAL FIXTURE CHECK before rendering: this is a SHOWER ENCLOSURE ONLY. Do NOT render a bathtub, soaking tub, or freestanding tub anywhere in the image — no tub was requested or selected.`
           );
         }
 
         const finalPrompt = sections.join("\n\n");
 
+        // Vanity and Shower Area are tight single-fixture close-ups — a tall,
+        // narrow subject that doesn't fill a wide 1536x1024 landscape canvas
+        // edge-to-edge, which left visible blank/white margins on both sides
+        // of the render. A portrait canvas matches the subject's natural
+        // shape instead. Full Bathroom stays landscape since a whole-room
+        // shot genuinely is wide.
+        const imageSize = (bathroom_type === "Vanity" || bathroom_type === "Shower Area")
+          ? "1024x1536"
+          : "1536x1024";
+
         const imageResponse = await client.images.generate({
           model:   "gpt-image-2.5-sunburst",
           prompt:  finalPrompt,
           n:       1,
-          size:    "1536x1024",
+          size:    imageSize,
           quality: "high",
         });
         const b64 = imageResponse.data?.[0]?.b64_json;
