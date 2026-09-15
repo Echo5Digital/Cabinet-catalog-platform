@@ -33,13 +33,13 @@ const TYPE_VISUAL = {
   },
   "Vanity": {
     structure: "A close, focused view of the vanity wall — cabinet, countertop, sink(s), faucet, and mirror. Other fixtures may be partially visible but are not the focus.",
-    camera:    "Straight-on or slightly angled view facing the vanity, filling most of the frame.",
+    camera:    "Straight-on eye-level view facing the vanity dead-center, framed tight enough that the cabinet, countertop, sink(s), faucet, and mirror fill 80%+ of the frame width — this is a close product-style shot of the vanity wall alone, not a room-scale shot.",
     spatial:   "Vanity is the visual centerpiece with adequate counter and knee clearance visible.",
     boundary:  "The vanity wall fills the frame; any toilet or shower/tub is only partially visible at the frame edge or absent entirely — the composition is about the vanity, not a wide room shot.",
   },
   "Shower Area": {
     structure: "A focused view of the shower or tub enclosure — glass or curtain, tile surround, showerhead and controls. Vanity may be partially visible in the background but is not the focus.",
-    camera:    "Angled view into the shower enclosure showing the tile surround and glass/fixture details clearly.",
+    camera:    "Angled three-quarter view standing just outside the enclosure looking in, framed tight enough that the glass/curtain, full tile surround, showerhead, and controls fill 80%+ of the frame — this is a close shot of the enclosure alone, not a room-scale shot.",
     spatial:   "Shower/tub enclosure is the visual centerpiece with realistic enclosure dimensions.",
     boundary:  "The shower/tub enclosure fills the frame; the vanity, if visible at all, is only partially visible at the frame edge — the composition is about the enclosure, not a wide room shot.",
   },
@@ -50,23 +50,37 @@ const TYPE_VISUAL = {
 // recolored version of the same room. Mirrors the Kitchen route's LAYOUT_VISUAL pattern.
 const STYLE_VISUAL = {
   // ── Full Bathroom layouts (room-shape configurations) ──
+  // Each entry's `camera` REPLACES the generic TYPE_VISUAL["Full Bathroom"]
+  // camera/structure once a layout is selected (see the `tv`/`sv` merge below)
+  // — a fixed "three-quarter view" camera cannot show an L-turn, a facing-wall
+  // corridor, a single run, or a three-wall wrap equally well, so the camera
+  // must be chosen to fit the shape being rendered, or the layout reads as
+  // generic regardless of what the structure text says.
   "L-Shaped": {
     structure: "Vanity and toilet run along one wall, with the shower or tub enclosure turning the corner onto an adjoining perpendicular wall — a classic two-wall L-shaped footprint.",
+    camera:    "Elevated three-quarter corner view shot from the open side of the room, positioned so BOTH walls of the L are visible in the same frame and the 90-degree corner junction between them is clearly readable — never a straight-on view of only one wall.",
+    boundary:  "Exactly TWO fixture-lined walls meeting at a 90-degree corner — not one wall (that is Single Wall), not two PARALLEL walls facing each other (that is Galley), and not three walls (that is U-Shaped). If the corner junction is not visible in frame, the render has FAILED this layout.",
     palette:   "Balanced neutral palette that reads consistently across both connected walls, large-format tile carrying around the corner.",
     lighting:  "Vanity sconces or a light bar above the mirror, plus a separate recessed light over the shower/tub leg of the L.",
   },
   "Galley": {
     structure: "Fixtures split across two parallel walls facing each other — vanity on one wall, shower/tub and toilet on the opposite wall — with a walkway corridor between them.",
+    camera:    "Camera positioned at one end of the corridor, looking straight down its length, so both parallel walls are visible on the left and right sides of the frame simultaneously with the walkway between them — never a view showing only one wall.",
+    boundary:  "Exactly TWO fixture-lined walls that are PARALLEL and face each other across a corridor — not walls meeting at a corner (that is L-Shaped), not a single wall (that is Single Wall), and not three walls (that is U-Shaped). If both parallel walls are not simultaneously visible with a walkway between them, the render has FAILED this layout.",
     palette:   "Cohesive palette carried on both facing walls so the corridor reads as one unified room, not two mismatched sides.",
     lighting:  "Symmetrical lighting on both parallel walls — vanity light bar facing a recessed or surface light on the opposite wall.",
   },
   "Single Wall": {
     structure: "All fixtures — vanity, toilet, and shower/tub — aligned along a single wall in a compact linear run, typical of a narrow bathroom footprint.",
+    camera:    "Straight-on wide view facing the single fixture wall head-on from across the room, framed so the full linear run — vanity, toilet, and shower/tub in sequence — is visible in one continuous line with no fixtures on the side or back walls.",
+    boundary:  "Exactly ONE fixture-lined wall — no fixture may appear on any side wall, back wall, or corner. If a second wall carries any fixture (vanity, toilet, or shower/tub), the render has FAILED this layout — that describes L-Shaped, Galley, or U-Shaped instead.",
     palette:   "Light, unified palette along the single run to keep the narrow linear space feeling open rather than cramped.",
     lighting:  "One continuous light source (light bar or run of recessed cans) along the full length of the wall.",
   },
   "U-Shaped": {
     structure: "Fixtures wrap three walls — vanity on the back wall, with the toilet and shower/tub occupying the two side walls — forming a U-shaped enclosure around a central floor area.",
+    camera:    "Wide-angle view shot from the open (fourth) side of the room facing inward, positioned so all three fixture-lined walls — both side walls and the back wall between them — are simultaneously visible, clearly reading as a three-wall wrap around open floor space.",
+    boundary:  "Exactly THREE fixture-lined walls (back wall plus both side walls) wrapping around open floor space, with the fourth wall open/omitted for the camera — not two walls (that is L-Shaped or Galley) and not one wall (that is Single Wall). If fewer than three fixture-lined walls are visible, the render has FAILED this layout.",
     palette:   "Consistent palette wrapping all three walls so the U reads as one enclosed room rather than three separate zones.",
     lighting:  "Central ceiling fixture or recessed cans overhead plus a vanity light bar on the back wall, evenly lighting all three sides.",
   },
@@ -479,7 +493,7 @@ export async function POST(request) {
         const imgBuffer = await getImageBuffer(sourceImageUrl);
         const imgFile   = await toFile(imgBuffer, "bathroom.png", { type: "image/png" });
         const imageResponse = await client.images.edit({
-          model:   "gpt-image-1",
+          model:   "gpt-image-2.5-sunburst",
           image:   imgFile,
           prompt:  editPrompt,
           size:    "1536x1024",
@@ -503,7 +517,7 @@ export async function POST(request) {
       const sv = style ? STYLE_VISUAL[style] : null;
 
       if (effectiveImageUrl) {
-        console.log(`[bathroom-design] Using gpt-image-1 edit for redesign with type: ${bathroom_type}, style: ${style}`);
+        console.log(`[bathroom-design] Using gpt-image-2.5-sunburst edit for redesign with type: ${bathroom_type}, style: ${style}`);
         const sections = [
           `Photorealistic residential bathroom photograph. Redesign using the customer's existing room — ONLY the vanity, countertop, flooring, and faucet change. Everything else is copied from the source photo without modification.`,
           PHOTO_LOCKED,
@@ -534,7 +548,12 @@ export async function POST(request) {
         }
         if (faucet_style) sections.push(`MANDATORY FAUCET: ${faucet_style} style faucet — must be clearly visible on the vanity. Do not substitute or omit.`);
         if (style) sections.push(`STYLE: ${style}`);
-        if (design_comments) sections.push(`SPECIAL REQUIREMENTS (apply to changed items only):\n${design_comments}`);
+        if (design_comments) {
+          sections.push(
+            `MANDATORY SPECIAL REQUESTS — apply ALL of the following exactly as specified, in addition to the vanity/countertop/flooring/faucet changes above:\n${design_comments}\n` +
+            `These requests are NOT limited to the vanity/countertop/flooring/faucet — if a request describes a fixture, feature, or enhancement not otherwise listed (e.g. lighting, storage, ventilation, a mirror upgrade), add or modify it even though it falls outside the CHANGE LIST, while still leaving every OTHER unmentioned element of the source photo untouched.`
+          );
+        }
         if (dalle_prompt) sections.push(`VISUAL STYLE (applies ONLY to the replaced vanity, countertop, and flooring):\n${dalle_prompt}`);
         const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
         sections.push(`BUDGET REALISM (applies ONLY to the replaced vanity, countertop, and flooring):\n${budgetTierDesc}`);
@@ -542,19 +561,39 @@ export async function POST(request) {
         dalleImageUrl = await editAndPersist(effectiveImageUrl, sections.join("\n\n"));
 
       } else {
-        // New build, no reference photo → gpt-image-1 text-to-image
+        // New build, no reference photo → gpt-image-2.5-sunburst text-to-image
         const tv = bathroom_type ? TYPE_VISUAL[bathroom_type] : null;
         const typeLabel = bathroom_type ? `${bathroom_type} bathroom.` : "";
         const sections = [`${typeLabel} Photorealistic residential bathroom photograph.`.trim()];
 
+        // For Full Bathroom, the selected layout (L-Shaped/Galley/Single Wall/
+        // U-Shaped) IS the room's structure and camera framing — a generic
+        // "three-quarter view" cannot show an L-turn, a facing-wall corridor,
+        // a single run, or a three-wall wrap equally well. The layout's own
+        // structure/camera therefore REPLACES the generic Full Bathroom ones
+        // rather than being layered alongside them (which previously gave the
+        // model two different, sometimes-conflicting camera instructions).
+        const isFullBathroomLayout = bathroom_type === "Full Bathroom" && sv;
+        const structureText = isFullBathroomLayout ? sv.structure : tv?.structure;
+        const cameraText    = isFullBathroomLayout ? sv.camera    : tv?.camera;
+
+        if (structureText) sections.push(`MANDATORY LAYOUT:\n${structureText}`);
+        if (cameraText)    sections.push(`MANDATORY CAMERA VIEW:\n${cameraText}`);
         if (tv) {
-          sections.push(`MANDATORY LAYOUT:\n${tv.structure}`);
-          sections.push(`MANDATORY CAMERA VIEW:\n${tv.camera}`);
           sections.push(`MANDATORY SPATIAL RULES:\n${tv.spatial}`);
           sections.push(`COMPOSITION BOUNDARIES:\n${tv.boundary}`);
         }
-        if (sv) {
+        if (isFullBathroomLayout && sv.boundary) {
+          sections.push(`LAYOUT BOUNDARY — wall count is non-negotiable:\n${sv.boundary}`);
+        }
+        if (sv && !isFullBathroomLayout) {
+          // Fixture-configuration styles (Vanity's Floating/Furniture Style/
+          // Double Sink, Shower Area's Walk-in Glass/etc.) — layouts already
+          // stated their structure above as MANDATORY LAYOUT, so skip the
+          // redundant restatement here for Full Bathroom.
           sections.push(`MANDATORY STYLE CONFIGURATION — "${style}" (this fixture configuration and silhouette must be clearly visible in the final image; do not substitute a generic or different style's configuration):\n${sv.structure}`);
+        }
+        if (sv) {
           sections.push(`STYLE PALETTE:\n${sv.palette}`);
           sections.push(`STYLE LIGHTING:\n${sv.lighting}`);
         }
@@ -580,10 +619,19 @@ export async function POST(request) {
         const budgetTierDesc = BUDGET_REALISM[budget_style] || BUDGET_REALISM["Modern Euro"];
         sections.push(`BUDGET REALISM:\n${budgetTierDesc}`);
 
+        if (isFullBathroomLayout) {
+          // Final restatement, placed last for recency — the single most
+          // important structural fact repeated once more in plain terms
+          // right before generation, after every other instruction.
+          sections.push(
+            `FINAL LAYOUT CHECK before rendering: this is a "${style}" bathroom. ${cameraText} Re-confirm the wall count and camera framing above match "${style}" exactly — do not default to a generic three-quarter room view.`
+          );
+        }
+
         const finalPrompt = sections.join("\n\n");
 
         const imageResponse = await client.images.generate({
-          model:   "gpt-image-1",
+          model:   "gpt-image-2.5-sunburst",
           prompt:  finalPrompt,
           n:       1,
           size:    "1536x1024",

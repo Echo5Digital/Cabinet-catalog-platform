@@ -92,7 +92,7 @@ const BUDGET_REALISM = {
 };
 
 // Project types that edit an existing customer photo (require photo upload)
-// These use gpt-image-1 images.edit — targeted image editing, not text-to-image.
+// These use gpt-image-2.5-sunburst images.edit — targeted image editing, not text-to-image.
 const REDESIGN_TYPES = new Set([
   "Remodel Existing Kitchen",
   "Replace Cabinets Only",
@@ -101,7 +101,7 @@ const REDESIGN_TYPES = new Set([
 
 /**
  * Convert a customer kitchen photo (HTTP URL or base64 data URL) to a Buffer.
- * Used to feed the image into the gpt-image-1 edit endpoint.
+ * Used to feed the image into the gpt-image-2.5-sunburst edit endpoint.
  */
 async function getImageBuffer(imageUrlOrBase64) {
   if (imageUrlOrBase64.startsWith("data:")) {
@@ -566,9 +566,9 @@ export async function POST(request) {
 
     // ── Stage 5: Generate image render + persist to Supabase Storage ─────────
     // Three paths based on project type + available images:
-    //   A)  Redesign type + customer photo           → gpt-image-1 edit (customer photo)
-    //   A2) New build + admin layout reference image → gpt-image-1 edit (reference photo)
-    //   B)  New build, no reference image            → DALL-E 3 text-to-image
+    //   A)  Redesign type + customer photo           → gpt-image-2.5-sunburst edit (customer photo)
+    //   A2) New build + admin layout reference image → gpt-image-2.5-sunburst edit (reference photo)
+    //   B)  New build, no reference image            → gpt-image-2.5-sunburst text-to-image
     let dalleImageUrl = null;
     let dalleError    = null;
     try {
@@ -587,12 +587,12 @@ export async function POST(request) {
         return null;
       }
 
-      // ── Helper: run gpt-image-1 edit and persist the result ─────────────────
+      // ── Helper: run gpt-image-2.5-sunburst edit and persist the result ──────
       async function editAndPersist(sourceImageUrl, editPrompt) {
         const imgBuffer = await getImageBuffer(sourceImageUrl);
         const imgFile   = await toFile(imgBuffer, "kitchen.png", { type: "image/png" });
         const imageResponse = await client.images.edit({
-          model:   "gpt-image-1",
+          model:   "gpt-image-2.5-sunburst",
           image:   imgFile,
           prompt:  editPrompt,
           size:    "1536x1024",
@@ -604,14 +604,14 @@ export async function POST(request) {
         return (await persistImage(outBuffer)) ?? `data:image/png;base64,${b64}`;
       }
 
-      // ── PATH A: Redesign type + customer photo → gpt-image-1 edit ────────────
+      // ── PATH A: Redesign type + customer photo → gpt-image-2.5-sunburst edit ─
       if (isRedesignType && effectiveImageUrl) {
-        console.log(`[kitchen-design] Using gpt-image-1 edit for project type: ${project_type}`);
+        console.log(`[kitchen-design] Using gpt-image-2.5-sunburst edit for project type: ${project_type}`);
 
         /*
          * PHOTO_LOCKED — injected as the second block in every remodel edit prompt.
          *
-         * Covers four categories that gpt-image-1 will otherwise silently alter:
+         * Covers four categories that gpt-image-2.5-sunburst will otherwise silently alter:
          *  1. Structural elements (windows, doors, walls, ceiling)
          *  2. Surface finishes  (wall paint, backsplash, ceiling colour)
          *  3. Fixtures          (lighting, appliances, sink, faucet)
@@ -713,12 +713,12 @@ export async function POST(request) {
         // Edit the customer's photo using the constructed prompt
         dalleImageUrl = await editAndPersist(effectiveImageUrl, editPrompt);
 
-      // ── PATH A2: New build + admin layout reference image → gpt-image-1 edit ─
+      // ── PATH A2: New build + admin layout reference image → gpt-image-2.5-sunburst edit
       // The admin has uploaded a real kitchen photo for this layout type.
       // We edit it with the customer's selected materials so the output is
-      // guaranteed to match the correct layout geometry — DALL-E 3 cannot do this.
+      // guaranteed to match the correct layout geometry — text-to-image cannot do this.
       } else if (refImages.layout_reference) {
-        console.log(`[kitchen-design] Using gpt-image-1 edit with admin layout reference for: ${layout}`);
+        console.log(`[kitchen-design] Using gpt-image-2.5-sunburst edit with admin layout reference for: ${layout}`);
 
         const sections = [
           `Photorealistic residential kitchen photograph. Using this reference kitchen as the spatial template, redesign it with the following materials and finishes. Keep the exact same layout structure, cabinet count, wall arrangement, and camera angle — only update the colors, materials, and finish style.`,
@@ -761,11 +761,11 @@ export async function POST(request) {
         const refEditPrompt = sections.join("\n\n");
         dalleImageUrl = await editAndPersist(refImages.layout_reference, refEditPrompt);
 
-      // ── PATH B: New build, no reference image → DALL-E 3 text-to-image ───────
+      // ── PATH B: New build, no reference image → gpt-image-2.5-sunburst text-to-image
       } else {
         const lv = layout ? LAYOUT_VISUAL[layout] : null;
 
-        // DALL-E 3 prompt engineering rules:
+        // Image-model prompt engineering rules:
         //  1. Layout name FIRST — activates training-data label recognition
         //  2. Positive descriptions only — negative/forbidden introduces unwanted concepts
         //  3. Geometry before colors/style — geometry in early token positions
@@ -821,7 +821,7 @@ export async function POST(request) {
         const finalDallePrompt = sections.join("\n\n");
 
         const imageResponse = await client.images.generate({
-          model:   "gpt-image-1",
+          model:   "gpt-image-2.5-sunburst",
           prompt:  finalDallePrompt,
           n:       1,
           size:    "1536x1024",

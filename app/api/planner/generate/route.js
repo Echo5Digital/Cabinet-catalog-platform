@@ -91,7 +91,7 @@ export async function POST(request) {
 
     // Generate the kitchen image
     const imageResponse = await client.images.generate({
-      model:   "gpt-image-1",
+      model:   "gpt-image-2.5-sunburst",
       prompt,
       n:       1,
       size:    "1536x1024",

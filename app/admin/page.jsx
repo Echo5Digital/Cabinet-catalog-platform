@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAdminRole } from "./AdminRoleContext";
 
 // ─── Icon Components ──────────────────────────────────────────────────────────
 
@@ -184,27 +185,15 @@ export default function AdminDashboard() {
     new_leads: null,
     total_leads: null,
   });
-  const [role, setRole] = useState(null);
+  // Resolved server-side and provided by AdminLayoutClient — reading it here
+  // (instead of a client-side fetch to /api/auth/session) means this page
+  // never renders the wrong role's content on first paint.
+  const role = useAdminRole();
 
   // The restricted "admin" and "staff" roles have no access to
   // Assets/Catalog/Setup — they only see Leads, Design, and Planner
   // (see app/admin/layout.jsx).
   const isRestrictedAdmin = role === "admin" || role === "staff";
-
-  useEffect(() => {
-    async function loadRole() {
-      try {
-        const res = await fetch("/api/auth/session");
-        if (res.ok) {
-          const data = await res.json();
-          setRole(data.user?.role ?? null);
-        }
-      } catch {
-        // Non-critical
-      }
-    }
-    loadRole();
-  }, []);
 
   useEffect(() => {
     async function load() {
