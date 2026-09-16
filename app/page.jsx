@@ -177,7 +177,13 @@ export default async function HomePage() {
           </>
         )}
         {!SHOW_KITCHEN_PLANNER && (
-          <div className="ai-tools-bg absolute inset-0" style={{ backgroundColor: "#FAFAF9" }} />
+          <>
+            <div
+              className="ai-tools-bg absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: "url('/cabinet-catalog-ai.webp')" }}
+            />
+            <div className="absolute inset-0 bg-white/70" />
+          </>
         )}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
@@ -185,7 +191,7 @@ export default async function HomePage() {
             className={
               SHOW_KITCHEN_PLANNER
                 ? "grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch"
-                : "max-w-2xl mx-auto"
+                : "max-w-2xl"
             }
           >
 
