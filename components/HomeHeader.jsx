@@ -4,6 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+// Kitchen Planner is temporarily disabled site-wide without removing the
+// feature — flip to true to bring it back in the nav.
+const SHOW_KITCHEN_PLANNER = false;
+
 export default function HomeHeader({ tenant, primaryColor, name }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -73,16 +77,19 @@ export default function HomeHeader({ tenant, primaryColor, name }) {
               </Link>
             </div>
           </div>
-          <Link
-            href="/planner"
-            className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition hover:bg-stone-50 shadow-sm"
-            style={{ borderColor: primaryColor, color: primaryColor }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
-            </svg>
-            Kitchen Planner
-          </Link>
+          {/* Kitchen Planner temporarily hidden from nav — see SHOW_KITCHEN_PLANNER */}
+          {SHOW_KITCHEN_PLANNER && (
+            <Link
+              href="/planner"
+              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition hover:bg-stone-50 shadow-sm"
+              style={{ borderColor: primaryColor, color: primaryColor }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
+              </svg>
+              Kitchen Planner
+            </Link>
+          )}
 
           {/* Hamburger — mobile only */}
           <button
@@ -151,17 +158,19 @@ export default function HomeHeader({ tenant, primaryColor, name }) {
               </svg>
               Bathroom Designer
             </Link>
-            <Link
-              href="/planner"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border rounded-full transition hover:bg-stone-50 shadow-sm"
-              style={{ borderColor: primaryColor, color: primaryColor }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
-              </svg>
-              Kitchen Planner
-            </Link>
+            {SHOW_KITCHEN_PLANNER && (
+              <Link
+                href="/planner"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border rounded-full transition hover:bg-stone-50 shadow-sm"
+                style={{ borderColor: primaryColor, color: primaryColor }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2h2a2 2 0 012-2V7" />
+                </svg>
+                Kitchen Planner
+              </Link>
+            )}
           </div>
         </div>
       )}

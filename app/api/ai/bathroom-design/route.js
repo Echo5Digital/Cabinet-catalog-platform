@@ -410,23 +410,40 @@ export async function POST(request) {
     const model = hasAnyImages ? "gpt-4o" : "gpt-4o-mini";
     const userContent = hasAnyImages ? visionParts : userPrompt;
 
-    const completion = await client.chat.completions.create({
-      model,
-      max_tokens: 4000,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user",   content: userContent },
-      ],
-    });
+    // ── Stage 3: Call GPT and parse JSON, with one automatic retry on
+    // truncated/malformed output (occasionally the model's verbose reasoning
+    // fields push the response past the token limit or yield invalid JSON) ──
+    let gptData = null;
+    let lastRawText = "";
+    for (let attempt = 0; attempt < 2 && !gptData; attempt++) {
+      const completion = await client.chat.completions.create({
+        model,
+        max_tokens: 8000,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user",   content: userContent },
+        ],
+      });
 
-    // ── Stage 3: Parse GPT JSON ───────────────────────────────────────────────
-    const rawText = completion.choices?.[0]?.message?.content ?? "";
-    let gptData;
-    try {
-      gptData = JSON.parse(rawText);
-    } catch {
-      console.error("[bathroom-design] JSON parse failed:", rawText.slice(0, 300));
+      const choice = completion.choices?.[0];
+      const rawText = choice?.message?.content ?? "";
+      lastRawText = rawText;
+
+      if (choice?.finish_reason === "length") {
+        console.warn(`[bathroom-design] completion truncated (attempt ${attempt + 1}), finish_reason=length`);
+        continue;
+      }
+
+      try {
+        gptData = JSON.parse(rawText);
+      } catch {
+        console.warn(`[bathroom-design] JSON parse failed (attempt ${attempt + 1}):`, rawText.slice(0, 300));
+      }
+    }
+
+    if (!gptData) {
+      console.error("[bathroom-design] JSON parse failed after retry:", lastRawText.slice(0, 300));
       return NextResponse.json(
         { error: "AI returned an unexpected format. Please try again." },
         { status: 500 }

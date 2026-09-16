@@ -6,6 +6,10 @@ import HomeHeader from "@/components/HomeHeader";
 import SiteFooter from "@/components/SiteFooter";
 export const dynamic = "force-dynamic";
 
+// Kitchen Planner is temporarily disabled site-wide without removing the
+// feature — flip to true to bring back its promo panel on the home page.
+const SHOW_KITCHEN_PLANNER = false;
+
 async function getData() {
   try {
     const tenantId = await resolveTenantId();
@@ -158,19 +162,32 @@ export default async function HomePage() {
             border-color: rgba(255,255,255,0.75) !important;
           }
         `}</style>
-        {/* Background: white left → maroon right */}
-        <div
-          className="ai-tools-bg absolute inset-0"
-          style={{ background: `linear-gradient(to right, #FAFAF9 45%, ${primaryColor} 55%)` }}
-        />
-        {/* Center gradient blend glow — wider + higher opacity for smoother merge */}
-        <div
-          className="ai-tools-glow absolute inset-y-0 left-1/2 -translate-x-1/2 w-80 blur-3xl opacity-95 pointer-events-none"
-          style={{ background: `linear-gradient(to right, #FAFAF9 20%, ${primaryColor} 80%)` }}
-        />
+        {/* Background: white left → maroon right (two-panel layout only) */}
+        {SHOW_KITCHEN_PLANNER && (
+          <>
+            <div
+              className="ai-tools-bg absolute inset-0"
+              style={{ background: `linear-gradient(to right, #FAFAF9 45%, ${primaryColor} 55%)` }}
+            />
+            {/* Center gradient blend glow — wider + higher opacity for smoother merge */}
+            <div
+              className="ai-tools-glow absolute inset-y-0 left-1/2 -translate-x-1/2 w-80 blur-3xl opacity-95 pointer-events-none"
+              style={{ background: `linear-gradient(to right, #FAFAF9 20%, ${primaryColor} 80%)` }}
+            />
+          </>
+        )}
+        {!SHOW_KITCHEN_PLANNER && (
+          <div className="ai-tools-bg absolute inset-0" style={{ backgroundColor: "#FAFAF9" }} />
+        )}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 lg:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+          <div
+            className={
+              SHOW_KITCHEN_PLANNER
+                ? "grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch"
+                : "max-w-2xl mx-auto"
+            }
+          >
 
             {/* ── Left panel: AI Kitchen Designer (white bg, maroon border) ── */}
             <div
@@ -249,6 +266,7 @@ export default async function HomePage() {
             </div>
 
             {/* ── Right panel: Kitchen Planner (maroon bg, white border) ── */}
+            {SHOW_KITCHEN_PLANNER && (
             <div
               className="ai-tool-card ai-card-right rounded-3xl border border-white/40 p-8 sm:p-10 lg:p-12 flex flex-col"
               style={{ backgroundColor: primaryColor }}
@@ -309,6 +327,7 @@ export default async function HomePage() {
                 </svg>
               </Link>
             </div>
+            )}
 
           </div>
         </div>

@@ -6,6 +6,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminRoleProvider } from "./AdminRoleContext";
 
+// Kitchen Planner admin section is temporarily disabled site-wide without
+// removing the feature — flip to true to bring the "Planner" nav group back.
+const SHOW_KITCHEN_PLANNER = false;
+
+// AI Designer admin section is temporarily disabled without removing the
+// feature — flip to true to bring the "Design" nav group back.
+const SHOW_DESIGN = false;
+
 // ─── SVG Icon Components ──────────────────────────────────────────────────────
 
 function IconDashboard() {
@@ -291,11 +299,18 @@ const NAV_GROUPS = [
  * - "staff": Leads/Design/Planner only, no Users.
  */
 function visibleNavGroups(role) {
-  if (role === "owner") return NAV_GROUPS;
-  if (role === "admin") {
-    return NAV_GROUPS.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label) || g.label === "Users");
+  let groups = NAV_GROUPS;
+  if (!SHOW_KITCHEN_PLANNER) {
+    groups = groups.filter((g) => g.label !== "Planner");
   }
-  return NAV_GROUPS.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label));
+  if (!SHOW_DESIGN) {
+    groups = groups.filter((g) => g.label !== "Design");
+  }
+  if (role === "owner") return groups;
+  if (role === "admin") {
+    return groups.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label) || g.label === "Users");
+  }
+  return groups.filter((g) => RESTRICTED_SECTION_GROUPS.has(g.label));
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
